@@ -1,0 +1,8 @@
+﻿la_tool/db.sqlite3
+la_tool/*/__pycache__/
+la_tool/*/migrations/
+la_tool/la_tool/env.py
+db.sqlite3
+*/__pycache__/
+*/migrations/
+la_tool/env.py
