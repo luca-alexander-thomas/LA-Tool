@@ -1,0 +1,4294 @@
+﻿{
+    "success": true,
+    "data": {
+        "ucr": {
+            "440818": {
+                "cluster_id": 20369,
+                "usergroup_id": 8,
+                "name": "THW-Jugend Gelsenkirchen",
+                "shortname": "THW-",
+                "status_id": 99525
+            },
+            "645688": {
+                "cluster_id": 8427,
+                "usergroup_id": 4,
+                "name": "Ortsverband Gelsenkirchen",
+                "shortname": "Orts",
+                "status_id": 33226
+            }
+        },
+        "ucr_default": 645688,
+        "ucr_active": 440818,
+        "ts": 1770986154,
+        "user": {
+            "accesskey": "pTNZJmCMbZWU6_UqIUvngmZGV2jqWLVoxVOmzLbj3X2TZMDke7vLoAVwesjxqMOr",
+            "firstname": "Luca-Alexander",
+            "lastname": "Thomas",
+            "shortname": "LT",
+            "email": "mail@lucathomas.de",
+            "emails": {
+                "523018": "mail@lucathomas.de",
+                "523596": "mail@lucathomas.de"
+            },
+            "status_default": 0,
+            "alarmbehaviour": 0,
+            "alarmsound": 0,
+            "messagesound": 1,
+            "statussound": 1,
+            "hide_name_in_monitor": false,
+            "push_alarm": false,
+            "push_message": true,
+            "push_message_channel": true,
+            "push_statuschange": true,
+            "phonenumbers": {
+                "140494": "+4917634514285"
+            },
+            "access": {
+                "messages": true,
+                "alarm": true,
+                "alarm_actions": {
+                    "edit": true,
+                    "edit_all": true,
+                    "answer": true,
+                    "edit_clusters": [],
+                    "edit_groups": [],
+                    "edit_ucrs": [],
+                    "comment": true,
+                    "report": true,
+                    "attach": true
+                },
+                "alarm_fields": {
+                    "address": 2,
+                    "author": 2,
+                    "files": 2,
+                    "priority": 2,
+                    "read": 2,
+                    "recipients": 2,
+                    "vehicles": 2,
+                    "report": 2,
+                    "text": 2,
+                    "title": 2,
+                    "response_count": 2,
+                    "response_names": 2,
+                    "message_channel": 2
+                },
+                "news": true,
+                "news_actions": {
+                    "edit": true,
+                    "edit_all": true,
+                    "answer": true,
+                    "edit_clusters": [],
+                    "edit_groups": [],
+                    "edit_ucrs": [],
+                    "comment": true,
+                    "attach": true
+                },
+                "news_fields": {
+                    "address": 2,
+                    "author": 2,
+                    "files": 2,
+                    "read": 2,
+                    "recipients": 2,
+                    "vehicles": 2,
+                    "report": 2,
+                    "text": 2,
+                    "title": 2,
+                    "response_count": 2,
+                    "response_names": 2,
+                    "message_channel": 2
+                },
+                "event": true,
+                "event_actions": {
+                    "edit": true,
+                    "edit_all": true,
+                    "answer": true,
+                    "edit_clusters": [],
+                    "edit_groups": [],
+                    "edit_ucrs": [],
+                    "comment": true,
+                    "attach": true
+                },
+                "event_fields": {
+                    "address": 2,
+                    "author": 2,
+                    "files": 2,
+                    "read": 2,
+                    "recipients": 2,
+                    "vehicles": 2,
+                    "report": 2,
+                    "text": 2,
+                    "title": 2,
+                    "response_count": 2,
+                    "response_names": 2,
+                    "message_channel": 2
+                },
+                "message_channel": true,
+                "message_channel_actions": {
+                    "edit": true,
+                    "edit_all": true,
+                    "attach": false,
+                    "edit_clusters": [],
+                    "edit_groups": [],
+                    "edit_ucrs": [],
+                    "comment": true
+                },
+                "message_channel_fields": {
+                    "author": 2,
+                    "files": 2,
+                    "recipients": 2
+                },
+                "report": true,
+                "report_actions": {
+                    "insert": true,
+                    "manage": true
+                },
+                "status": true,
+                "status_manual": true,
+                "status_planer": true,
+                "status_geofence": true,
+                "status_vehicle": true,
+                "status_actions": {
+                    "set_all": true,
+                    "set_ids": [],
+                    "vehicle_all": true,
+                    "vehicle_ids": []
+                },
+                "monitor": true,
+                "monitor_show_names": true,
+                "monitor_actions": [],
+                "monitor_fields": [],
+                "personnel_phonenumbers": true,
+                "localmanagement": true,
+                "management": true,
+                "management_actions": {
+                    "management_central": 1,
+                    "management_personnel": 1,
+                    "management_personnel_user": 4,
+                    "management_personnel_user_userdata": 2,
+                    "management_personnel_user_authorization": 4,
+                    "management_personnel_user_groups": 2,
+                    "management_personnel_user_qualifications": 2,
+                    "management_personnel_user_phonenumbers": 2,
+                    "management_personnel_user_pager": 2,
+                    "management_personnel_user_lock": 2,
+                    "management_personnel_user_status": 2,
+                    "management_personnel_user_foreign_id": 2,
+                    "management_personnel_user_push_settings": 2,
+                    "management_personnel_user_devices": 2,
+                    "management_personnel_groups": 4,
+                    "management_personnel_accessgroups": 4,
+                    "management_personnel_export": 1,
+                    "management_cluster_children": 1,
+                    "management_cluster_access_all": 0,
+                    "management_settings": 1,
+                    "management_settings_setup": 1,
+                    "management_settings_setup_monitors": 4,
+                    "management_settings_setup_monitor_users": 4,
+                    "management_settings_setup_status": 4,
+                    "management_settings_setup_geofence": 4,
+                    "management_settings_setup_qualifications": 4,
+                    "management_settings_setup_functions": 4,
+                    "management_settings_setup_objects": 4,
+                    "management_settings_setup_vehicles": 4,
+                    "management_settings_setup_crewtargets": 4,
+                    "management_settings_setup_security": 4,
+                    "management_settings_setup_rics": 4,
+                    "management_settings_setup_operationalstrengths": 4,
+                    "management_settings_setup_protectiontargets": 4,
+                    "management_settings_setup_security_passwordpolicys": 4,
+                    "management_settings_messages": 1,
+                    "management_settings_messages_alarms": 2,
+                    "management_settings_messages_news": 2,
+                    "management_settings_messages_events": 2,
+                    "management_settings_messages_messenger": 2,
+                    "management_settings_messages_alarmcodes": 4,
+                    "management_settings_messages_reporting": 4,
+                    "management_settings_messages_sms_tts_pager": 2,
+                    "management_settings_messages_notification_formats": 2,
+                    "management_settings_automation": 1,
+                    "management_settings_automation_clusterrules": 4,
+                    "management_settings_automation_tasks_scheduler": 5,
+                    "management_settings_exchanges": 1,
+                    "management_settings_exchanges_api": 2,
+                    "management_settings_exchanges_rics": 2,
+                    "management_settings_exchanges_alarmserver": 2,
+                    "management_settings_exchanges_sms_fax_inbound": 2,
+                    "management_settings_exchanges_exchange": 2,
+                    "management_settings_exchanges_webhooks": 4,
+                    "management_settings_exchanges_system_user": 4,
+                    "management_settings_controlcenter": 2,
+                    "management_account": 1,
+                    "management_account_contract": 2,
+                    "management_account_credit": 3,
+                    "management_account_sponsoring": 2,
+                    "management_account_privacy": 2,
+                    "management_account_logging": 1,
+                    "management_storage": 2,
+                    "management_statistics": 1
+                },
+                "dashboard": true,
+                "dashboard_widgets": {
+                    "alarm_informations": true,
+                    "countdown": true,
+                    "direct_messages": true,
+                    "iframe": true,
+                    "map": true,
+                    "messages": true,
+                    "messenger": true,
+                    "status_compact": true,
+                    "status_detail": true,
+                    "vehicle_status": true,
+                    "vehicle_status_history": true
+                },
+                "cross_unit": false,
+                "cross_unit_fields": {
+                    "alarm": {
+                        "recipients": false,
+                        "response_count": false,
+                        "response_names": false
+                    },
+                    "news": {
+                        "recipients": false,
+                        "response_count": false,
+                        "response_names": false
+                    },
+                    "event": {
+                        "recipients": false,
+                        "response_count": false,
+                        "response_names": false
+                    }
+                },
+                "localmonitor": true,
+                "localmonitor_show_names": true,
+                "fms_editor": true,
+                "status_vehicle_ids": [],
+                "status_vehicle_type": 1
+            },
+            "geofences": [
+                {
+                    "id": 817005,
+                    "cluster_geofence_id": 15380,
+                    "title": "Ortsverband",
+                    "address": "Adenauerallee 100, Gelsenkirchen",
+                    "lat": 51.56191436,
+                    "lng": 7.06939161,
+                    "radius": 500,
+                    "entry_status_id": 71583,
+                    "entry_reset_time": 0,
+                    "entry_reset_to": 71368,
+                    "exit_status_id": 99525,
+                    "exit_reset_time": 0,
+                    "exit_reset_to": 71368,
+                    "statusplan_skip": false,
+                    "alarm_skip": false,
+                    "hidden": false,
+                    "deactivatable": true,
+                    "editable": false
+                }
+            ],
+            "onboarding_tour_state": 1,
+            "ts": 1770986154
+        },
+        "status": {
+            "status_id": 99525,
+            "status_skip_statusplan": false,
+            "status_skip_geofence": false,
+            "status_set_date": 1770487344,
+            "status_reset_date": "",
+            "status_reset_id": 0,
+            "status_log": [],
+            "status_changes": [
+                {
+                    "ts": 1770316329,
+                    "status": 99525,
+                    "note": "",
+                    "vehicle": 0,
+                    "event": 0,
+                    "type": 0
+                },
+                {
+                    "ts": 1770447041,
+                    "status": 71583,
+                    "note": "",
+                    "vehicle": 0,
+                    "event": 0,
+                    "type": 5
+                },
+                {
+                    "ts": 1770487344,
+                    "status": 99525,
+                    "note": "",
+                    "vehicle": 0,
+                    "event": 0,
+                    "type": 6
+                }
+            ],
+            "note": "",
+            "vehicle": 0,
+            "ts": 1770487344,
+            "cached": true
+        },
+        "cluster": {
+            "consumer": {
+                "438880": {
+                    "firstname": "Andreas",
+                    "lastname": "Kania",
+                    "stdformat_name": "Andreas Kania",
+                    "groups": [
+                        93206
+                    ],
+                    "qualifications": [
+                        24130
+                    ]
+                },
+                "440634": {
+                    "firstname": "Martin",
+                    "lastname": "Horstmann",
+                    "stdformat_name": "Martin Horstmann",
+                    "groups": [
+                        93206
+                    ],
+                    "qualifications": [
+                        24130
+                    ]
+                },
+                "440804": {
+                    "firstname": "Elias",
+                    "lastname": "Nasic",
+                    "stdformat_name": "Elias Nasic",
+                    "groups": [
+                        93207,
+                        178765
+                    ],
+                    "qualifications": [
+                        24131,
+                        30133
+                    ]
+                },
+                "440805": {
+                    "firstname": "Justin ",
+                    "lastname": "Mahr",
+                    "stdformat_name": "Justin  Mahr",
+                    "groups": [
+                        93207
+                    ],
+                    "qualifications": [
+                        24131,
+                        30132
+                    ]
+                },
+                "440807": {
+                    "firstname": "Jonas ",
+                    "lastname": "Schulz",
+                    "stdformat_name": "Jonas  Schulz",
+                    "groups": [
+                        93207,
+                        163225,
+                        178765
+                    ],
+                    "qualifications": [
+                        24131,
+                        30133
+                    ]
+                },
+                "440812": {
+                    "firstname": "Ramona ",
+                    "lastname": "Lange",
+                    "stdformat_name": "Ramona  Lange",
+                    "groups": [
+                        93206
+                    ],
+                    "qualifications": [
+                        24130
+                    ]
+                },
+                "440816": {
+                    "firstname": "Tara",
+                    "lastname": "Wietzorrek",
+                    "stdformat_name": "Tara Wietzorrek",
+                    "groups": [
+                        93207
+                    ],
+                    "qualifications": [
+                        24131
+                    ]
+                },
+                "440817": {
+                    "firstname": "Luca",
+                    "lastname": "Ziebarth",
+                    "stdformat_name": "Luca Ziebarth",
+                    "groups": [
+                        93207
+                    ],
+                    "qualifications": [
+                        24131
+                    ]
+                },
+                "440818": {
+                    "firstname": "Luca-Alexander",
+                    "lastname": "Thomas",
+                    "stdformat_name": "Luca-Alexander Thomas",
+                    "groups": [
+                        93206,
+                        163225,
+                        173277
+                    ],
+                    "qualifications": [
+                        24130
+                    ],
+                    "phonenumbers": [
+                        "+4917634514285"
+                    ]
+                },
+                "446461": {
+                    "firstname": "Elias",
+                    "lastname": "Triebwasser",
+                    "stdformat_name": "Elias Triebwasser",
+                    "groups": [
+                        93206,
+                        173277
+                    ],
+                    "qualifications": [
+                        24130
+                    ]
+                },
+                "564131": {
+                    "firstname": "Emilio",
+                    "lastname": "Leske",
+                    "stdformat_name": "Emilio Leske",
+                    "groups": [
+                        93207,
+                        163225,
+                        178765,
+                        183875
+                    ],
+                    "qualifications": [
+                        24131,
+                        24135,
+                        30132
+                    ]
+                },
+                "579628": {
+                    "firstname": "Nelly-Amalia",
+                    "lastname": "Schüssler",
+                    "stdformat_name": "Nelly-Amalia Schüssler",
+                    "groups": [
+                        93207,
+                        163225,
+                        178765,
+                        183875
+                    ],
+                    "qualifications": [
+                        24131,
+                        24135,
+                        30133
+                    ]
+                },
+                "579629": {
+                    "firstname": "Maya-Axelle",
+                    "lastname": "Hannemann",
+                    "stdformat_name": "Maya-Axelle Hannemann",
+                    "groups": [
+                        93207,
+                        178765
+                    ],
+                    "qualifications": [
+                        24131,
+                        30132
+                    ]
+                },
+                "579630": {
+                    "firstname": "Colin",
+                    "lastname": "Herrmann",
+                    "stdformat_name": "Colin Herrmann",
+                    "groups": [
+                        93207
+                    ],
+                    "qualifications": [
+                        24131
+                    ]
+                },
+                "682966": {
+                    "firstname": "Marlon",
+                    "lastname": "Ringeler",
+                    "stdformat_name": "Marlon Ringeler",
+                    "groups": [
+                        93207,
+                        163225
+                    ],
+                    "qualifications": [
+                        24131
+                    ]
+                },
+                "683669": {
+                    "firstname": "Benjamin Christian",
+                    "lastname": "Kleinfeld",
+                    "stdformat_name": "Benjamin Christian Kleinfeld",
+                    "groups": [
+                        93207,
+                        178765
+                    ],
+                    "qualifications": [
+                        24131,
+                        30132
+                    ]
+                },
+                "685569": {
+                    "firstname": "Jason",
+                    "lastname": "Steingräber",
+                    "stdformat_name": "Jason Steingräber",
+                    "groups": [
+                        93207,
+                        177697,
+                        178765
+                    ],
+                    "qualifications": [
+                        32453
+                    ]
+                },
+                "719372": {
+                    "firstname": "Alea Saphira",
+                    "lastname": "Hentz",
+                    "stdformat_name": "Alea Saphira Hentz",
+                    "groups": [
+                        93207,
+                        163225,
+                        177697
+                    ],
+                    "qualifications": [
+                        32453
+                    ]
+                },
+                "719373": {
+                    "firstname": "Raik Balian",
+                    "lastname": "Hentz",
+                    "stdformat_name": "Raik Balian Hentz",
+                    "groups": [
+                        93207,
+                        178765
+                    ],
+                    "qualifications": [
+                        24131,
+                        30132
+                    ]
+                },
+                "731697": {
+                    "firstname": "Luca",
+                    "lastname": "Zapka",
+                    "stdformat_name": "Luca Zapka",
+                    "groups": [
+                        93207,
+                        178765
+                    ],
+                    "qualifications": [
+                        24131,
+                        30132
+                    ]
+                },
+                "740275": {
+                    "firstname": "Justin Joel",
+                    "lastname": "Ixert",
+                    "stdformat_name": "Justin Joel Ixert",
+                    "groups": [
+                        93207
+                    ],
+                    "qualifications": [
+                        24131
+                    ]
+                },
+                "759163": {
+                    "firstname": "Noah",
+                    "lastname": "Koch",
+                    "stdformat_name": "Noah Koch",
+                    "groups": [
+                        93207
+                    ],
+                    "qualifications": [
+                        24131
+                    ]
+                },
+                "780186": {
+                    "firstname": "Lenny Marlon",
+                    "lastname": "Müller",
+                    "stdformat_name": "Lenny Marlon Müller",
+                    "groups": [
+                        93207
+                    ],
+                    "qualifications": [
+                        24131
+                    ]
+                },
+                "781157": {
+                    "firstname": "Tyler",
+                    "lastname": "Jagusch",
+                    "stdformat_name": "Tyler Jagusch",
+                    "groups": [
+                        93207
+                    ],
+                    "qualifications": [
+                        24131
+                    ]
+                },
+                "802309": {
+                    "firstname": "Nicole",
+                    "lastname": "Lange",
+                    "stdformat_name": "Nicole Lange",
+                    "groups": [
+                        93206
+                    ],
+                    "qualifications": [
+                        24130
+                    ]
+                }
+            },
+            "consumersorting": [
+                719372,
+                438880,
+                683669,
+                579630,
+                440804,
+                446461,
+                564131,
+                685569,
+                440807,
+                440805,
+                740275,
+                780186,
+                731697,
+                440817,
+                440818,
+                682966,
+                440634,
+                579629,
+                579628,
+                802309,
+                759163,
+                719373,
+                440812,
+                440816,
+                781157
+            ],
+            "qualification": {
+                "24130": {
+                    "name": "Jugendbetreuer",
+                    "shortname": "JUB"
+                },
+                "24131": {
+                    "name": "Jugendhelfer",
+                    "shortname": "JHE"
+                },
+                "24135": {
+                    "name": "Jugendhelfersprecher",
+                    "shortname": "JHEsp"
+                },
+                "30132": {
+                    "name": "Leistungsabzeichen Bronze",
+                    "shortname": "LA B"
+                },
+                "30133": {
+                    "name": "Leistungsabzeichen Silber",
+                    "shortname": "LA S"
+                },
+                "30134": {
+                    "name": "Leistungsabzeichen Gold",
+                    "shortname": "LA G"
+                },
+                "32453": {
+                    "name": "Junghelfer+",
+                    "shortname": "JHE+"
+                }
+            },
+            "qualificationsorting": [
+                30132,
+                30133,
+                30134,
+                32453,
+                24135,
+                24131,
+                24130
+            ],
+            "operationrole": {
+                "7176": {
+                    "name": "Jugendbetreuer/innen",
+                    "shortname": "JUB"
+                },
+                "7177": {
+                    "name": "Junghelfer/innen",
+                    "shortname": "JHe"
+                }
+            },
+            "operationrolesorting": [
+                7176,
+                7177
+            ],
+            "status": {
+                "71366": {
+                    "id": 71366,
+                    "cluster_id": 20369,
+                    "name": "20 Minuten am OV",
+                    "show_on_alarmmonitor": true,
+                    "show_on_alarm": true,
+                    "show_on_statusgeber": true,
+                    "show_on_statusplaner": true,
+                    "show_on_geofence": true,
+                    "color_id": 12,
+                    "color_hex": "39CF00",
+                    "time": 20,
+                    "sorting": 9,
+                    "hidden": false,
+                    "phonenumber": "+4920293009061",
+                    "alias": "+4932229979741"
+                },
+                "71367": {
+                    "id": 71367,
+                    "cluster_id": 20369,
+                    "name": "Im Übungseinsatz",
+                    "show_on_alarmmonitor": true,
+                    "show_on_alarm": true,
+                    "show_on_statusgeber": true,
+                    "show_on_statusplaner": true,
+                    "show_on_geofence": true,
+                    "color_id": 8,
+                    "color_hex": "0046FF",
+                    "time": 1,
+                    "sorting": 9,
+                    "hidden": false,
+                    "phonenumber": "+4920293009062",
+                    "alias": "+4932229979742"
+                },
+                "71368": {
+                    "id": 71368,
+                    "cluster_id": 20369,
+                    "name": "Komme kurzfristig doch nicht",
+                    "show_on_alarmmonitor": true,
+                    "show_on_alarm": true,
+                    "show_on_statusgeber": true,
+                    "show_on_statusplaner": true,
+                    "show_on_geofence": true,
+                    "color_id": 35,
+                    "color_hex": "F70000",
+                    "time": 0,
+                    "sorting": 9,
+                    "hidden": false,
+                    "phonenumber": "+4920293009063",
+                    "alias": "+4932229979743"
+                },
+                "71581": {
+                    "id": 71581,
+                    "cluster_id": 20369,
+                    "name": "10 Minuten am OV",
+                    "show_on_alarmmonitor": true,
+                    "show_on_alarm": true,
+                    "show_on_statusgeber": true,
+                    "show_on_statusplaner": true,
+                    "show_on_geofence": true,
+                    "color_id": 10,
+                    "color_hex": "009329",
+                    "time": 10,
+                    "sorting": 9,
+                    "hidden": false,
+                    "phonenumber": "",
+                    "alias": ""
+                },
+                "71582": {
+                    "id": 71582,
+                    "cluster_id": 20369,
+                    "name": "Verspäte mich (erheblich)",
+                    "show_on_alarmmonitor": true,
+                    "show_on_alarm": true,
+                    "show_on_statusgeber": true,
+                    "show_on_statusplaner": true,
+                    "show_on_geofence": true,
+                    "color_id": 31,
+                    "color_hex": "FF7E00",
+                    "time": 60,
+                    "sorting": 9,
+                    "hidden": false,
+                    "phonenumber": "",
+                    "alias": ""
+                },
+                "71583": {
+                    "id": 71583,
+                    "cluster_id": 20369,
+                    "name": "Im OV",
+                    "show_on_alarmmonitor": true,
+                    "show_on_alarm": true,
+                    "show_on_statusgeber": true,
+                    "show_on_statusplaner": true,
+                    "show_on_geofence": true,
+                    "color_id": 13,
+                    "color_hex": "084F00",
+                    "time": 1,
+                    "sorting": 9,
+                    "hidden": false,
+                    "phonenumber": "",
+                    "alias": ""
+                },
+                "99525": {
+                    "id": 99525,
+                    "cluster_id": 20369,
+                    "name": "Nicht im OV",
+                    "show_on_alarmmonitor": true,
+                    "show_on_alarm": true,
+                    "show_on_statusgeber": true,
+                    "show_on_statusplaner": false,
+                    "show_on_geofence": true,
+                    "color_id": 30,
+                    "color_hex": "800035",
+                    "time": 0,
+                    "sorting": 9,
+                    "hidden": false,
+                    "phonenumber": "",
+                    "alias": ""
+                }
+            },
+            "statussorting": [
+                71368,
+                99525,
+                71583,
+                71367,
+                71581,
+                71366,
+                71582
+            ],
+            "statussorting_alarm": [
+                99525,
+                71583,
+                71581,
+                71366,
+                71582,
+                71367,
+                71368
+            ],
+            "statussorting_statusgeber": [
+                99525,
+                71583,
+                71581,
+                71366,
+                71582,
+                71367,
+                71368
+            ],
+            "statussorting_statusplaner": [
+                71368,
+                71367,
+                71583,
+                71581,
+                71366,
+                71582
+            ],
+            "statussorting_geofence": [
+                71368,
+                99525,
+                71367,
+                71583,
+                71581,
+                71366,
+                71582
+            ],
+            "statusplancategory": {
+                "0": {
+                    "name": "Keine Angabe"
+                },
+                "3": {
+                    "name": "Dienst"
+                }
+            },
+            "statusplancategorysorting": [
+                0,
+                3
+            ],
+            "id": 20369,
+            "name": "THW-Jugend Gelsenkirchen",
+            "shortname": "THW-",
+            "status_default": 71368,
+            "status_default_overwrite_by_user": false,
+            "address": {
+                "lat": 51.5622114,
+                "lng": 7.0703524,
+                "long": 7.0703524,
+                "street": "Adenauerallee 100",
+                "zip": "45891",
+                "city": "Gelsenkirchen",
+                "country": "de",
+                "ags": 5513000
+            },
+            "predef": {
+                "cloud_size": 25,
+                "message_channel_count": 1,
+                "webhook_count": 10,
+                "news_survey_option_count": 100
+            },
+            "settings": {
+                "test_alpha": false,
+                "test_beta": false,
+                "messenger": false,
+                "messenger_count": 1,
+                "cloud": false,
+                "cloud_size": 25,
+                "alarm_private_mode": false,
+                "alarm_message_channel": true,
+                "alarm_custom_answers": true,
+                "alarm_acknowledge": false,
+                "alarm_api": true,
+                "alarm_response": true,
+                "alarm_response_multiple": true,
+                "alarm_response_time": 3600,
+                "alarm_notification_primary": [
+                    "push"
+                ],
+                "alarm_notification_filter_access": false,
+                "alarm_notification_filter_vehicle": false,
+                "alarm_notification_filter_status": false,
+                "alarm_notification_filter_status_ids": [],
+                "alarm_archive_time": 1440,
+                "news_private_mode": false,
+                "news_message_channel": false,
+                "news_acknowledge": false,
+                "news_notification_primary": [
+                    "push"
+                ],
+                "news_survey_default_show_result_count": 1,
+                "news_survey_default_show_result_names": 2,
+                "event_private_mode": false,
+                "event_message_channel": false,
+                "event_acknowledge": false,
+                "event_notification_primary": [
+                    "push"
+                ],
+                "event_default_show_result_count": 1,
+                "event_default_show_result_names": 2,
+                "event_archive_time": 0,
+                "news_archive_time": 0,
+                "message_channel_editable": true,
+                "message_channel_writable": true,
+                "message_channel_attachable": false,
+                "message_channel_notification": true,
+                "message_channel_access_earlier_messages": true,
+                "status_planer_default": false,
+                "status_planer_default_during_status_id": 0,
+                "status_planer_default_after_status_id": 0,
+                "status_planer_default_status_plan_category_id": 0,
+                "alarm_notification_filter_status_access": false,
+                "sms": false,
+                "tts": false,
+                "pager": false,
+                "user_order": 1,
+                "user_format_name": 1
+            },
+            "fms_status": {
+                "items": {
+                    "1": {
+                        "name": "Funkfrei",
+                        "number": "1",
+                        "color_id": 0,
+                        "color_hex": "55B300"
+                    },
+                    "2": {
+                        "name": "Einsatzbereit an Wache",
+                        "number": "2",
+                        "color_id": 0,
+                        "color_hex": "198215"
+                    },
+                    "3": {
+                        "name": "Auf Anfahrt",
+                        "number": "3",
+                        "color_id": 0,
+                        "color_hex": "FF460C"
+                    },
+                    "4": {
+                        "name": "E-Stelle an",
+                        "number": "4",
+                        "color_id": 0,
+                        "color_hex": "D60000"
+                    },
+                    "5": {
+                        "name": "Sprechwunsch",
+                        "number": "5",
+                        "color_id": 0,
+                        "color_hex": "EFB200"
+                    },
+                    "6": {
+                        "name": "nicht einsatzbereit",
+                        "number": "6",
+                        "color_id": 0,
+                        "color_hex": "3E3E3E"
+                    },
+                    "7": {
+                        "name": "Patient aufgenommen",
+                        "number": "7",
+                        "color_id": 0,
+                        "color_hex": "0087E6"
+                    },
+                    "8": {
+                        "name": "am Transportziel",
+                        "number": "8",
+                        "color_id": 0,
+                        "color_hex": "0038A9"
+                    },
+                    "9": {
+                        "name": "NA aufgenommen",
+                        "number": "9",
+                        "color_id": 0,
+                        "color_hex": "001A7A"
+                    },
+                    "10": {
+                        "name": "Notruf",
+                        "number": "0",
+                        "color_id": 0,
+                        "color_hex": "E400FF"
+                    }
+                },
+                "sorting": [
+                    10,
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9
+                ]
+            },
+            "crewtarget": {
+                "items": {}
+            },
+            "vehicle": {
+                "86012": {
+                    "fullname": "Gerätekraftwagen",
+                    "shortname": "GKW",
+                    "name": "Heros GE 23/51",
+                    "fmsstatus_id": 2,
+                    "fmsstatus_note": "",
+                    "fmsstatus_ts": 1733739758,
+                    "crew": [],
+                    "lat": 0,
+                    "lng": 0,
+                    "opta": "",
+                    "issi": "",
+                    "number": ""
+                },
+                "86013": {
+                    "fullname": "Manschaftstransportwagen",
+                    "shortname": "MTW",
+                    "name": "Heros GE 86/26",
+                    "fmsstatus_id": 2,
+                    "fmsstatus_note": "",
+                    "fmsstatus_ts": 1737122984,
+                    "crew": [],
+                    "lat": 51.4936558,
+                    "lng": 7.0898207,
+                    "opta": "",
+                    "issi": "",
+                    "number": ""
+                },
+                "86014": {
+                    "fullname": "Manschaftstransportwagen",
+                    "shortname": "MTW",
+                    "name": "Heros GE 86/25",
+                    "fmsstatus_id": 2,
+                    "fmsstatus_note": "",
+                    "fmsstatus_ts": 1751267914,
+                    "crew": [],
+                    "lat": 51.4938048,
+                    "lng": 7.0898346,
+                    "opta": "",
+                    "issi": "",
+                    "number": "THW-9996"
+                },
+                "91384": {
+                    "fullname": "Gerätekraftwagen",
+                    "shortname": "GKW",
+                    "name": "Heros GE 22/51",
+                    "fmsstatus_id": 2,
+                    "fmsstatus_note": "",
+                    "fmsstatus_ts": 0,
+                    "crew": [],
+                    "lat": 0,
+                    "lng": 0,
+                    "opta": "",
+                    "issi": "",
+                    "number": ""
+                },
+                "91385": {
+                    "fullname": "Bergeräumgerät",
+                    "shortname": "BRmG",
+                    "name": "Heros GE 43/73",
+                    "fmsstatus_id": 2,
+                    "fmsstatus_note": "",
+                    "fmsstatus_ts": 0,
+                    "crew": [],
+                    "lat": 0,
+                    "lng": 0,
+                    "opta": "",
+                    "issi": "",
+                    "number": ""
+                },
+                "91386": {
+                    "fullname": "Manschaftstransportwagen",
+                    "shortname": "MTW",
+                    "name": "Heros GE 21/10",
+                    "fmsstatus_id": 2,
+                    "fmsstatus_note": "",
+                    "fmsstatus_ts": 1770467512,
+                    "crew": [],
+                    "lat": 0,
+                    "lng": 0,
+                    "opta": "",
+                    "issi": "",
+                    "number": ""
+                },
+                "91387": {
+                    "fullname": "Bergeräumgerät",
+                    "shortname": "BRmG",
+                    "name": "Heros GE 43/72",
+                    "fmsstatus_id": 2,
+                    "fmsstatus_note": "",
+                    "fmsstatus_ts": 0,
+                    "crew": [],
+                    "lat": 0,
+                    "lng": 0,
+                    "opta": "",
+                    "issi": "",
+                    "number": ""
+                },
+                "91388": {
+                    "fullname": "LKW Ladebordwand",
+                    "shortname": "LKW-LABO",
+                    "name": "Heros GE 32/43",
+                    "fmsstatus_id": 2,
+                    "fmsstatus_note": "",
+                    "fmsstatus_ts": 0,
+                    "crew": [],
+                    "lat": 0,
+                    "lng": 0,
+                    "opta": "",
+                    "issi": "",
+                    "number": ""
+                },
+                "91389": {
+                    "fullname": "Wechsellader",
+                    "shortname": "WLF",
+                    "name": "Heros GE 43/66",
+                    "fmsstatus_id": 2,
+                    "fmsstatus_note": "",
+                    "fmsstatus_ts": 0,
+                    "crew": [],
+                    "lat": 0,
+                    "lng": 0,
+                    "opta": "",
+                    "issi": "",
+                    "number": ""
+                },
+                "91390": {
+                    "fullname": "Mehrzweck Gerätewagen",
+                    "shortname": "MzGW",
+                    "name": "Heros GE 24/55",
+                    "fmsstatus_id": 2,
+                    "fmsstatus_note": "",
+                    "fmsstatus_ts": 0,
+                    "crew": [],
+                    "lat": 0,
+                    "lng": 0,
+                    "opta": "",
+                    "issi": "",
+                    "number": ""
+                },
+                "91391": {
+                    "fullname": "Gerätekraftwagen",
+                    "shortname": "GKW",
+                    "name": "Heros GE 24/52",
+                    "fmsstatus_id": 6,
+                    "fmsstatus_note": "",
+                    "fmsstatus_ts": 1769889446,
+                    "crew": [],
+                    "lat": 47.67012917,
+                    "lng": 9.47868733,
+                    "opta": "",
+                    "issi": "",
+                    "number": ""
+                },
+                "91392": {
+                    "fullname": "LKW Kipper",
+                    "shortname": "LKW-K",
+                    "name": "Heros GE 43/62",
+                    "fmsstatus_id": 2,
+                    "fmsstatus_note": "",
+                    "fmsstatus_ts": 0,
+                    "crew": [],
+                    "lat": 0,
+                    "lng": 0,
+                    "opta": "",
+                    "issi": "",
+                    "number": ""
+                }
+            },
+            "vehiclesorting": [
+                91386,
+                91384,
+                86012,
+                91391,
+                91390,
+                91388,
+                91392,
+                91389,
+                91387,
+                91385,
+                86014,
+                86013
+            ],
+            "alarmcodesorting": [
+                0,
+                54405
+            ],
+            "alarmcode": {
+                "0": {
+                    "name": "Ohne Vorschlag",
+                    "text": "",
+                    "address": "",
+                    "lat": 0,
+                    "lng": 0,
+                    "scene_object": "",
+                    "caller": "",
+                    "patient": "",
+                    "remark": "",
+                    "units": "",
+                    "destination": false,
+                    "destination_address": "",
+                    "priority": true,
+                    "groups": [],
+                    "user_cluster_relations": [],
+                    "vehicles": [],
+                    "notification": false,
+                    "notification_type": 2,
+                    "notification_filter_vehicle": false,
+                    "notification_filter_status": false,
+                    "notification_filter_status_ids": [],
+                    "notification_filter_shift_plan": 0,
+                    "notification_filter_shift_plan_ids": [],
+                    "notification_filter_access": false,
+                    "message_channel": 1,
+                    "custom_answers": 1,
+                    "send": false,
+                    "send_mail": false,
+                    "send_push": false,
+                    "send_sms": false,
+                    "send_call": false,
+                    "send_pager": false,
+                    "notification_filter_status_access": false
+                },
+                "54405": {
+                    "name": "PROBEALARM THW-Jugend Gelsenkirchen",
+                    "text": "Dies ist ein Probealarm der THW-Jugend Gelsenkirchen. Es handelt sich NICHT um einen Einsatz!\r\nBitte mit Status \"Im Übungseinsatzt/Dienst\" antworten.",
+                    "address": "Ortsverband",
+                    "lat": 0,
+                    "lng": 0,
+                    "scene_object": "",
+                    "caller": "",
+                    "patient": "",
+                    "remark": "",
+                    "units": "",
+                    "destination": false,
+                    "destination_address": "",
+                    "priority": false,
+                    "clusters": [],
+                    "cluster_tree": [],
+                    "groups": [
+                        93207
+                    ],
+                    "user_cluster_relations": [],
+                    "vehicles": [],
+                    "notification": true,
+                    "notification_type": 3,
+                    "notification_filter_vehicle": false,
+                    "notification_filter_status": true,
+                    "notification_filter_status_ids": [
+                        71583
+                    ],
+                    "notification_filter_shift_plan": 0,
+                    "notification_filter_shift_plan_ids": [],
+                    "notification_filter_access": true,
+                    "message_channel": -1,
+                    "custom_answers": -1,
+                    "send": true,
+                    "send_mail": false,
+                    "send_push": true,
+                    "send_sms": false,
+                    "send_call": false,
+                    "send_pager": false,
+                    "notification_filter_status_access": true
+                }
+            },
+            "group": {
+                "93206": {
+                    "name": "Jugenbetreuer/innen",
+                    "ric": null,
+                    "foreign_id": ""
+                },
+                "93207": {
+                    "name": "Jugendliche",
+                    "ric": "",
+                    "foreign_id": ""
+                },
+                "163225": {
+                    "name": "Ö-Arbeit",
+                    "ric": "",
+                    "foreign_id": ""
+                },
+                "173277": {
+                    "name": "Jugendlager",
+                    "ric": "",
+                    "foreign_id": ""
+                },
+                "177697": {
+                    "name": "JHe+",
+                    "ric": "",
+                    "foreign_id": ""
+                },
+                "178765": {
+                    "name": "Leistungsabzeichen neu",
+                    "ric": "",
+                    "foreign_id": ""
+                },
+                "183875": {
+                    "name": "Junghelfersprecher",
+                    "ric": "",
+                    "foreign_id": ""
+                }
+            },
+            "groupsorting": [
+                177697,
+                93206,
+                173277,
+                93207,
+                183875,
+                178765,
+                163225
+            ],
+            "is_root": false,
+            "version_id": 2,
+            "reporttypes": {
+                "items": {
+                    "14734": {
+                        "cluster_id": 20369,
+                        "id": 14734,
+                        "name": "Feedback",
+                        "description": "Hier könnt Ihr Feedback zu einem Dienst geben. Natürlich könnt ihr das aus persönlichen machen nur wenn Ihr konkrete Vorschläge habt können wir das hier immer nachlesen.\r\nGerne könnt Ihr hier auch Dienst wünsche abgeben.",
+                        "version": 0,
+                        "uploads": false,
+                        "skip_empty": false,
+                        "anonym": false,
+                        "location": false,
+                        "fields": [
+                            {
+                                "id": "ceb1298b-6d6b-4b2a-bb53-f0d62a388a3e",
+                                "name": "Typ",
+                                "type": "selectbox",
+                                "required": "1",
+                                "options": [
+                                    {
+                                        "name": "Feedback",
+                                        "id": "4c321609-6903-4cb0-81ec-f45dddd9297e"
+                                    },
+                                    {
+                                        "name": "Dienst Wunsch",
+                                        "id": "c6b57e3a-bcea-4ce8-be43-361560390a63"
+                                    },
+                                    {
+                                        "name": "Sonstiges",
+                                        "id": "244ddcec-9ae9-4b99-a096-4feb7c0145b6"
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "97f57929-fcf8-4b43-a497-ca5fc30d64d7",
+                                "name": "Bei Feedback referenzierender Dienst",
+                                "type": "date"
+                            },
+                            {
+                                "id": "d67e5d99-6b9b-41d8-97e1-dc77e74d14cd",
+                                "name": "Nachricht",
+                                "type": "textarea",
+                                "required": "1"
+                            }
+                        ],
+                        "attachments": []
+                    }
+                },
+                "sorting": [
+                    14734
+                ]
+            },
+            "ts": 1770986155
+        },
+        "monitor": {
+            "1": {
+                "71366": {
+                    "all": 1,
+                    "qualification": {
+                        "24130": 1,
+                        "24131": 0,
+                        "24135": 0,
+                        "30132": 0,
+                        "30133": 0,
+                        "30134": 0,
+                        "32453": 0
+                    }
+                },
+                "71367": {
+                    "all": 0,
+                    "qualification": {
+                        "24130": 0,
+                        "24131": 0,
+                        "24135": 0,
+                        "30132": 0,
+                        "30133": 0,
+                        "30134": 0,
+                        "32453": 0
+                    }
+                },
+                "71368": {
+                    "all": 1,
+                    "qualification": {
+                        "24130": 1,
+                        "24131": 0,
+                        "24135": 0,
+                        "30132": 0,
+                        "30133": 0,
+                        "30134": 0,
+                        "32453": 0
+                    }
+                },
+                "71581": {
+                    "all": 0,
+                    "qualification": {
+                        "24130": 0,
+                        "24131": 0,
+                        "24135": 0,
+                        "30132": 0,
+                        "30133": 0,
+                        "30134": 0,
+                        "32453": 0
+                    }
+                },
+                "71582": {
+                    "all": 0,
+                    "qualification": {
+                        "24130": 0,
+                        "24131": 0,
+                        "24135": 0,
+                        "30132": 0,
+                        "30133": 0,
+                        "30134": 0,
+                        "32453": 0
+                    }
+                },
+                "71583": {
+                    "all": 0,
+                    "qualification": {
+                        "24130": 0,
+                        "24131": 0,
+                        "24135": 0,
+                        "30132": 0,
+                        "30133": 0,
+                        "30134": 0,
+                        "32453": 0
+                    }
+                },
+                "99525": {
+                    "all": 23,
+                    "qualification": {
+                        "24130": 4,
+                        "24131": 17,
+                        "24135": 2,
+                        "30132": 6,
+                        "30133": 3,
+                        "30134": 0,
+                        "32453": 2
+                    }
+                }
+            },
+            "2": {
+                "71366": {
+                    "all": [
+                        {
+                            "id": 802309,
+                            "status": 71366,
+                            "ts": 1769102450,
+                            "note": "",
+                            "vehicle": 0
+                        }
+                    ],
+                    "qualification": {
+                        "24130": [
+                            {
+                                "id": 802309
+                            }
+                        ],
+                        "24131": [],
+                        "24135": [],
+                        "30132": [],
+                        "30133": [],
+                        "30134": [],
+                        "32453": []
+                    }
+                },
+                "71367": {
+                    "all": [],
+                    "qualification": {
+                        "24130": [],
+                        "24131": [],
+                        "24135": [],
+                        "30132": [],
+                        "30133": [],
+                        "30134": [],
+                        "32453": []
+                    }
+                },
+                "71368": {
+                    "all": [
+                        {
+                            "id": 440812,
+                            "status": 71368,
+                            "ts": 1768510448,
+                            "note": "",
+                            "vehicle": 0
+                        }
+                    ],
+                    "qualification": {
+                        "24130": [
+                            {
+                                "id": 440812
+                            }
+                        ],
+                        "24131": [],
+                        "24135": [],
+                        "30132": [],
+                        "30133": [],
+                        "30134": [],
+                        "32453": []
+                    }
+                },
+                "71581": {
+                    "all": [],
+                    "qualification": {
+                        "24130": [],
+                        "24131": [],
+                        "24135": [],
+                        "30132": [],
+                        "30133": [],
+                        "30134": [],
+                        "32453": []
+                    }
+                },
+                "71582": {
+                    "all": [],
+                    "qualification": {
+                        "24130": [],
+                        "24131": [],
+                        "24135": [],
+                        "30132": [],
+                        "30133": [],
+                        "30134": [],
+                        "32453": []
+                    }
+                },
+                "71583": {
+                    "all": [],
+                    "qualification": {
+                        "24130": [],
+                        "24131": [],
+                        "24135": [],
+                        "30132": [],
+                        "30133": [],
+                        "30134": [],
+                        "32453": []
+                    }
+                },
+                "99525": {
+                    "all": [
+                        {
+                            "id": 438880,
+                            "status": 99525,
+                            "ts": 1770808936,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 440634,
+                            "status": 99525,
+                            "ts": 1770764259,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 440804,
+                            "status": 99525,
+                            "ts": 1770980188,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 440805,
+                            "status": 99525,
+                            "ts": 1742803931,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 440807,
+                            "status": 99525,
+                            "ts": 1769200518,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 440816,
+                            "status": 99525,
+                            "ts": 1739959732,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 440817,
+                            "status": 99525,
+                            "ts": 1741798574,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 440818,
+                            "status": 99525,
+                            "ts": 1770487344,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 446461,
+                            "status": 99525,
+                            "ts": 1770904431,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 564131,
+                            "status": 99525,
+                            "ts": 1770478424,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 579628,
+                            "status": 99525,
+                            "ts": 1770482513,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 579629,
+                            "status": 99525,
+                            "ts": 1739959732,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 579630,
+                            "status": 99525,
+                            "ts": 1739959732,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 682966,
+                            "status": 99525,
+                            "ts": 1768426948,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 683669,
+                            "status": 99525,
+                            "ts": 1770750876,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 685569,
+                            "status": 99525,
+                            "ts": 1767621557,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 719372,
+                            "status": 99525,
+                            "ts": 1770480172,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 719373,
+                            "status": 99525,
+                            "ts": 1766189074,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 731697,
+                            "status": 99525,
+                            "ts": 1770536847,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 740275,
+                            "status": 99525,
+                            "ts": 1770482483,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 759163,
+                            "status": 99525,
+                            "ts": 1749301058,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 780186,
+                            "status": 99525,
+                            "ts": 1770109225,
+                            "note": "",
+                            "vehicle": 0
+                        },
+                        {
+                            "id": 781157,
+                            "status": 99525,
+                            "ts": 1770639672,
+                            "note": "",
+                            "vehicle": 0
+                        }
+                    ],
+                    "qualification": {
+                        "24130": [
+                            {
+                                "id": 438880
+                            },
+                            {
+                                "id": 440634
+                            },
+                            {
+                                "id": 440818
+                            },
+                            {
+                                "id": 446461
+                            }
+                        ],
+                        "24131": [
+                            {
+                                "id": 440804
+                            },
+                            {
+                                "id": 440805
+                            },
+                            {
+                                "id": 440807
+                            },
+                            {
+                                "id": 440816
+                            },
+                            {
+                                "id": 440817
+                            },
+                            {
+                                "id": 564131
+                            },
+                            {
+                                "id": 579628
+                            },
+                            {
+                                "id": 579629
+                            },
+                            {
+                                "id": 579630
+                            },
+                            {
+                                "id": 682966
+                            },
+                            {
+                                "id": 683669
+                            },
+                            {
+                                "id": 719373
+                            },
+                            {
+                                "id": 731697
+                            },
+                            {
+                                "id": 740275
+                            },
+                            {
+                                "id": 759163
+                            },
+                            {
+                                "id": 780186
+                            },
+                            {
+                                "id": 781157
+                            }
+                        ],
+                        "24135": [
+                            {
+                                "id": 564131
+                            },
+                            {
+                                "id": 579628
+                            }
+                        ],
+                        "30132": [
+                            {
+                                "id": 440805
+                            },
+                            {
+                                "id": 564131
+                            },
+                            {
+                                "id": 579629
+                            },
+                            {
+                                "id": 683669
+                            },
+                            {
+                                "id": 719373
+                            },
+                            {
+                                "id": 731697
+                            }
+                        ],
+                        "30133": [
+                            {
+                                "id": 440804
+                            },
+                            {
+                                "id": 440807
+                            },
+                            {
+                                "id": 579628
+                            }
+                        ],
+                        "30134": [],
+                        "32453": [
+                            {
+                                "id": 685569
+                            },
+                            {
+                                "id": 719372
+                            }
+                        ]
+                    }
+                }
+            },
+            "3": {
+                "438880": {
+                    "id": 438880,
+                    "status": 99525,
+                    "ts": 1770808936,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "440634": {
+                    "id": 440634,
+                    "status": 99525,
+                    "ts": 1770764259,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "440804": {
+                    "id": 440804,
+                    "status": 99525,
+                    "ts": 1770980188,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "440805": {
+                    "id": 440805,
+                    "status": 99525,
+                    "ts": 1742803931,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "440807": {
+                    "id": 440807,
+                    "status": 99525,
+                    "ts": 1769200518,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "440812": {
+                    "id": 440812,
+                    "status": 71368,
+                    "ts": 1768510448,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "440816": {
+                    "id": 440816,
+                    "status": 99525,
+                    "ts": 1739959732,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "440817": {
+                    "id": 440817,
+                    "status": 99525,
+                    "ts": 1741798574,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "440818": {
+                    "id": 440818,
+                    "status": 99525,
+                    "ts": 1770487344,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "446461": {
+                    "id": 446461,
+                    "status": 99525,
+                    "ts": 1770904431,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "564131": {
+                    "id": 564131,
+                    "status": 99525,
+                    "ts": 1770478424,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "579628": {
+                    "id": 579628,
+                    "status": 99525,
+                    "ts": 1770482513,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "579629": {
+                    "id": 579629,
+                    "status": 99525,
+                    "ts": 1739959732,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "579630": {
+                    "id": 579630,
+                    "status": 99525,
+                    "ts": 1739959732,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "682966": {
+                    "id": 682966,
+                    "status": 99525,
+                    "ts": 1768426948,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "683669": {
+                    "id": 683669,
+                    "status": 99525,
+                    "ts": 1770750876,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "685569": {
+                    "id": 685569,
+                    "status": 99525,
+                    "ts": 1767621557,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "719372": {
+                    "id": 719372,
+                    "status": 99525,
+                    "ts": 1770480172,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "719373": {
+                    "id": 719373,
+                    "status": 99525,
+                    "ts": 1766189074,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "731697": {
+                    "id": 731697,
+                    "status": 99525,
+                    "ts": 1770536847,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "740275": {
+                    "id": 740275,
+                    "status": 99525,
+                    "ts": 1770482483,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "759163": {
+                    "id": 759163,
+                    "status": 99525,
+                    "ts": 1749301058,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "780186": {
+                    "id": 780186,
+                    "status": 99525,
+                    "ts": 1770109225,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "781157": {
+                    "id": 781157,
+                    "status": 99525,
+                    "ts": 1770639672,
+                    "note": "",
+                    "vehicle": 0
+                },
+                "802309": {
+                    "id": 802309,
+                    "status": 71366,
+                    "ts": 1769102450,
+                    "note": "",
+                    "vehicle": 0
+                }
+            },
+            "ts": 1770980188,
+            "cached": true
+        },
+        "alarm": {
+            "items": [],
+            "sorting": [],
+            "ts": 1770986154,
+            "new": 0
+        },
+        "news": {
+            "items": {
+                "2058558": {
+                    "id": 2058558,
+                    "author_id": 440818,
+                    "cluster_id": 20369,
+                    "message_channel_id": 0,
+                    "foreign_id": "",
+                    "title": "Dienstplan 2026/1",
+                    "text": "Hier der neue Dienstplan als PDF",
+                    "address": "",
+                    "lat": 0,
+                    "lng": 0,
+                    "archive": false,
+                    "date": 1767636900,
+                    "ts_archive": 0,
+                    "new": false,
+                    "editable": true,
+                    "answerable": true,
+                    "notification_type": 2,
+                    "group": [],
+                    "cluster": [],
+                    "user_cluster_relation": [],
+                    "hidden": false,
+                    "deleted": false,
+                    "message_channel": false,
+                    "attachment_count": 1,
+                    "count_recipients": 25,
+                    "count_read": 18,
+                    "survey": false,
+                    "ucr_addressed": [
+                        438880,
+                        440634,
+                        440804,
+                        440805,
+                        440807,
+                        440812,
+                        440816,
+                        440817,
+                        440818,
+                        446461,
+                        564131,
+                        579628,
+                        579629,
+                        579630,
+                        682966,
+                        683669,
+                        685569,
+                        719372,
+                        719373,
+                        731697,
+                        740275,
+                        759163,
+                        780186,
+                        781157,
+                        802309
+                    ],
+                    "ucr_read": [
+                        438880,
+                        440804,
+                        440807,
+                        440812,
+                        440818,
+                        446461,
+                        564131,
+                        579628,
+                        579629,
+                        682966,
+                        683669,
+                        685569,
+                        719373,
+                        740275,
+                        759163,
+                        780186,
+                        781157,
+                        802309
+                    ],
+                    "ucr_self_addressed": true,
+                    "private_mode": false,
+                    "attachments": [
+                        {
+                            "id": 244696,
+                            "file_reference_id": 247224,
+                            "foreign_type": "news",
+                            "foreign_id": 2058558,
+                            "type": 1,
+                            "title": "d_thw_jugend_ge_jugenddienstplan_2026_1.pdf",
+                            "description": "",
+                            "encrypted": true,
+                            "encryption_iv": "cd3f84b56448b82e82c8775a15a8e647",
+                            "name": "d_thw_jugend_ge_jugenddienstplan_2026_1.pdf",
+                            "mime_type": "application/pdf",
+                            "deleted": false,
+                            "size": 428160,
+                            "cluster_id": 20369,
+                            "ts_create": 1767636036
+                        }
+                    ],
+                    "ts_publish": 1767636900,
+                    "ts_create": 1767636035,
+                    "ts_update": 1770741212,
+                    "send_mail": false,
+                    "send_push": false,
+                    "send_sms": false,
+                    "send_call": false,
+                    "send_pager": false
+                }
+            },
+            "sorting": [
+                2058558
+            ],
+            "ts": 1770986154,
+            "new": 0
+        },
+        "events": {
+            "items": {
+                "1793234": {
+                    "id": 1793234,
+                    "author_id": 440818,
+                    "cluster_id": 20369,
+                    "message_channel_id": 0,
+                    "foreign_id": "",
+                    "title": "Landesjugendausschuss",
+                    "text": "Infos Folgen",
+                    "address": "",
+                    "lat": 0,
+                    "lng": 0,
+                    "start": 1773478800,
+                    "end": 1773500400,
+                    "fullday": false,
+                    "days": 1,
+                    "archive": false,
+                    "ts_archive": 0,
+                    "new": false,
+                    "editable": true,
+                    "answerable": true,
+                    "custom_answers": false,
+                    "participation": 0,
+                    "note": "",
+                    "show_result_count": 1,
+                    "show_result_names": 2,
+                    "count_recipients": 8,
+                    "count_read": 7,
+                    "notification_type": 3,
+                    "group": [
+                        93206,
+                        183875
+                    ],
+                    "cluster": [],
+                    "user_cluster_relation": [],
+                    "ucr_addressed": [
+                        438880,
+                        440634,
+                        440812,
+                        440818,
+                        446461,
+                        564131,
+                        579628,
+                        802309
+                    ],
+                    "ucr_self_addressed": true,
+                    "ucr_read": [
+                        440634,
+                        440812,
+                        440818,
+                        446461,
+                        564131,
+                        579628,
+                        802309
+                    ],
+                    "hidden": false,
+                    "deleted": false,
+                    "message_channel": false,
+                    "attachment_count": 0,
+                    "response_type": 0,
+                    "response_until": false,
+                    "ts_response": 0,
+                    "send_reminder": false,
+                    "private_mode": false,
+                    "access_names": true,
+                    "access_count": true,
+                    "participationlist": {},
+                    "participationcount": {},
+                    "participationnotes": [],
+                    "ts_publish": 1770562800,
+                    "ts_create": 1755081924,
+                    "ts_update": 1770655716,
+                    "send_mail": false,
+                    "send_push": false,
+                    "send_sms": false,
+                    "send_call": false,
+                    "send_pager": false
+                },
+                "1985856": {
+                    "id": 1985856,
+                    "author_id": 440818,
+                    "cluster_id": 20369,
+                    "message_channel_id": 0,
+                    "foreign_id": "",
+                    "title": "Jugenddienst technische Ausbildung",
+                    "text": "THW-Jugend Dienst technische Ausbildung \r\nBitte seid pünktlich am OV und reist in Zivil an!\r\nBei Fragen könnt ihr euch gerne an uns wenden",
+                    "address": "THW-Jugend Gelsenkirchen, Adenauerallee 100 45891 Gelsenkirchen",
+                    "lat": 0,
+                    "lng": 0,
+                    "start": 1771664400,
+                    "end": 1771686000,
+                    "fullday": false,
+                    "days": 1,
+                    "archive": false,
+                    "ts_archive": 0,
+                    "new": false,
+                    "editable": true,
+                    "answerable": true,
+                    "custom_answers": true,
+                    "participation": 3,
+                    "note": "",
+                    "show_result_count": 2,
+                    "show_result_names": 2,
+                    "count_recipients": 25,
+                    "count_read": 12,
+                    "notification_type": 3,
+                    "group": [
+                        93206,
+                        93207
+                    ],
+                    "cluster": [],
+                    "user_cluster_relation": [],
+                    "ucr_addressed": [
+                        438880,
+                        440634,
+                        440804,
+                        440805,
+                        440807,
+                        440812,
+                        440816,
+                        440817,
+                        440818,
+                        446461,
+                        564131,
+                        579628,
+                        579629,
+                        579630,
+                        682966,
+                        683669,
+                        685569,
+                        719372,
+                        719373,
+                        731697,
+                        740275,
+                        759163,
+                        780186,
+                        781157,
+                        802309
+                    ],
+                    "ucr_self_addressed": true,
+                    "ucr_read": [
+                        438880,
+                        440804,
+                        440812,
+                        440818,
+                        564131,
+                        579628,
+                        683669,
+                        685569,
+                        719373,
+                        740275,
+                        780186,
+                        781157
+                    ],
+                    "hidden": false,
+                    "deleted": false,
+                    "message_channel": false,
+                    "attachment_count": 0,
+                    "response_type": 2,
+                    "response_until": true,
+                    "ts_response": 1771405200,
+                    "send_reminder": true,
+                    "private_mode": false,
+                    "access_names": true,
+                    "access_count": true,
+                    "participationlist": {
+                        "1": [
+                            440812
+                        ],
+                        "2": [
+                            438880,
+                            440804,
+                            781157
+                        ],
+                        "3": [
+                            440818,
+                            685569
+                        ]
+                    },
+                    "participationcount": {
+                        "1": 1,
+                        "2": 3,
+                        "3": 2
+                    },
+                    "participationnotes": [],
+                    "reminder": {
+                        "notification_filter": 1,
+                        "ts": 1771318800,
+                        "send_push": true,
+                        "send_mail": false,
+                        "executed": false
+                    },
+                    "ts_publish": 1767622130,
+                    "ts_create": 1767622130,
+                    "ts_update": 1770973455,
+                    "send_mail": false,
+                    "send_push": false,
+                    "send_sms": false,
+                    "send_call": false,
+                    "send_pager": false
+                },
+                "1985857": {
+                    "id": 1985857,
+                    "author_id": 440818,
+                    "cluster_id": 20369,
+                    "message_channel_id": 0,
+                    "foreign_id": "",
+                    "title": "Jugenddienst technische Ausbildung",
+                    "text": "THW-Jugend Dienst technische Ausbildung \r\nBitte seid pünktlich am OV und reist in Zivil an!\r\nBei Fragen könnt ihr euch gerne an uns wenden",
+                    "address": "THW-Jugend Gelsenkirchen, Adenauerallee 100 45891 Gelsenkirchen",
+                    "lat": 0,
+                    "lng": 0,
+                    "start": 1772874000,
+                    "end": 1772895600,
+                    "fullday": false,
+                    "days": 1,
+                    "archive": false,
+                    "ts_archive": 0,
+                    "new": false,
+                    "editable": true,
+                    "answerable": true,
+                    "custom_answers": true,
+                    "participation": 3,
+                    "note": "",
+                    "show_result_count": 2,
+                    "show_result_names": 2,
+                    "count_recipients": 25,
+                    "count_read": 10,
+                    "notification_type": 3,
+                    "group": [
+                        93206,
+                        93207
+                    ],
+                    "cluster": [],
+                    "user_cluster_relation": [],
+                    "ucr_addressed": [
+                        438880,
+                        440634,
+                        440804,
+                        440805,
+                        440807,
+                        440812,
+                        440816,
+                        440817,
+                        440818,
+                        446461,
+                        564131,
+                        579628,
+                        579629,
+                        579630,
+                        682966,
+                        683669,
+                        685569,
+                        719372,
+                        719373,
+                        731697,
+                        740275,
+                        759163,
+                        780186,
+                        781157,
+                        802309
+                    ],
+                    "ucr_self_addressed": true,
+                    "ucr_read": [
+                        440634,
+                        440804,
+                        440818,
+                        564131,
+                        579628,
+                        685569,
+                        719373,
+                        740275,
+                        780186,
+                        781157
+                    ],
+                    "hidden": false,
+                    "deleted": false,
+                    "message_channel": false,
+                    "attachment_count": 0,
+                    "response_type": 2,
+                    "response_until": true,
+                    "ts_response": 1772614800,
+                    "send_reminder": true,
+                    "private_mode": false,
+                    "access_names": true,
+                    "access_count": true,
+                    "participationlist": {
+                        "1": [],
+                        "2": [],
+                        "3": [
+                            440818,
+                            685569,
+                            780186
+                        ]
+                    },
+                    "participationcount": {
+                        "1": 0,
+                        "2": 0,
+                        "3": 3
+                    },
+                    "participationnotes": [],
+                    "reminder": {
+                        "notification_filter": 1,
+                        "ts": 1772528400,
+                        "send_push": true,
+                        "send_mail": false,
+                        "executed": false
+                    },
+                    "ts_publish": 1767622130,
+                    "ts_create": 1767622130,
+                    "ts_update": 1770741233,
+                    "send_mail": false,
+                    "send_push": false,
+                    "send_sms": false,
+                    "send_call": false,
+                    "send_pager": false
+                },
+                "1985858": {
+                    "id": 1985858,
+                    "author_id": 440818,
+                    "cluster_id": 20369,
+                    "message_channel_id": 0,
+                    "foreign_id": "",
+                    "title": "Jugenddienst technische Ausbildung",
+                    "text": "THW-Jugend Dienst technische Ausbildung \r\nBitte seid pünktlich am OV und reist in Zivil an!\r\nBei Fragen könnt ihr euch gerne an uns wenden",
+                    "address": "THW-Jugend Gelsenkirchen, Adenauerallee 100 45891 Gelsenkirchen",
+                    "lat": 0,
+                    "lng": 0,
+                    "start": 1774688400,
+                    "end": 1774710000,
+                    "fullday": false,
+                    "days": 1,
+                    "archive": false,
+                    "ts_archive": 0,
+                    "new": false,
+                    "editable": true,
+                    "answerable": true,
+                    "custom_answers": true,
+                    "participation": 3,
+                    "note": "",
+                    "show_result_count": 2,
+                    "show_result_names": 2,
+                    "count_recipients": 25,
+                    "count_read": 9,
+                    "notification_type": 3,
+                    "group": [
+                        93206,
+                        93207
+                    ],
+                    "cluster": [],
+                    "user_cluster_relation": [],
+                    "ucr_addressed": [
+                        438880,
+                        440634,
+                        440804,
+                        440805,
+                        440807,
+                        440812,
+                        440816,
+                        440817,
+                        440818,
+                        446461,
+                        564131,
+                        579628,
+                        579629,
+                        579630,
+                        682966,
+                        683669,
+                        685569,
+                        719372,
+                        719373,
+                        731697,
+                        740275,
+                        759163,
+                        780186,
+                        781157,
+                        802309
+                    ],
+                    "ucr_self_addressed": true,
+                    "ucr_read": [
+                        440804,
+                        440818,
+                        564131,
+                        579628,
+                        685569,
+                        719373,
+                        740275,
+                        780186,
+                        781157
+                    ],
+                    "hidden": false,
+                    "deleted": false,
+                    "message_channel": false,
+                    "attachment_count": 0,
+                    "response_type": 2,
+                    "response_until": true,
+                    "ts_response": 1774429200,
+                    "send_reminder": true,
+                    "private_mode": false,
+                    "access_names": true,
+                    "access_count": true,
+                    "participationlist": {
+                        "1": [],
+                        "2": [],
+                        "3": [
+                            440818,
+                            685569
+                        ]
+                    },
+                    "participationcount": {
+                        "1": 0,
+                        "2": 0,
+                        "3": 2
+                    },
+                    "participationnotes": [],
+                    "reminder": {
+                        "notification_filter": 1,
+                        "ts": 1774342800,
+                        "send_push": true,
+                        "send_mail": false,
+                        "executed": false
+                    },
+                    "ts_publish": 1767622130,
+                    "ts_create": 1767622130,
+                    "ts_update": 1770741233,
+                    "send_mail": false,
+                    "send_push": false,
+                    "send_sms": false,
+                    "send_call": false,
+                    "send_pager": false
+                },
+                "1985859": {
+                    "id": 1985859,
+                    "author_id": 440818,
+                    "cluster_id": 20369,
+                    "message_channel_id": 0,
+                    "foreign_id": "",
+                    "title": "Jugenddienst technische Ausbildung",
+                    "text": "THW-Jugend Dienst technische Ausbildung \r\nBitte seid pünktlich am OV und reist in Zivil an!\r\nBei Fragen könnt ihr euch gerne an uns wenden",
+                    "address": "THW-Jugend Gelsenkirchen, Adenauerallee 100 45891 Gelsenkirchen",
+                    "lat": 0,
+                    "lng": 0,
+                    "start": 1775894400,
+                    "end": 1775916000,
+                    "fullday": false,
+                    "days": 1,
+                    "archive": false,
+                    "ts_archive": 0,
+                    "new": false,
+                    "editable": true,
+                    "answerable": true,
+                    "custom_answers": true,
+                    "participation": 3,
+                    "note": "",
+                    "show_result_count": 2,
+                    "show_result_names": 2,
+                    "count_recipients": 25,
+                    "count_read": 10,
+                    "notification_type": 3,
+                    "group": [
+                        93206,
+                        93207
+                    ],
+                    "cluster": [],
+                    "user_cluster_relation": [],
+                    "ucr_addressed": [
+                        438880,
+                        440634,
+                        440804,
+                        440805,
+                        440807,
+                        440812,
+                        440816,
+                        440817,
+                        440818,
+                        446461,
+                        564131,
+                        579628,
+                        579629,
+                        579630,
+                        682966,
+                        683669,
+                        685569,
+                        719372,
+                        719373,
+                        731697,
+                        740275,
+                        759163,
+                        780186,
+                        781157,
+                        802309
+                    ],
+                    "ucr_self_addressed": true,
+                    "ucr_read": [
+                        440804,
+                        440818,
+                        564131,
+                        579628,
+                        685569,
+                        719373,
+                        740275,
+                        759163,
+                        780186,
+                        781157
+                    ],
+                    "hidden": false,
+                    "deleted": false,
+                    "message_channel": false,
+                    "attachment_count": 0,
+                    "response_type": 2,
+                    "response_until": true,
+                    "ts_response": 1775635200,
+                    "send_reminder": true,
+                    "private_mode": false,
+                    "access_names": true,
+                    "access_count": true,
+                    "participationlist": {
+                        "1": [
+                            579628
+                        ],
+                        "2": [],
+                        "3": [
+                            440818,
+                            685569
+                        ]
+                    },
+                    "participationcount": {
+                        "1": 1,
+                        "2": 0,
+                        "3": 2
+                    },
+                    "participationnotes": [],
+                    "reminder": {
+                        "notification_filter": 1,
+                        "ts": 1775548800,
+                        "send_push": true,
+                        "send_mail": false,
+                        "executed": false
+                    },
+                    "ts_publish": 1767622130,
+                    "ts_create": 1767622130,
+                    "ts_update": 1770741233,
+                    "send_mail": false,
+                    "send_push": false,
+                    "send_sms": false,
+                    "send_call": false,
+                    "send_pager": false
+                },
+                "1985860": {
+                    "id": 1985860,
+                    "author_id": 440818,
+                    "cluster_id": 20369,
+                    "message_channel_id": 0,
+                    "foreign_id": "",
+                    "title": "Jugenddienst technische Ausbildung",
+                    "text": "THW-Jugend Dienst technische Ausbildung \r\nBitte seid pünktlich am OV und reist in Zivil an!\r\nBei Fragen könnt ihr euch gerne an uns wenden",
+                    "address": "THW-Jugend Gelsenkirchen, Adenauerallee 100 45891 Gelsenkirchen",
+                    "lat": 0,
+                    "lng": 0,
+                    "start": 1777104000,
+                    "end": 1777125600,
+                    "fullday": false,
+                    "days": 1,
+                    "archive": false,
+                    "ts_archive": 0,
+                    "new": false,
+                    "editable": true,
+                    "answerable": true,
+                    "custom_answers": true,
+                    "participation": 3,
+                    "note": "",
+                    "show_result_count": 2,
+                    "show_result_names": 2,
+                    "count_recipients": 25,
+                    "count_read": 9,
+                    "notification_type": 3,
+                    "group": [
+                        93206,
+                        93207
+                    ],
+                    "cluster": [],
+                    "user_cluster_relation": [],
+                    "ucr_addressed": [
+                        438880,
+                        440634,
+                        440804,
+                        440805,
+                        440807,
+                        440812,
+                        440816,
+                        440817,
+                        440818,
+                        446461,
+                        564131,
+                        579628,
+                        579629,
+                        579630,
+                        682966,
+                        683669,
+                        685569,
+                        719372,
+                        719373,
+                        731697,
+                        740275,
+                        759163,
+                        780186,
+                        781157,
+                        802309
+                    ],
+                    "ucr_self_addressed": true,
+                    "ucr_read": [
+                        440804,
+                        440818,
+                        564131,
+                        579628,
+                        685569,
+                        719373,
+                        740275,
+                        780186,
+                        781157
+                    ],
+                    "hidden": false,
+                    "deleted": false,
+                    "message_channel": false,
+                    "attachment_count": 0,
+                    "response_type": 2,
+                    "response_until": true,
+                    "ts_response": 1776844800,
+                    "send_reminder": true,
+                    "private_mode": false,
+                    "access_names": true,
+                    "access_count": true,
+                    "participationlist": {
+                        "1": [],
+                        "2": [],
+                        "3": [
+                            440818,
+                            685569
+                        ]
+                    },
+                    "participationcount": {
+                        "1": 0,
+                        "2": 0,
+                        "3": 2
+                    },
+                    "participationnotes": [],
+                    "reminder": {
+                        "notification_filter": 1,
+                        "ts": 1776758400,
+                        "send_push": true,
+                        "send_mail": false,
+                        "executed": false
+                    },
+                    "ts_publish": 1767622130,
+                    "ts_create": 1767622130,
+                    "ts_update": 1770741234,
+                    "send_mail": false,
+                    "send_push": false,
+                    "send_sms": false,
+                    "send_call": false,
+                    "send_pager": false
+                },
+                "1985861": {
+                    "id": 1985861,
+                    "author_id": 440818,
+                    "cluster_id": 20369,
+                    "message_channel_id": 0,
+                    "foreign_id": "",
+                    "title": "Jugenddienst technische Ausbildung",
+                    "text": "THW-Jugend Dienst technische Ausbildung \r\nBitte seid pünktlich am OV und reist in Zivil an!\r\nBei Fragen könnt ihr euch gerne an uns wenden",
+                    "address": "THW-Jugend Gelsenkirchen, Adenauerallee 100 45891 Gelsenkirchen",
+                    "lat": 0,
+                    "lng": 0,
+                    "start": 1778918400,
+                    "end": 1778940000,
+                    "fullday": false,
+                    "days": 1,
+                    "archive": false,
+                    "ts_archive": 0,
+                    "new": false,
+                    "editable": true,
+                    "answerable": true,
+                    "custom_answers": true,
+                    "participation": 3,
+                    "note": "",
+                    "show_result_count": 2,
+                    "show_result_names": 2,
+                    "count_recipients": 25,
+                    "count_read": 9,
+                    "notification_type": 3,
+                    "group": [
+                        93206,
+                        93207
+                    ],
+                    "cluster": [],
+                    "user_cluster_relation": [],
+                    "ucr_addressed": [
+                        438880,
+                        440634,
+                        440804,
+                        440805,
+                        440807,
+                        440812,
+                        440816,
+                        440817,
+                        440818,
+                        446461,
+                        564131,
+                        579628,
+                        579629,
+                        579630,
+                        682966,
+                        683669,
+                        685569,
+                        719372,
+                        719373,
+                        731697,
+                        740275,
+                        759163,
+                        780186,
+                        781157,
+                        802309
+                    ],
+                    "ucr_self_addressed": true,
+                    "ucr_read": [
+                        440804,
+                        440818,
+                        564131,
+                        579628,
+                        685569,
+                        719373,
+                        740275,
+                        780186,
+                        781157
+                    ],
+                    "hidden": false,
+                    "deleted": false,
+                    "message_channel": false,
+                    "attachment_count": 0,
+                    "response_type": 2,
+                    "response_until": true,
+                    "ts_response": 1778659200,
+                    "send_reminder": true,
+                    "private_mode": false,
+                    "access_names": true,
+                    "access_count": true,
+                    "participationlist": {
+                        "1": [],
+                        "2": [],
+                        "3": [
+                            440818,
+                            685569
+                        ]
+                    },
+                    "participationcount": {
+                        "1": 0,
+                        "2": 0,
+                        "3": 2
+                    },
+                    "participationnotes": [],
+                    "reminder": {
+                        "notification_filter": 1,
+                        "ts": 1778572800,
+                        "send_push": true,
+                        "send_mail": false,
+                        "executed": false
+                    },
+                    "ts_publish": 1767622130,
+                    "ts_create": 1767622130,
+                    "ts_update": 1770741234,
+                    "send_mail": false,
+                    "send_push": false,
+                    "send_sms": false,
+                    "send_call": false,
+                    "send_pager": false
+                },
+                "1985862": {
+                    "id": 1985862,
+                    "author_id": 440818,
+                    "cluster_id": 20369,
+                    "message_channel_id": 0,
+                    "foreign_id": "",
+                    "title": "Jugenddienst technische Ausbildung",
+                    "text": "THW-Jugend Dienst technische Ausbildung \r\nBitte seid pünktlich am OV und reist in Zivil an!\r\nBei Fragen könnt ihr euch gerne an uns wenden",
+                    "address": "THW-Jugend Gelsenkirchen, Adenauerallee 100 45891 Gelsenkirchen",
+                    "lat": 0,
+                    "lng": 0,
+                    "start": 1780128000,
+                    "end": 1780149600,
+                    "fullday": false,
+                    "days": 1,
+                    "archive": false,
+                    "ts_archive": 0,
+                    "new": false,
+                    "editable": true,
+                    "answerable": true,
+                    "custom_answers": true,
+                    "participation": 3,
+                    "note": "",
+                    "show_result_count": 2,
+                    "show_result_names": 2,
+                    "count_recipients": 25,
+                    "count_read": 8,
+                    "notification_type": 3,
+                    "group": [
+                        93206,
+                        93207
+                    ],
+                    "cluster": [],
+                    "user_cluster_relation": [],
+                    "ucr_addressed": [
+                        438880,
+                        440634,
+                        440804,
+                        440805,
+                        440807,
+                        440812,
+                        440816,
+                        440817,
+                        440818,
+                        446461,
+                        564131,
+                        579628,
+                        579629,
+                        579630,
+                        682966,
+                        683669,
+                        685569,
+                        719372,
+                        719373,
+                        731697,
+                        740275,
+                        759163,
+                        780186,
+                        781157,
+                        802309
+                    ],
+                    "ucr_self_addressed": true,
+                    "ucr_read": [
+                        440804,
+                        440818,
+                        564131,
+                        579628,
+                        685569,
+                        719373,
+                        740275,
+                        780186
+                    ],
+                    "hidden": false,
+                    "deleted": false,
+                    "message_channel": false,
+                    "attachment_count": 0,
+                    "response_type": 2,
+                    "response_until": true,
+                    "ts_response": 1779868800,
+                    "send_reminder": true,
+                    "private_mode": false,
+                    "access_names": true,
+                    "access_count": true,
+                    "participationlist": {
+                        "1": [],
+                        "2": [],
+                        "3": [
+                            440818,
+                            685569
+                        ]
+                    },
+                    "participationcount": {
+                        "1": 0,
+                        "2": 0,
+                        "3": 2
+                    },
+                    "participationnotes": [],
+                    "reminder": {
+                        "notification_filter": 1,
+                        "ts": 1779782400,
+                        "send_push": true,
+                        "send_mail": false,
+                        "executed": false
+                    },
+                    "ts_publish": 1767622130,
+                    "ts_create": 1767622130,
+                    "ts_update": 1770741234,
+                    "send_mail": false,
+                    "send_push": false,
+                    "send_sms": false,
+                    "send_call": false,
+                    "send_pager": false
+                },
+                "1985863": {
+                    "id": 1985863,
+                    "author_id": 440818,
+                    "cluster_id": 20369,
+                    "message_channel_id": 0,
+                    "foreign_id": "",
+                    "title": "Jugenddienst technische Ausbildung",
+                    "text": "THW-Jugend Dienst technische Ausbildung \r\nBitte seid pünktlich am OV und reist in Zivil an!\r\nBei Fragen könnt ihr euch gerne an uns wenden",
+                    "address": "THW-Jugend Gelsenkirchen, Adenauerallee 100 45891 Gelsenkirchen",
+                    "lat": 0,
+                    "lng": 0,
+                    "start": 1781337600,
+                    "end": 1781359200,
+                    "fullday": false,
+                    "days": 1,
+                    "archive": false,
+                    "ts_archive": 0,
+                    "new": false,
+                    "editable": true,
+                    "answerable": true,
+                    "custom_answers": true,
+                    "participation": 3,
+                    "note": "",
+                    "show_result_count": 2,
+                    "show_result_names": 2,
+                    "count_recipients": 25,
+                    "count_read": 8,
+                    "notification_type": 3,
+                    "group": [
+                        93206,
+                        93207
+                    ],
+                    "cluster": [],
+                    "user_cluster_relation": [],
+                    "ucr_addressed": [
+                        438880,
+                        440634,
+                        440804,
+                        440805,
+                        440807,
+                        440812,
+                        440816,
+                        440817,
+                        440818,
+                        446461,
+                        564131,
+                        579628,
+                        579629,
+                        579630,
+                        682966,
+                        683669,
+                        685569,
+                        719372,
+                        719373,
+                        731697,
+                        740275,
+                        759163,
+                        780186,
+                        781157,
+                        802309
+                    ],
+                    "ucr_self_addressed": true,
+                    "ucr_read": [
+                        440804,
+                        440818,
+                        564131,
+                        579628,
+                        685569,
+                        719373,
+                        740275,
+                        780186
+                    ],
+                    "hidden": false,
+                    "deleted": false,
+                    "message_channel": false,
+                    "attachment_count": 0,
+                    "response_type": 2,
+                    "response_until": true,
+                    "ts_response": 1781078400,
+                    "send_reminder": true,
+                    "private_mode": false,
+                    "access_names": true,
+                    "access_count": true,
+                    "participationlist": {
+                        "1": [],
+                        "2": [],
+                        "3": [
+                            440818,
+                            685569
+                        ]
+                    },
+                    "participationcount": {
+                        "1": 0,
+                        "2": 0,
+                        "3": 2
+                    },
+                    "participationnotes": [],
+                    "reminder": {
+                        "notification_filter": 1,
+                        "ts": 1780992000,
+                        "send_push": true,
+                        "send_mail": false,
+                        "executed": false
+                    },
+                    "ts_publish": 1767622130,
+                    "ts_create": 1767622130,
+                    "ts_update": 1770741234,
+                    "send_mail": false,
+                    "send_push": false,
+                    "send_sms": false,
+                    "send_call": false,
+                    "send_pager": false
+                },
+                "1985864": {
+                    "id": 1985864,
+                    "author_id": 440818,
+                    "cluster_id": 20369,
+                    "message_channel_id": 0,
+                    "foreign_id": "",
+                    "title": "Jugenddienst technische Ausbildung",
+                    "text": "THW-Jugend Dienst technische Ausbildung \r\nBitte seid pünktlich am OV und reist in Zivil an!\r\nBei Fragen könnt ihr euch gerne an uns wenden",
+                    "address": "THW-Jugend Gelsenkirchen, Adenauerallee 100 45891 Gelsenkirchen",
+                    "lat": 0,
+                    "lng": 0,
+                    "start": 1782547200,
+                    "end": 1782568800,
+                    "fullday": false,
+                    "days": 1,
+                    "archive": false,
+                    "ts_archive": 0,
+                    "new": false,
+                    "editable": true,
+                    "answerable": true,
+                    "custom_answers": true,
+                    "participation": 0,
+                    "note": "",
+                    "show_result_count": 2,
+                    "show_result_names": 2,
+                    "count_recipients": 25,
+                    "count_read": 9,
+                    "notification_type": 3,
+                    "group": [
+                        93206,
+                        93207
+                    ],
+                    "cluster": [],
+                    "user_cluster_relation": [],
+                    "ucr_addressed": [
+                        438880,
+                        440634,
+                        440804,
+                        440805,
+                        440807,
+                        440812,
+                        440816,
+                        440817,
+                        440818,
+                        446461,
+                        564131,
+                        579628,
+                        579629,
+                        579630,
+                        682966,
+                        683669,
+                        685569,
+                        719372,
+                        719373,
+                        731697,
+                        740275,
+                        759163,
+                        780186,
+                        781157,
+                        802309
+                    ],
+                    "ucr_self_addressed": true,
+                    "ucr_read": [
+                        440804,
+                        440818,
+                        564131,
+                        579628,
+                        685569,
+                        719373,
+                        740275,
+                        780186,
+                        781157
+                    ],
+                    "hidden": false,
+                    "deleted": false,
+                    "message_channel": false,
+                    "attachment_count": 0,
+                    "response_type": 2,
+                    "response_until": true,
+                    "ts_response": 1782288000,
+                    "send_reminder": true,
+                    "private_mode": false,
+                    "access_names": true,
+                    "access_count": true,
+                    "participationlist": {
+                        "1": [],
+                        "2": [],
+                        "3": [
+                            685569
+                        ]
+                    },
+                    "participationcount": {
+                        "1": 0,
+                        "2": 0,
+                        "3": 1
+                    },
+                    "participationnotes": [],
+                    "reminder": {
+                        "notification_filter": 1,
+                        "ts": 1782201600,
+                        "send_push": true,
+                        "send_mail": false,
+                        "executed": false
+                    },
+                    "ts_publish": 1767622130,
+                    "ts_create": 1767622130,
+                    "ts_update": 1770741234,
+                    "send_mail": false,
+                    "send_push": false,
+                    "send_sms": false,
+                    "send_call": false,
+                    "send_pager": false
+                },
+                "2057041": {
+                    "id": 2057041,
+                    "author_id": 440818,
+                    "cluster_id": 20369,
+                    "message_channel_id": 0,
+                    "foreign_id": "",
+                    "title": "Jungendring Sitzung",
+                    "text": "Erste VV des Jugendrings in 2026. Alle Infos in https://thwjugendge.sharepoint.com/:f:/s/JUB/IgDPPmEwBGPOSKxOLbGMuW_QARn0gWfijCgWOyS-Zl5bCM4?e=VTTdro",
+                    "address": "Naturfreundehaus Gelsenkirchen Fritz Bohne, Holbeinstraße 25, 45879 Gelsenkirchen, Deutschland",
+                    "lat": 51.5049337,
+                    "lng": 7.0815695,
+                    "start": 1771952400,
+                    "end": 1771963200,
+                    "fullday": false,
+                    "days": 1,
+                    "archive": false,
+                    "ts_archive": 0,
+                    "new": false,
+                    "editable": true,
+                    "answerable": true,
+                    "custom_answers": true,
+                    "participation": 3,
+                    "note": "",
+                    "show_result_count": 1,
+                    "show_result_names": 2,
+                    "count_recipients": 6,
+                    "count_read": 5,
+                    "notification_type": 3,
+                    "group": [
+                        93206
+                    ],
+                    "cluster": [],
+                    "user_cluster_relation": [],
+                    "ucr_addressed": [
+                        438880,
+                        440634,
+                        440812,
+                        440818,
+                        446461,
+                        802309
+                    ],
+                    "ucr_self_addressed": true,
+                    "ucr_read": [
+                        438880,
+                        440812,
+                        440818,
+                        446461,
+                        802309
+                    ],
+                    "hidden": false,
+                    "deleted": false,
+                    "message_channel": false,
+                    "attachment_count": 0,
+                    "response_type": 1,
+                    "response_until": false,
+                    "ts_response": 0,
+                    "send_reminder": true,
+                    "private_mode": false,
+                    "access_names": true,
+                    "access_count": true,
+                    "participationlist": {
+                        "1": [
+                            446461
+                        ],
+                        "2": [],
+                        "3": [
+                            440812,
+                            440818
+                        ]
+                    },
+                    "participationcount": {
+                        "1": 1,
+                        "2": 0,
+                        "3": 2
+                    },
+                    "participationnotes": [],
+                    "reminder": {
+                        "notification_filter": 1,
+                        "ts": 1771261200,
+                        "send_push": true,
+                        "send_mail": true,
+                        "executed": false
+                    },
+                    "ts_publish": 1769887800,
+                    "ts_create": 1769886877,
+                    "ts_update": 1770904168,
+                    "send_mail": false,
+                    "send_push": false,
+                    "send_sms": false,
+                    "send_call": false,
+                    "send_pager": false
+                },
+                "2057042": {
+                    "id": 2057042,
+                    "author_id": 440818,
+                    "cluster_id": 20369,
+                    "message_channel_id": 0,
+                    "foreign_id": "",
+                    "title": "Jugenring Sitzung",
+                    "text": "2. VV des Jugendrings in 2026. Ort und Zeit noch nicht bekannt. Infos folgen.",
+                    "address": "Noch nicht bekannt",
+                    "lat": 0,
+                    "lng": 0,
+                    "start": 1779984000,
+                    "end": 1779994800,
+                    "fullday": false,
+                    "days": 1,
+                    "archive": false,
+                    "ts_archive": 0,
+                    "new": false,
+                    "editable": true,
+                    "answerable": true,
+                    "custom_answers": true,
+                    "participation": 3,
+                    "note": "",
+                    "show_result_count": 1,
+                    "show_result_names": 2,
+                    "count_recipients": 6,
+                    "count_read": 2,
+                    "notification_type": 3,
+                    "group": [
+                        93206
+                    ],
+                    "cluster": [],
+                    "user_cluster_relation": [],
+                    "ucr_addressed": [
+                        438880,
+                        440634,
+                        440812,
+                        440818,
+                        446461,
+                        802309
+                    ],
+                    "ucr_self_addressed": true,
+                    "ucr_read": [
+                        440818,
+                        802309
+                    ],
+                    "hidden": false,
+                    "deleted": false,
+                    "message_channel": false,
+                    "attachment_count": 0,
+                    "response_type": 1,
+                    "response_until": false,
+                    "ts_response": 0,
+                    "send_reminder": true,
+                    "private_mode": false,
+                    "access_names": true,
+                    "access_count": true,
+                    "participationlist": {
+                        "1": [],
+                        "2": [],
+                        "3": [
+                            440818
+                        ]
+                    },
+                    "participationcount": {
+                        "1": 0,
+                        "2": 0,
+                        "3": 1
+                    },
+                    "participationnotes": [],
+                    "reminder": {
+                        "notification_filter": 1,
+                        "ts": 1779292800,
+                        "send_push": false,
+                        "send_mail": true,
+                        "executed": false
+                    },
+                    "ts_publish": 1769887800,
+                    "ts_create": 1769886988,
+                    "ts_update": 1769888100,
+                    "send_mail": false,
+                    "send_push": false,
+                    "send_sms": false,
+                    "send_call": false,
+                    "send_pager": false
+                },
+                "2057068": {
+                    "id": 2057068,
+                    "author_id": 440818,
+                    "cluster_id": 20369,
+                    "message_channel_id": 0,
+                    "foreign_id": "",
+                    "title": "Ortsjugendvorstandssitzung (OJV)",
+                    "text": "Hier einmal der Termin für die 1. OJV Sitzung in 2026. Infos und Einladung folgen fristgerecht.\r\n\r\nWer schon mal Infos oder Vorschläge notieren möchte kann das im 06 OJV Ordner von 2026:\r\nhttps://thwjugendge.sharepoint.com/:f:/s/JUB/IgAdjBPMv1aAQZW3CAx5QvuuATVQNfxMqocdNunZfN79vzA?e=CKf08F",
+                    "address": "Haus V Schulungsraum",
+                    "lat": 0,
+                    "lng": 0,
+                    "start": 1785258000,
+                    "end": 1785267000,
+                    "fullday": false,
+                    "days": 1,
+                    "archive": false,
+                    "ts_archive": 0,
+                    "new": false,
+                    "editable": true,
+                    "answerable": true,
+                    "custom_answers": true,
+                    "participation": 1,
+                    "note": "",
+                    "show_result_count": 2,
+                    "show_result_names": 2,
+                    "count_recipients": 8,
+                    "count_read": 4,
+                    "notification_type": 3,
+                    "group": [
+                        93206,
+                        183875
+                    ],
+                    "cluster": [],
+                    "user_cluster_relation": [],
+                    "ucr_addressed": [
+                        438880,
+                        440634,
+                        440812,
+                        440818,
+                        446461,
+                        564131,
+                        579628,
+                        802309
+                    ],
+                    "ucr_self_addressed": true,
+                    "ucr_read": [
+                        440818,
+                        564131,
+                        579628,
+                        802309
+                    ],
+                    "hidden": false,
+                    "deleted": false,
+                    "message_channel": false,
+                    "attachment_count": 0,
+                    "response_type": 1,
+                    "response_until": true,
+                    "ts_response": 1784656800,
+                    "send_reminder": true,
+                    "private_mode": false,
+                    "access_names": true,
+                    "access_count": true,
+                    "participationlist": {
+                        "1": [
+                            440818
+                        ],
+                        "2": [],
+                        "3": []
+                    },
+                    "participationcount": {
+                        "1": 1,
+                        "2": 0,
+                        "3": 0
+                    },
+                    "participationnotes": [],
+                    "reminder": {
+                        "notification_filter": 1,
+                        "ts": 1783962000,
+                        "send_push": true,
+                        "send_mail": true,
+                        "executed": false
+                    },
+                    "ts_publish": 1769888100,
+                    "ts_create": 1769888037,
+                    "ts_update": 1769889457,
+                    "send_mail": false,
+                    "send_push": false,
+                    "send_sms": false,
+                    "send_call": false,
+                    "send_pager": false
+                }
+            },
+            "sorting": [
+                1985856,
+                2057041,
+                1985857,
+                1793234,
+                1985858,
+                1985859,
+                1985860,
+                1985861,
+                2057042,
+                1985862,
+                1985863,
+                1985864,
+                2057068
+            ],
+            "ts": 1770986154,
+            "new": 0
+        },
+        "dm": {
+            "items": [],
+            "sorting": [],
+            "ts": 1770986155,
+            "new": 0
+        },
+        "message_channel": {
+            "items": {
+                "5893461": {
+                    "id": 5893461,
+                    "foreign_type": "",
+                    "foreign_id": 0,
+                    "author_id": 440818,
+                    "cluster_id": 20369,
+                    "title": "Allgemein",
+                    "description": "",
+                    "messages": [],
+                    "message_count": 0,
+                    "first_message_id": 0,
+                    "last_message_id": 0,
+                    "hidden": false,
+                    "deleted": false,
+                    "self_access": {
+                        "id": 16726353,
+                        "message_channel_id": 5893461,
+                        "user_cluster_relation_id": 440818,
+                        "joined": false,
+                        "editable": true,
+                        "writable": true,
+                        "attachable": false,
+                        "notification": true,
+                        "access": true,
+                        "access_earlier_messages": true,
+                        "silent": false,
+                        "ts_silent_start": 0,
+                        "ts_silent_expire": 0,
+                        "ts_create": 1739256525,
+                        "ts_access_start": 0,
+                        "ts_access_expire": 0,
+                        "last_message_id": 0,
+                        "ts_last_activity": 0
+                    },
+                    "editable": true,
+                    "config": {
+                        "default": {
+                            "access_start": false,
+                            "notification": true,
+                            "attachable": true,
+                            "editable": true,
+                            "access_earlier_messages": true,
+                            "access_expire": false,
+                            "writable": true
+                        }
+                    },
+                    "access_all": true,
+                    "private_mode": true,
+                    "ts_create": 1739256525,
+                    "ts_update": 1770566642,
+                    "ts_publish": 0,
+                    "ts_archive": 0,
+                    "ts_delete": 0,
+                    "ts_last_message": 1739256525,
+                    "entities": {
+                        "group": [],
+                        "cluster": [],
+                        "user_cluster_relation": []
+                    },
+                    "ucr_access": {
+                        "438880": {
+                            "user_cluster_relation_id": 438880,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": false,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1739256525,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "438881": {
+                            "user_cluster_relation_id": 438881,
+                            "editable": false,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": false,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1739256525,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "440634": {
+                            "user_cluster_relation_id": 440634,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": false,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1739256525,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "440804": {
+                            "user_cluster_relation_id": 440804,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": false,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1739256525,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "440805": {
+                            "user_cluster_relation_id": 440805,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": false,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1739256525,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "440807": {
+                            "user_cluster_relation_id": 440807,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": false,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1739256525,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "440812": {
+                            "user_cluster_relation_id": 440812,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": false,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1739256525,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "440816": {
+                            "user_cluster_relation_id": 440816,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": false,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1739256525,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "440817": {
+                            "user_cluster_relation_id": 440817,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": false,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1739256525,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "440818": {
+                            "user_cluster_relation_id": 440818,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": false,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1739256525,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "446461": {
+                            "user_cluster_relation_id": 446461,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": false,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1739256525,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "564131": {
+                            "user_cluster_relation_id": 564131,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": false,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1739256525,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "579628": {
+                            "user_cluster_relation_id": 579628,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": false,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1739256525,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "579629": {
+                            "user_cluster_relation_id": 579629,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": false,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1739256525,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "579630": {
+                            "user_cluster_relation_id": 579630,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": false,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1739256525,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "682966": {
+                            "user_cluster_relation_id": 682966,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": false,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1739256525,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "683669": {
+                            "user_cluster_relation_id": 683669,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": false,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1739256525,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "685569": {
+                            "user_cluster_relation_id": 685569,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": false,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1739256525,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "719372": {
+                            "user_cluster_relation_id": 719372,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": false,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1739256525,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "719373": {
+                            "user_cluster_relation_id": 719373,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": false,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1739256525,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "731697": {
+                            "user_cluster_relation_id": 731697,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": true,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1740512990,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "740275": {
+                            "user_cluster_relation_id": 740275,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": true,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1743149238,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "740756": {
+                            "user_cluster_relation_id": 740756,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": true,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1743408180,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "759163": {
+                            "user_cluster_relation_id": 759163,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": true,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1749301021,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "760500": {
+                            "user_cluster_relation_id": 760500,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": true,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1749821099,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "776973": {
+                            "user_cluster_relation_id": 776973,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": true,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1755126934,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "780186": {
+                            "user_cluster_relation_id": 780186,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": true,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1756385997,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "781157": {
+                            "user_cluster_relation_id": 781157,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": true,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1756843407,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        },
+                        "802309": {
+                            "user_cluster_relation_id": 802309,
+                            "editable": true,
+                            "joined": false,
+                            "writable": true,
+                            "attachable": true,
+                            "notification": true,
+                            "access": true,
+                            "ts_access_start": 0,
+                            "ts_access_expire": 0,
+                            "ts_create": 1763847511,
+                            "access_earlier_messages": true,
+                            "access_start": false,
+                            "access_expire": false
+                        }
+                    }
+                }
+            },
+            "ts": 1770986155,
+            "sorting": [
+                5893461
+            ]
+        },
+        "message": {
+            "items": {},
+            "parents": {},
+            "updated": {},
+            "message_channel": {},
+            "limit": 50,
+            "ts": 1770986155,
+            "limit_updated": 50
+        },
+        "localmonitor": {
+            "sorting": [
+                109210,
+                74308,
+                74309
+            ],
+            "items": {
+                "74308": {
+                    "id": 74308,
+                    "name": "Übersicht",
+                    "type": 1,
+                    "groups": [
+                        93206,
+                        93207
+                    ],
+                    "vehicles": [],
+                    "show_alarm": true,
+                    "show_alarm_duration": 0,
+                    "show_alarm_vehicle": 1,
+                    "show_alarm_vehicle_fms_status": true,
+                    "show_alarm_group": true,
+                    "show_alarm_response": true,
+                    "filter_addressed": true,
+                    "filter_response": false,
+                    "filter_group": false,
+                    "user_order": 1,
+                    "user_format_name": 5,
+                    "status_compact_mode": 1,
+                    "status_details_layout": 1,
+                    "status_compact_status": [
+                        71583,
+                        71367,
+                        71368
+                    ],
+                    "status_compact_qualification": [
+                        24130,
+                        24131
+                    ],
+                    "status_details_mode": 1,
+                    "status_details_status": [
+                        71583,
+                        71581,
+                        71366,
+                        71582,
+                        71367,
+                        71368
+                    ],
+                    "status_details_qualification": [
+                        24135,
+                        30132,
+                        30134,
+                        30133
+                    ],
+                    "status_details_group": false,
+                    "status_details_show_update": true,
+                    "status_details_show_note": true,
+                    "status_details_show_vehicle": true,
+                    "status_standby_only_statusgeber": false,
+                    "status_alarm_only_response": false,
+                    "show_vehicle_fms": false,
+                    "show_vehicle_note": false,
+                    "show_crewtarget": false,
+                    "status": [],
+                    "qualifications": [],
+                    "show_alarm_countdown": 1800,
+                    "layout": 1
+                },
+                "74309": {
+                    "id": 74309,
+                    "name": "Wache",
+                    "type": 4,
+                    "groups": [],
+                    "vehicles": [],
+                    "show_alarm": true,
+                    "show_alarm_duration": 0,
+                    "show_alarm_vehicle": 1,
+                    "show_alarm_vehicle_fms_status": true,
+                    "show_alarm_group": true,
+                    "show_alarm_response": false,
+                    "filter_addressed": true,
+                    "filter_response": true,
+                    "filter_group": false,
+                    "user_order": 1,
+                    "user_format_name": 1,
+                    "status_compact_mode": 1,
+                    "status_details_layout": 1,
+                    "status_compact_status": [
+                        71366,
+                        71367,
+                        71583,
+                        71581
+                    ],
+                    "status_compact_qualification": [
+                        24131,
+                        24130
+                    ],
+                    "status_details_mode": 1,
+                    "status_details_status": [
+                        71366,
+                        71367,
+                        71583,
+                        71368,
+                        71581,
+                        71582,
+                        99525
+                    ],
+                    "status_details_qualification": [
+                        30132,
+                        30134,
+                        30133,
+                        24135,
+                        32453
+                    ],
+                    "status_details_group": false,
+                    "status_details_show_update": true,
+                    "status_details_show_note": true,
+                    "status_details_show_vehicle": false,
+                    "status_standby_only_statusgeber": false,
+                    "status_alarm_only_response": false,
+                    "show_vehicle_fms": false,
+                    "show_vehicle_note": false,
+                    "show_crewtarget": false,
+                    "status": [],
+                    "qualifications": [],
+                    "show_alarm_countdown": 1800,
+                    "layout": 1
+                },
+                "109210": {
+                    "id": 109210,
+                    "name": "Fahrzeug",
+                    "type": 9,
+                    "groups": [],
+                    "vehicles": [],
+                    "show_alarm": true,
+                    "show_alarm_duration": 0,
+                    "show_alarm_vehicle": 1,
+                    "show_alarm_vehicle_fms_status": true,
+                    "show_alarm_group": true,
+                    "show_alarm_response": false,
+                    "filter_addressed": false,
+                    "filter_response": false,
+                    "filter_group": false,
+                    "user_order": 1,
+                    "user_format_name": 1,
+                    "status_compact_mode": 1,
+                    "status_details_layout": 1,
+                    "status_compact_status": [],
+                    "status_compact_qualification": [],
+                    "status_details_mode": 1,
+                    "status_details_status": [],
+                    "status_details_qualification": [],
+                    "status_details_group": false,
+                    "status_details_show_update": true,
+                    "status_details_show_note": false,
+                    "status_details_show_vehicle": false,
+                    "status_standby_only_statusgeber": false,
+                    "status_alarm_only_response": false,
+                    "show_vehicle_fms": false,
+                    "show_vehicle_note": false,
+                    "show_crewtarget": false,
+                    "status": [],
+                    "qualifications": [],
+                    "show_alarm_countdown": 0,
+                    "layout": 1
+                }
+            },
+            "ts": 1770986154
+        },
+        "statusplan": {
+            "items": {},
+            "sorting": [],
+            "ts": 1770986154,
+            "categories": [
+                "Keine Angabe"
+            ]
+        }
+    }
+}

@@ -1,0 +1,31 @@
+﻿{% extends "base_app.html" %}
+{% block title %}- Konto{% endblock %}
+
+{% block site_content %}
+<div class="container py-5">
+    <div class="row d-flex justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h2 class="card-title mb-4">Kontoeinstellungen</h2>
+                    <p class="text-muted mb-4">Verwalten Sie hier Ihre Kontoeinstellungen.</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Benutzername:</label>
+                        <p class="form-control-plaintext">{{ user.username }}</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">E-Mail:</label>
+                        <p class="form-control-plaintext">{{ user.email }}</p>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'logout' %}" class="btn btn-danger">Abmelden</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

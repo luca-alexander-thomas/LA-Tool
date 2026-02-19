@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import la_tool.env as env
+import os
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +23,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-i14!%crw08@rucn&iq*y-r5-^%s7rj3^4ga^6_5xm!6dtm74pn'
+SECRET_KEY = env.SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.DEBUG
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['*', env.HOSTNAME]
 
 
 # Application definition
@@ -37,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     'app',
     'la_tool_admin',
 ]
@@ -53,6 +57,20 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'la_tool.urls'
 
+# Authentication Backends für MS Entra ID SSO + lokales Fallback
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# MS Entra ID (Azure AD) Konfiguration für Custom OAuth Flow
+MICROSOFT_AUTH_CLIENT_ID = env.AZURE_CLIENT_ID
+MICROSOFT_AUTH_CLIENT_SECRET = env.AZURE_CLIENT_SECRET
+MICROSOFT_AUTH_TENANT_ID = env.AZURE_TENANT_ID
+MICROSOFT_AUTH_REDIRECT_URI = env.AZURE_REDIRECT_URI
+
+# Azure AD Gruppen Mapping
+AZURE_GROUPS_MAPPING = env.AZURE_GROUPS_MAPPING
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -63,6 +81,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.media',
             ],
         },
     },
@@ -73,13 +92,23 @@ WSGI_APPLICATION = 'la_tool.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+DATABASES = {'default': {}}
 
-DATABASES = {
-    'default': {
+if env.DATABASE['Type'] == 'sqlite3':
+    DATABASES['default'] = {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': BASE_DIR / env.DATABASE['sqlite3']['FILENAME'],
     }
-}
+elif env.DATABASE['Type'] == 'mysql':
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': env.DATABASE['mysql']['HOST'],
+        'PORT': env.DATABASE['mysql']['PORT'],
+        'USER': env.DATABASE['mysql']['USER'],
+        'PASSWORD': env.DATABASE['mysql']['PASSWORD'],
+        'NAME': env.DATABASE['mysql']['DATABASE'],
+    }
+
 
 
 # Password validation
@@ -117,3 +146,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
+
+# Django Sites Framework (benötigt von django-microsoft-auth)
+SITE_ID = 1
+
+
+

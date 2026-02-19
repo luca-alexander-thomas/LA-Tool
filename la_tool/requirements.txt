@@ -1,0 +1,6 @@
+﻿Django==6.0.2
+msal==1.27.0
+requests==2.31.0
+PyJWT==2.8.1
+cryptography==41.0.7
+msrest==0.7.1
