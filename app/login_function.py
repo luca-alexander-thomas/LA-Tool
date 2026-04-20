@@ -4,6 +4,7 @@ import requests
 import la_tool.env as env
 from la_tool_admin.models import Profile
 
+
 def login(username, password, request):
     print(f"Attempting to authenticate user: {username}")
     user = auth.authenticate(request, username=username, password=password)
@@ -46,7 +47,8 @@ def divera_login(username, password, request):
         request.session['login_error'] = 'Ungültige DIVERA Zugangsdaten.'
         return None
 
-    access_token = auth_data.get('data', {}).get('user', {}).get('access_token')
+    access_token = auth_data.get('data', {}).get(
+        'user', {}).get('access_token')
     if not access_token:
         request.session['login_error'] = 'Kein Divera Access Token erhalten.'
         return None
@@ -56,7 +58,7 @@ def divera_login(username, password, request):
     try:
         data_response = requests.get(
             f'https://app.divera247.com/api/v2/pull/all?accesskey={access_token}',
-            #timeout=10
+            # timeout=10
         )
     except requests.RequestException:
         request.session['login_error'] = 'Divera-Benutzerdaten konnten nicht geladen werden.'
@@ -93,7 +95,7 @@ def divera_login(username, password, request):
             profile, _ = Profile.objects.get_or_create(user=user)
 
             profile.divera_api_key = access_token
-            #profile.divera_ucr = item.get('id')
+            # profile.divera_ucr = item.get('id')
             profile.save()
             if 'login_error' in request.session:
                 del request.session['login_error']
