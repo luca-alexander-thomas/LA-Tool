@@ -1,0 +1,67 @@
+﻿{% extends "base.html" %}
+
+{% block site_content %}
+    <div class="container py-4 py-xl-5">
+        <div class="row mb-5">
+            <div class="col-md-8 col-xl-6 text-center mx-auto">
+                <h2>Mein Konto</h2>
+                <p>Hier findest du alles zu deinem Konto</p>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 pt-2 pb-2">
+                <div class="border rounded-1 border-3 border-primary p-2">
+                    <h4>Kontoübersicht</h4>
+                    <div class="d-flex flex-column justify-content-start mt-2 mb-2"><span>Name: {{ user.first_name }} {{ user.last_name }}</span><span>Benutzername: {{ user.username }}</span><span>E-Mail: {{ user.email }}</span></div>
+                    <div class="d-flex justify-content-end mt-2 mb-2"><button class="btn btn-primary" type="button" data-bs-target="#modal-edit-user" data-bs-toggle="modal">Bearbeiten</button></div><span class="fs-6 fw-semibold mb-2">Deine Leistungsabzeichen:</span>
+                    <div class="d-flex justify-content-evenly align-items-center mt-2"><img src="assets/img/01d_Abzeichen-Bronze.png" width="90" height="90"><img src="assets/img/01c_Abzeichen-Silber.png" width="90" height="90"><img src="assets/img/01b_Abzeichen-Gold.png" width="90" height="90"></div>
+                </div>
+            </div>
+            <div class="col-md-4"></div>
+            <div class="col-md-4 pt-2">
+                <div class="border rounded-1 border-3 border-primary p-2">
+                    <h4>Verknüpfungen:</h4>
+                    <div class="border rounded-1 border-2 border-secondary d-flex flex-column align-items-start p-2"><span class="fs-5 fw-semibold">DIVERA</span>
+                        <div><span>API-Key</span><input class="ms-2" type="text" readonly="" value="{{ user.profile.divera_api_key }}"></div><button class="btn btn-primary align-self-end mt-2" type="button" data-bs-target="#modal-edit-divera" data-bs-toggle="modal">Bearbeiten</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" role="dialog" tabindex="-1" id="modal-edit-divera">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">DIVERA API-Key Anpassen</h4><button class="btn-close" type="button" aria-label="Close" data-bs-dismiss="modal"></button>
+                </div>
+                <form>
+                    <div class="modal-body">
+                        <div class="alert alert-danger text-center" role="alert"><span><strong>Diese Einstellung kann die Funktion der Seite einschränken!</strong></span></div><span>Anmelden bei DIVERA</span><input class="form-control mt-2 mb-1" type="email" name="email-login-divera" placeholder="E-Mail"><input class="form-control mt-1" type="password" name="password-divera-login" placeholder="Passwort">
+                        <div class="d-flex justify-content-center align-items-center">
+                            <hr class="flex-grow-1"><span class="m-2">oder</span>
+                            <hr class="flex-grow-1">
+                        </div><span>Eingabe API-Key</span><input class="form-control mt-2" type="text" name="apikey-divera-login" placeholder="API-Key">
+                    </div>
+                    <div class="modal-footer"><button class="btn btn-light" type="reset" data-bs-dismiss="modal">Schließen</button><button class="btn btn-primary" type="submit">Speichern</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" role="dialog" tabindex="-1" id="modal-edit-user">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-md-down" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Benutzer bearbeiten</h4><button class="btn-close" type="button" aria-label="Close" data-bs-dismiss="modal"></button>
+                </div>
+                <form>
+                    <div class="modal-body d-flex flex-column justify-content-evenly align-items-center"><span class="text-center">Die E-Mail Adresse muss zwangsläufig mit der in DIVERA übereinstimmen</span><input class="form-control mt-2 mb-2" type="email" name="email-edit" placeholder="E-Mail"><input class="form-control mt-2 mb-2 pb-2" type="text" name="username-edit" placeholder="Benutzername">
+                        <hr class="d-flex w-100 flex-grow-1"><input class="form-control mb-1" type="password" name="passwort-edit-1" placeholder="Passwort"><input class="form-control mt-1" type="password" name="passwort-edit-2" placeholder="Passwort wiederholen">
+                    </div>
+                    <div class="modal-footer"><button class="btn btn-light" type="reset" data-bs-dismiss="modal">Schließen</button><button class="btn btn-primary" type="submit">Speichern</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,10 @@
+﻿db.sqlite3
+*/__pycache__/
+*/migrations/
+la_tool/env.py
+*.pyc
+la_tool/media/
+divera.json
+*.pyc
+old/
+

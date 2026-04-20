@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block site_content %}
+    <div class="container py-4 py-xl-5">
+        <div class="row mb-5">
+            <div class="col"></div>
+            <div class="col-md-8 col-xl-6 text-center mx-auto">
+                <h2>Übungen - Theorie</h2>
+                <p>Hier gibt es den Fragenkatalog der Theoriefragen und die Übungen</p>
+            </div>
+            <div class="col d-flex justify-content-center align-items-center"><a class="btn btn-primary" role="button" href="exercise-theorie-training-start.html">Üben</a></div>
+        </div>
+    </div>
+    <div class="container py-4 py-xl-5">
+        <div class="row mt-2">
+            <div class="col border rounded-1 border-3 border-primary p-2 mt-2">
+                <div class="d-flex flex-row justify-content-center align-items-center">
+                    <div class="col-3 col-sm-2 col-md-2 col-lg-1 col-xl-1 d-flex justify-content-center"><span>Nr. Bl-48</span></div>
+                    <div class="col"><span class="fw-bold">Was ist ein THW-Fahrzeug?</span></div>
+                    <div class="col-2 col-sm-2 col-md-1 col-lg-1 col-xl-1 col-xxl-1 d-flex justify-content-center"><img class="img-fluid w-50" width="512" height="512" src="assets/img/01d_Abzeichen-Bronze.png"></div>
+                    <div class="col col-sm-2 col-md-2 col-lg-1 col-xl-1 d-none d-sm-none d-md-flex justify-content-center">
+                        <div class="d-flex flex-column align-items-center"><span>Richtig:</span><span class="fw-semibold text-success ms-3">100%</span></div>
+                    </div>
+                    <div class="col-1 col-sm-1 col-md-1 col-lg-1 col-xl-1 d-flex justify-content-center transition-0-5" id="switch-1" onclick="expandRow(&#39;row1&#39;,&#39;switch-1&#39;,&#39;rotate&#39;)"><svg class="bi bi-chevron-down" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 40px;">
+                            <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708"></path>
+                        </svg></div>
+                </div>
+                <div class="d-none flex-row justify-content-center align-items-center" id="row1">
+                    <div class="col col-xl-1">
+                        <div class="fw-semibold d-flex flex-column align-items-center"><span>A</span><span>B</span><span>C</span></div>
+                    </div>
+                    <div class="col">
+                        <div class="d-flex flex-column align-items-start"><span>GKW</span><span>RTW</span><span>TLF</span></div>
+                    </div>
+                    <div class="col col-xl-1">
+                        <div class="fw-semibold d-flex flex-column align-items-center"><svg class="bi bi-check-square-fill text-success mt-1 mb-1" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm10.03 4.97a.75.75 0 0 1 .011 1.05l-3.992 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.75.75 0 0 1 1.08-.022z"></path>
+                            </svg><svg class="bi bi-x-square text-danger mt-1 mb-1" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z"></path>
+                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"></path>
+                            </svg><svg class="bi bi-x-square text-danger mt-1 mb-1" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z"></path>
+                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"></path>
+                            </svg></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col border rounded-1 border-3 border-primary p-2 mt-2">
+                <div class="d-flex flex-row justify-content-center align-items-center">
+                    <div class="col col-sm-2 col-md-2 col-lg-1 col-xl-1 d-flex justify-content-center"><span>Nr. S-3-3</span></div>
+                    <div class="col"><span class="fw-bold">Welche Leinen/Seile dürfen zum Sichern von Personen verwendet werden?</span></div>
+                    <div class="col col-sm-2 col-md-1 col-lg-1 col-xl-1 d-flex justify-content-center"><img class="img-fluid w-50" width="512" height="512" src="assets/img/01c_Abzeichen-Silber.png"></div>
+                    <div class="col col-sm-2 col-md-2 col-lg-1 col-xl-1 d-flex justify-content-center">
+                        <div class="d-flex flex-column align-items-center"><span>Richtig:</span><span class="fw-semibold text-success ms-3">100%</span></div>
+                    </div>
+                    <div class="col col-sm-1 col-md-1 col-lg-1 col-xl-1 d-flex justify-content-center transition-0-5" id="switch-2" onclick="expandRow(&#39;row2&#39;,&#39;switch-2&#39;,&#39;rotate&#39;)"><svg class="bi bi-chevron-down" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 40px;">
+                            <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708"></path>
+                        </svg></div>
+                </div>
+                <div class="d-none flex-row justify-content-center align-items-center transition-0-5" id="row2">
+                    <div class="col col-xl-1">
+                        <div class="fw-semibold d-flex flex-column align-items-center"><span>A</span><span>B</span><span>C</span></div>
+                    </div>
+                    <div class="col">
+                        <div class="d-flex flex-column align-items-start"><span>Sicherheitsseile</span><span>Arbeitsseile</span><span>Jede Naturfaserleine</span></div>
+                    </div>
+                    <div class="col col-xl-1">
+                        <div class="fw-semibold d-flex flex-column align-items-center"><svg class="bi bi-check-square-fill text-success mt-1 mb-1" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm10.03 4.97a.75.75 0 0 1 .011 1.05l-3.992 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.75.75 0 0 1 1.08-.022z"></path>
+                            </svg><svg class="bi bi-x-square text-danger mt-1 mb-1" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z"></path>
+                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"></path>
+                            </svg><svg class="bi bi-x-square text-danger mt-1 mb-1" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z"></path>
+                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"></path>
+                            </svg></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

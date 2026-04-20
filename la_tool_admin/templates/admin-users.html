@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block site_content %}
+    <div class="container py-4 py-xl-5">
+        <div class="row mb-5">
+            <div class="col-md-8 col-xl-6 text-center mx-auto">
+                <h2>Admin Benutzer</h2>
+                <p>Übersicht über alle Benutzer und deren Rechte</p>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-xl-4">
+                <div class="border rounded-1 border-3 border-primary h-75 p-2 pane-content">
+                    <div class="border rounded-1 border-3 border-primary d-flex flex-row justify-content-center align-items-center p-2 mt-1 mb-1">
+                        <div class="col">
+                            <div>
+                                <div class="col"><span class="fw-bold">Rainer Zufall</span></div>
+                                <div class="col"><span>rainer.zufall@example.com</span></div>
+                            </div>
+                        </div>
+                        <div class="col col-xl-2 d-flex justify-content-center align-items-center"><a href="#"><svg class="bi bi-chevron-right" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 40px;">
+                                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
+                                </svg></a></div>
+                    </div>
+                    <div class="border rounded-1 border-3 border-primary d-flex flex-row justify-content-center align-items-center p-2 mt-1 mb-1">
+                        <div class="col">
+                            <div>
+                                <div class="col"><span class="fw-bold">Rainer Zufall</span></div>
+                                <div class="col"><span>rainer.zufall@example.com</span></div>
+                            </div>
+                        </div>
+                        <div class="col col-xl-2 d-flex justify-content-center align-items-center"><a href="#"><svg class="bi bi-chevron-right" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 40px;">
+                                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
+                                </svg></a></div>
+                    </div>
+                    <div class="border rounded-1 border-3 border-dark-subtle d-flex flex-row justify-content-center align-items-center p-2 mt-1 mb-1">
+                        <div class="col">
+                            <div>
+                                <div class="col"><span class="fw-bold">Rainer Zufall</span></div>
+                                <div class="col"><span>rainer.zufall@example.com</span></div>
+                            </div>
+                        </div>
+                        <div class="col col-xl-2 d-flex justify-content-center align-items-center"><a href="#"><svg class="bi bi-chevron-right" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 40px;">
+                                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
+                                </svg></a></div>
+                    </div>
+                    <div class="border rounded-1 border-3 border-primary d-flex flex-row justify-content-center align-items-center p-2 mt-1 mb-1">
+                        <div class="col">
+                            <div>
+                                <div class="col"><span class="fw-bold">Rainer Zufall</span></div>
+                                <div class="col"><span>rainer.zufall@example.com</span></div>
+                            </div>
+                        </div>
+                        <div class="col col-xl-2 d-flex justify-content-center align-items-center"><a href="#"><svg class="bi bi-chevron-right" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 40px;">
+                                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
+                                </svg></a></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-8">
+                <div class="border rounded-1 border-3 border-primary d-flex flex-column justify-content-center p-2">
+                    <form>
+                        <div class="row">
+                            <div class="col">
+                                <div class="d-flex flex-row justify-content-center mt-2">
+                                    <div class="col col-xl-4 fs-5 fw-semibold d-flex align-items-center"><span>Name</span></div>
+                                    <div class="col d-flex align-items-center"><input class="form-control" type="text" name="user-edit-name" value="Rainer Zufall" placeholder="Name"></div>
+                                </div>
+                                <div class="d-flex flex-row justify-content-center mt-2">
+                                    <div class="col col-xl-4 fs-5 fw-semibold d-flex align-items-center"><span>Nutzername</span></div>
+                                    <div class="col d-flex align-items-center"><input class="form-control" type="text" name="user-edit-username" value="rainer.zufall@example.com" placeholder="Nutzername"></div>
+                                </div>
+                                <div class="d-flex flex-row justify-content-center mt-2">
+                                    <div class="col col-xl-4 fs-5 fw-semibold d-flex align-items-center"><span>E-Mail</span></div>
+                                    <div class="col d-flex align-items-center"><input class="form-control" type="text" value="rainer.zufall@example.com" placeholder="E-Mail" name="user-edit-email"></div>
+                                </div>
+                                <div class="d-flex justify-content-evenly align-items-center mt-2"><button class="btn btn-primary" type="button" data-bs-target="#modal-reset-pw" data-bs-toggle="modal">Passwort Reset</button><button class="btn btn-primary" type="button">Passwort Reset Mail</button></div>
+                            </div>
+                            <div class="col">
+                                <div class="d-flex flex-row justify-content-center mt-2">
+                                    <div class="col col-xl-4 fs-5 fw-semibold d-flex align-items-center"><span class="fs-6">Verknüpfte Dienste</span></div>
+                                    <div class="col d-flex flex-column justify-content-center align-items-center">
+                                        <div class="row w-100">
+                                            <div class="col d-flex align-items-center"><span>DIVERA</span></div>
+                                            <div class="col col-xl-3"><svg class="bi bi-check text-success" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 38px;">
+                                                    <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"></path>
+                                                </svg></div>
+                                        </div>
+                                        <div class="row w-100">
+                                            <div class="col d-flex align-items-center"><span>Microsoft</span></div>
+                                            <div class="col col-xl-3"><svg class="bi bi-x text-danger" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 38px;">
+                                                    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"></path>
+                                                </svg></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex flex-row justify-content-center mt-2">
+                                    <div class="col col-xl-2 fs-5 fw-semibold d-flex align-items-center"><img src="assets/img/01d_Abzeichen-Bronze.png" width="60" height="60"></div>
+                                    <div class="col col-xl-2 fs-5 fw-semibold d-flex align-items-center"><img src="assets/img/01c_Abzeichen-Silber.png" width="60" height="60"></div>
+                                    <div class="col col-xl-2 fs-5 fw-semibold d-flex align-items-center"><img src="assets/img/01b_Abzeichen-Gold.png" width="60" height="60"></div>
+                                    <div class="col col-xl-2 fs-5 fw-semibold d-flex align-items-center"><img src="assets/img/Thw_dienststellungskennzeichen_helfer.svg" width="58" height="21"></div>
+                                </div>
+                                <div class="form-check mt-2"><input class="form-check-input" type="checkbox" id="formCheck-1"><label class="form-check-label" for="formCheck-1">Benutzer Deaktiviert</label></div>
+                                <div class="mt-2"><span class="fw-semibold">Berechtigungen:</span>
+                                    <div class="row">
+                                        <div class="col col-xl-2 d-flex justify-content-center align-items-center"><input type="checkbox" checked=""></div>
+                                        <div class="col d-flex justify-content-start align-items-center"><span>Nutzer</span></div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col col-xl-2 d-flex justify-content-center align-items-center"><input type="checkbox"></div>
+                                        <div class="col d-flex justify-content-start align-items-center"><span>Administrator</span></div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col col-xl-2 d-flex justify-content-center align-items-center"><input type="checkbox"></div>
+                                        <div class="col d-flex justify-content-start align-items-center"><span>Super User</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" role="dialog" tabindex="-1" id="modal-reset-pw">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Passwort Zurücksetzten</h4><button class="btn-close" type="button" aria-label="Close" data-bs-dismiss="modal"></button>
+                </div>
+                <form>
+                    <div class="modal-body"><span>Für Rainer Zufall</span><input class="form-control mt-1 mb-1" type="password" name="reset-passwort-1" placeholder="Passwort"><input class="form-control mt-1 mb-1" type="password" name="reset-passwort-1" placeholder="Passwort wiederholen"></div>
+                    <div class="modal-footer"><button class="btn btn-light" type="reset" data-bs-dismiss="modal">Abbrechen</button><button class="btn btn-primary" type="submit">Passwort zurücksetzten</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+ {% endblock %}

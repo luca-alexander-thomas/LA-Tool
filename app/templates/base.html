@@ -1,0 +1,207 @@
+{% load static %}
+<!DOCTYPE html>
+<html data-bs-theme="light" lang="de">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>LA-Tool-Boostrap</title>
+    <script>
+        (function() {
+
+            // JavaScript snippet handling Dark/Light mode switching
+
+            const getStoredTheme = () => localStorage.getItem('theme');
+            const setStoredTheme = theme => localStorage.setItem('theme', theme);
+            const forcedTheme = document.documentElement.getAttribute('data-bss-forced-theme');
+
+            const getPreferredTheme = () => {
+
+                if (forcedTheme) return forcedTheme;
+
+                const storedTheme = getStoredTheme();
+                if (storedTheme) {
+                    return storedTheme;
+                }
+
+                const pageTheme = document.documentElement.getAttribute('data-bs-theme');
+
+                if (pageTheme) {
+                    return pageTheme;
+                }
+
+                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+
+            const setTheme = theme => {
+                if (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.setAttribute('data-bs-theme', 'dark');
+                } else {
+                    document.documentElement.setAttribute('data-bs-theme', theme);
+                }
+            }
+
+            setTheme(getPreferredTheme());
+
+            const showActiveTheme = (theme, focus = false) => {
+                const themeSwitchers = [].slice.call(document.querySelectorAll('.theme-switcher'));
+
+                if (!themeSwitchers.length) return;
+
+                document.querySelectorAll('[data-bs-theme-value]').forEach(element => {
+                    element.classList.remove('active');
+                    element.setAttribute('aria-pressed', 'false');
+                });
+
+                const iconTheme = theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme;
+
+                for (const themeSwitcher of themeSwitchers) {
+
+                    const adaptIcon = !!themeSwitcher.dataset.bsAdaptIcon;
+
+                    if (adaptIcon) {
+                        const btnIcon = themeSwitcher.querySelector('[data-bss-adaptable]');
+
+                        try {
+                            const themeIcons = JSON.parse(themeSwitcher.dataset.bssIcons || "{}");
+                            const newIconMarkup = themeIcons[iconTheme];
+
+                            const template = document.createElement("template");
+                            template.innerHTML = newIconMarkup;
+
+                            const newIconFragment = template.content.cloneNode(true);
+
+                            if (newIconFragment?.children?.length) {
+                                newIconFragment.children[0].dataset.bssAdaptable = true;
+                            }
+
+                            btnIcon.replaceWith(newIconFragment);
+                        } catch (e) {}
+                    }
+
+                    const btnToActivate = themeSwitcher.querySelector('[data-bs-theme-value="' + theme + '"]');
+
+                    if (btnToActivate) {
+                        btnToActivate.classList.add('active');
+                        btnToActivate.setAttribute('aria-pressed', 'true');
+                    }
+                }
+            }
+
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                const storedTheme = getStoredTheme();
+                if (storedTheme !== 'light' && storedTheme !== 'dark') {
+                    setTheme(getPreferredTheme());
+                }
+            });
+
+            window.addEventListener('DOMContentLoaded', () => {
+                showActiveTheme(getPreferredTheme());
+
+                document.querySelectorAll('[data-bs-theme-value]')
+                    .forEach(toggle => {
+                        toggle.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const theme = toggle.getAttribute('data-bs-theme-value');
+                            setStoredTheme(theme);
+                            setTheme(theme);
+                            showActiveTheme(theme);
+                        })
+                    })
+            });
+        })();
+    </script>
+    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+    <!--<link rel="manifest" href="manifest.json" crossorigin="use-credentials">-->
+    <link rel="stylesheet" href="{% static 'css/bss-overrides.css' %}">
+    <link rel="stylesheet" href="{% static 'css/calendar.css' %}">
+    <link rel="stylesheet" href="{% static 'css/Features-Cards-icons.css' %}">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
+</head>
+
+<body>
+    <div class="container-fluid d-flex justify-content-center align-items-center" style="background: linear-gradient(95deg, var(--bs-primary) 35%, var(--bs-primary-bg-subtle));"><a class="navbar-brand text-center d-flex align-items-center m-3" href="#"><img class="w-25 h-25" src="https://sp-ao.shortpixel.ai/client/to_auto,q_glossy,ret_img,w_159/https://thw-jugend-ge.de/wp-content/uploads/2024/03/thw-jugend-ge-logo_2560-159x91.png" loading="lazy" width="135" height="77"><span class="fs-3 fw-bold text-center p-2" style="color: var(--bs-light);">THW-Jugend LA-Tool</span></a></div>
+    <nav class="navbar navbar-expand-md bg-body d-flex align-items-center py-3" style="background: var(--bs-background);position: relative;">
+        <div class="container"><button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navcol-3"><span class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse mb-5 pb-0" id="navcol-3">
+                <div class="dropdown border rounded-1 border-2 border-primary d-flex me-0"><a data-bs-toggle="dropdown" aria-expanded="false" href="#"><img id="displayImage" width="57" height="49"></a>
+                    <div class="dropdown-menu"><a class="dropdown-item" href="#" onclick="changeImage('{% static 'img/01d_Abzeichen-Bronze.png' %}')"><img src="{% static 'img/01d_Abzeichen-Bronze.png' %}" width="62" height="53">Bronze</a><a class="dropdown-item" href="#" onclick="changeImage('{% static 'img/01c_Abzeichen-Silber.png' %}')"><img src="{% static 'img/01c_Abzeichen-Silber.png' %}" width="62" height="53">Silber</a><a class="dropdown-item" onclick="changeImage('{% static 'img/01b_Abzeichen-Gold.png' %}')"><img src="{% static 'img/01b_Abzeichen-Gold.png' %}" width="62" height="53">Gold</a></div>
+                </div>
+                <ul class="navbar-nav mx-auto">
+                    <li class="nav-item"><a class="nav-link active" href="{% url 'home' %}">Start</a></li>
+                    <li class="nav-item d-flex align-items-center">
+                        <div class="nav-item dropdown d-flex"><a class="dropdown-toggle text-decoration-none link-secondary" data-bs-toggle="dropdown" aria-expanded="false" href="exercise.html">Übungen</a>
+                            <div class="dropdown-menu"><a class="dropdown-item" href="exercise.html">Übungen</a><a class="dropdown-item" href="exercise-theorie.html">Theorie</a><a class="dropdown-item" href="exercise-praxis.html">Praxis</a><a class="dropdown-item" href="exercise-groups.html">Gruppenaufgaben</a></div>
+                        </div>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="work.html">Dienste</a></li>
+                    <li class="nav-item"><a class="nav-link" href="exams.html">Prüfungen</a></li>
+                    <li class="nav-item"><a class="nav-link" href="admin-home.html">Admin</a></li>
+                    <li class="nav-item"><a class="nav-link" href="admin-users.html">Benutzer</a></li>
+                    <li class="nav-item dropdown"><a class="dropdown-toggle nav-link" data-bs-toggle="dropdown" aria-expanded="true" href="admin-work.html">Inhalte</a>
+                        <div class="dropdown-menu" data-bs-popper="none"><a class="dropdown-item" href="admin-work.html">Inhalte</a><a class="dropdown-item" href="#">Prüfungen</a><a class="dropdown-item" href="#">Dienste</a><a class="dropdown-item" href="#">Kataloge</a></div>
+                    </li>
+                </ul>
+                <div class="theme-switcher dropdown me-3"><a class="dropdown-toggle ms-3" data-bs-toggle="dropdown" aria-expanded="false" href="#"><svg class="bi bi-sun-fill mb-1" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"></path>
+                        </svg></a>
+                    <div class="dropdown-menu"><a class="dropdown-item d-flex align-items-center" href="#" data-bs-theme-value="light"><svg class="bi bi-sun-fill opacity-50 me-2" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"></path>
+                            </svg>Light</a><a class="dropdown-item d-flex align-items-center" href="#" data-bs-theme-value="dark"><svg class="bi bi-moon-stars-fill opacity-50 me-2" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"></path>
+                                <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"></path>
+                            </svg>Dark</a><a class="dropdown-item d-flex align-items-center" href="#" data-bs-theme-value="auto"><svg class="bi bi-circle-half opacity-50 me-2" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 15A7 7 0 1 0 8 1zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16"></path>
+                            </svg>Auto</a></div>
+                </div>
+                {% if user.is_authenticated %}
+                <a class="btn btn-primary" role="button" href="{% url 'profile' %}">Konto</a>
+
+                <button class="btn btn-primary text-center justify-content-center align-items-center ms-3" role="button" href="{% url 'logout' %}">
+                    <svg class="bi bi-box-arrow-right text-center d-flex justify-content-center" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="text-align: center;font-size: 25px;">
+                        <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0z"></path>
+                        <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"></path>
+                    </svg></button>
+
+                {% else %}
+                <a class="btn btn-primary" role="button" href="{% url 'login' %}">Anmelden</a>
+                {% endif %}
+                
+
+            </div>
+        </div>
+    </nav>
+
+
+    {% block site_content %}
+    {% endblock %}
+
+
+
+    <footer class="text-center bg-body py-4" style="position: relative;overflow: visible;">
+        <div class="container">
+            <div class="row row-cols-1 row-cols-lg-3">
+                <div class="col">
+                    <p class="text-body my-2">© 2026 Luca-Alexander Thomas - THW-Jugend Gelsenkirchen&nbsp;</p>
+                </div>
+                <div class="col"></div>
+                <div class="col">
+                    <ul class="list-inline my-2">
+                        <li class="list-inline-item"><a class="link-body-emphasis" href="#">Datenschutz</a></li>
+                        <li class="list-inline-item"><a class="link-body-emphasis" href="#">Nutzungsbedingungen</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'js/bs-init.js' %}"></script>
+    <script src="{% static 'js/calendar.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/8/tinymce.min.js" crossorigin="anonymous"></script>
+    <script src="{% static 'js/js-functions.js' %}"></script>
+    <script src="{% static 'js/Popover-init.js' %}"></script>
+</body>
+
+</html>

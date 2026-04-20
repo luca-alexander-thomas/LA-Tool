@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block site_content %}
+<div class="container py-4 py-xl-5">
+    <div class="row mb-5">
+        <div class="col-md-8 col-xl-6 text-center mx-auto">
+            <h2>Dienste</h2>
+            <p>Hier findest du die letzten Dienste mit den Behandelten Themen</p>
+        </div>
+    </div>
+</div>
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 col-xl-4 pt-2 pb-2">
+            <div
+                class="border rounded-1 border-3 border-primary d-flex flex-column justify-content-center align-items-center ps-3 pe-3 pt-2 pb-2">
+                <h4>Letzte Dienste</h4>
+                <div class="row border rounded-1 border-3 border-primary w-100 pe-0 mt-2 pt-1 mb-2 pb-1">
+                    <div class="col fs-5 fw-semibold d-flex justify-content-center align-items-center">
+                        <span>Thema</span></div>
+                    <div class="col col-xl-3 d-flex justify-content-center align-items-center"><span>02.02.2026</span>
+                    </div>
+                    <div class="col col-xl-1 d-flex justify-content-center"><a class="text-reset"
+                            href="work-detail.html"><svg class="bi bi-chevron-right text-reset"
+                                xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor"
+                                viewBox="0 0 16 16" style="font-size: 32px;">
+                                <path fill-rule="evenodd"
+                                    d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708">
+                                </path>
+                            </svg></a></div>
+                </div>
+                <div class="row border rounded-1 border-3 border-primary w-100 pe-0 mt-2 pt-1 mb-2 pb-1">
+                    <div class="col fs-5 fw-semibold d-flex justify-content-center align-items-center">
+                        <span>Thema</span></div>
+                    <div class="col col-xl-3 d-flex justify-content-center align-items-center"><span>02.02.2026</span>
+                    </div>
+                    <div class="col col-xl-1 d-flex justify-content-center"><a class="text-reset"
+                            href="work-detail.html"><svg class="bi bi-chevron-right text-reset"
+                                xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor"
+                                viewBox="0 0 16 16" style="font-size: 32px;">
+                                <path fill-rule="evenodd"
+                                    d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708">
+                                </path>
+                            </svg></a></div>
+                </div>
+                <div class="row border rounded-1 border-3 border-primary w-100 pe-0 mt-2 pt-1 mb-2 pb-1">
+                    <div class="col fs-5 fw-semibold d-flex justify-content-center align-items-center">
+                        <span>Thema</span></div>
+                    <div class="col col-xl-3 d-flex justify-content-center align-items-center"><span>02.02.2026</span>
+                    </div>
+                    <div class="col col-xl-1 d-flex justify-content-center"><a class="text-reset"
+                            href="work-detail.html"><svg class="bi bi-chevron-right text-reset"
+                                xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor"
+                                viewBox="0 0 16 16" style="font-size: 32px;">
+                                <path fill-rule="evenodd"
+                                    d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708">
+                                </path>
+                            </svg></a></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-8 pt-0 pb-2">
+            <div class="col-md-6 col-xl-8 pt-2 pb-2 w-100">
+                <div
+                    class="border rounded-1 border-3 border-primary d-flex flex-column justify-content-center align-items-center ps-3 pe-3 pt-2 pb-2">
+                    <!-- Kalender Header -->
+                    <div class="calendar-header">
+                        <button class="btn btn-sm btn-outline-primary" id="prevMonth">← Vorher</button>
+                        <h4 id="monthYear" class="mb-0"></h4>
+                        <button class="btn btn-sm btn-outline-primary" id="nextMonth">Nächste →</button>
+                    </div>
+
+                    <!-- Kalender Container -->
+                    <div class="calendar-container">
+                        <div class="calendar-grid-wrapper">
+                            <div class="calendar-weekdays">
+                                <div class="weekday">Mo</div>
+                                <div class="weekday">Di</div>
+                                <div class="weekday">Mi</div>
+                                <div class="weekday">Do</div>
+                                <div class="weekday">Fr</div>
+                                <div class="weekday">Sa</div>
+                                <div class="weekday">So</div>
+                            </div>
+
+                            <div class="calendar-days" id="calendarDays"></div>
+                        </div>
+                    </div>
+
+                    <!-- Event-Liste unter dem Kalender -->
+                    <div class="event-list-container">
+                        <h5 id="selectedDateTitle" class="mb-3">Events wählen Sie ein Datum</h5>
+                        <div id="eventList" class="event-list">
+                            <p class="text-muted">Kein Event ausgewählt</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

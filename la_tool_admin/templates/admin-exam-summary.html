@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block site_content %}
+    <div class="container py-4 py-xl-5">
+        <div class="row mb-5">
+            <div class="col-md-8 col-xl-6 text-center mx-auto">
+                <h2>Prüfung- LA Abnahme 28.03.2026</h2>
+                <p>Ergebnissübersicht</p>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 col-xl-4 p-2">
+                <div class="border rounded-1 border-3 border-primary p-2">
+                    <p class="fs-4 fw-bold text-center">Punkteverteilung</p>
+                    <div><canvas data-bss-chart="{&quot;type&quot;:&quot;line&quot;,&quot;data&quot;:{&quot;labels&quot;:[&quot;LA 1&quot;,&quot;LA 2&quot;,&quot;LA 3&quot;,&quot;LA 4&quot;,&quot;LA 5&quot;,&quot;LA 6&quot;],&quot;datasets&quot;:[{&quot;label&quot;:&quot;Result&quot;,&quot;backgroundColor&quot;:&quot;#f49e00&quot;,&quot;borderColor&quot;:&quot;#f49e00&quot;,&quot;data&quot;:[&quot;5&quot;,&quot;3&quot;,&quot;4&quot;,&quot;7&quot;,&quot;1&quot;,&quot;2&quot;],&quot;fill&quot;:true}]},&quot;options&quot;:{&quot;legend&quot;:{&quot;display&quot;:false,&quot;labels&quot;:{&quot;fontStyle&quot;:&quot;normal&quot;}},&quot;title&quot;:{&quot;fontStyle&quot;:&quot;bold&quot;},&quot;aspectRatio&quot;:2,&quot;maintainAspectRatio&quot;:true,&quot;scales&quot;:{&quot;xAxes&quot;:[{&quot;gridLines&quot;:{&quot;drawBorder&quot;:false,&quot;drawTicks&quot;:false,&quot;drawOnChartArea&quot;:false},&quot;ticks&quot;:{&quot;fontStyle&quot;:&quot;normal&quot;,&quot;beginAtZero&quot;:true,&quot;padding&quot;:3,&quot;display&quot;:false}}],&quot;yAxes&quot;:[{&quot;gridLines&quot;:{&quot;drawBorder&quot;:false,&quot;drawTicks&quot;:false,&quot;drawOnChartArea&quot;:false},&quot;ticks&quot;:{&quot;fontStyle&quot;:&quot;normal&quot;,&quot;beginAtZero&quot;:true,&quot;padding&quot;:3,&quot;display&quot;:false}}]}}}"></canvas></div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-8">
+                <div class="row border rounded-1 border-3 border-primary m-2 p-2">
+                    <div class="col col-xl-10 d-flex flex-row justify-content-between align-items-center">
+                        <div class="d-flex flex-column justify-content-center align-items-center"><span>Name</span>
+                            <div class="d-flex flex-row justify-content-evenly align-items-center"><span class="fw-semibold text-primary m-1">10</span><span class="fw-semibold text-success m-1">8</span><span class="fw-semibold text-danger m-1">2</span></div>
+                        </div><span class="fs-5 fw-bold text-success ms-2 me-2">Bestanden</span><span class="ms-2 me-2">13:43 min</span>
+                    </div>
+                    <div class="col d-flex justify-content-center align-items-center"><a class="d-flex justify-content-center align-items-center" href="admin-exam-summary-user.html"><br><svg class="bi bi-chevron-right text-reset d-flex" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 45px;">
+                                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
+                            </svg></a></div>
+                </div>
+                <div class="row border rounded-1 border-3 border-primary m-2 p-2">
+                    <div class="col col-xl-10 d-flex flex-row justify-content-between align-items-center">
+                        <div class="d-flex flex-column justify-content-center align-items-center"><span>Name</span>
+                            <div class="d-flex flex-row justify-content-evenly align-items-center"><span class="fw-semibold text-primary m-1">10</span><span class="fw-semibold text-success m-1">4</span><span class="fw-semibold text-danger m-1">6</span></div>
+                        </div><span class="fs-5 fw-bold text-danger ms-2 me-2">nicht Bestanden</span><span class="ms-2 me-2">08:26 min</span>
+                    </div>
+                    <div class="col d-flex justify-content-center align-items-center"><a class="d-flex justify-content-center align-items-center" href="admin-exam-summary-user.html"><br><svg class="bi bi-chevron-right text-reset d-flex" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 45px;">
+                                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
+                            </svg></a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+ {% endblock %}

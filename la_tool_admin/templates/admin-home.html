@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block site_content %}
+    <div class="container py-4 py-xl-5">
+        <div class="row mb-5">
+            <div class="col-md-8 col-xl-6 text-center mx-auto">
+                <h2>Admin Übersicht</h2>
+                <p>Übersicht über alle letzten Prüfungen und änderungen</p>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 p-2">
+                <div class="border rounded-1 border-3 border-primary p-2">
+                    <h4>Neuste Prüfungen</h4><a class="text-decoration-none text-reset" href="admin-exam-summary-user.html">
+                        <div class="border rounded-1 border-3 border-primary d-flex flex-row justify-content-evenly align-items-center mt-2 mb-2"><img src="assets/img/01b_Abzeichen-Gold.png" width="50" height="50">
+                            <div class="d-flex h-100 flex-column justify-content-center align-items-center ms-2 me-2"><span class="fw-bold">Zulassungstest</span><span>01.02.2026</span></div>
+                            <div class="d-flex h-100 flex-column justify-content-center align-items-center ms-2 me-2"><span class="fw-semibold text-success">20</span><span class="fw-semibold text-danger">10</span></div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-4 flex-column p-2">
+                <div class="border rounded-1 border-3 border-primary p-2">
+                    <div class="row d-flex justify-content-center">
+                        <div class="col-5 text-light bg-primary border rounded-2 d-flex flex-column justify-content-center align-items-center m-1"><span class="fs-5 text-center">Benutzer</span><span class="fs-4 fw-bold">10</span></div>
+                        <div class="col-5 text-light bg-primary border rounded-2 d-flex flex-column justify-content-center align-items-center m-1"><span class="fs-5 text-center">In Bearbeitung</span><span class="fs-4 fw-bold">5</span></div>
+                        <div class="col-5 text-light bg-primary border rounded-2 d-flex flex-column justify-content-center align-items-center m-1"><span class="fs-5 text-center">Aktive Prüfungen</span><span class="fs-4 fw-bold">3</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 p-2">
+                <div class="border rounded-1 border-3 border-primary p-2">
+                    <h4>Neuste Inhalte</h4>
+                    <div class="border rounded-1 border-2 border-primary d-flex flex-row justify-content-center align-items-center mb-3">
+                        <div class="col col-xl-2 text-center"><span>P 1.1.1</span></div>
+                        <div class="col text-center">
+                            <div class="d-flex flex-column justify-content-center align-items-center ms-2"><span>Zuordnung von Dienststellungskennzeichen zu Funktionen</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

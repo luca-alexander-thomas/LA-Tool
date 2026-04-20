@@ -1,0 +1,48 @@
+.checked-color:checked {
+  background-color: var(--bs-success);
+  border-color: var(--bs-success);
+}
+
+.switch-color-green:checked {
+  background-color: var(--bs-success)!important;
+}
+
+.rotate {
+  transform: rotate(180deg);
+}
+
+.transition-0-5 {
+  transition: 0.5s;
+}
+
+.hidden {
+  display: flex !important;
+}
+
+.rotate-90 {
+  transform: rotate(90deg);
+}
+
+.pane-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.pane-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.pane-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.pane-content::-webkit-scrollbar-thumb {
+  background: #0c63e4;
+  border-radius: 4px;
+}
+
+.pane-content::-webkit-scrollbar-thumb:hover {
+  background: #0a58ca;
+}
+

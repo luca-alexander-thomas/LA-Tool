@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block site_content %}
+    <div class="container pt-4 pb-2 py-xl-5">
+        <div class="row mb-5">
+            <div class="col"></div>
+            <div class="col-md-8 col-xl-6 text-center mx-auto">
+                <h2>Admin Prüfungen erstellen</h2>
+                <p>Prüfungen erstellen</p>
+            </div>
+            <div class="col d-flex justify-content-center align-items-center"></div>
+        </div>
+    </div>
+    <form>
+        <div class="container">
+            <div class="row mt-2 mb-2">
+                <div class="col-md-6 col-xl-4">
+                    <div class="border rounded-1 border-3 border-primary m-2 p-2">
+                        <h4>Details</h4><input class="form-control mb-2" type="text" placeholder="Prüfungstitel" required=""><select class="form-select mb-2" value="LA-Stufe" required="">
+                            <optgroup label="LA-Stufe">
+                                <option value="12">Bronze</option>
+                                <option value="13">Silber</option>
+                                <option value="14">Gold</option>
+                            </optgroup>
+                        </select><select class="form-select mb-2" value="Fragenkatalog" required="">
+                            <optgroup label="Fragenkatalog">
+                                <option value="12">Bronze</option>
+                                <option value="13">Silber</option>
+                                <option value="14">Gold</option>
+                            </optgroup>
+                        </select><input class="form-control mb-2" type="number" placeholder="Zeit in Min">
+                    </div>
+                    <div class="d-flex flex-row justify-content-center align-items-center mt-4">
+                        <div class="col d-flex justify-content-center align-items-center"><a class="text-reset" href="#"><svg class="bi bi-eye" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 40px;">
+                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"></path>
+                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"></path>
+                                </svg></a></div>
+                        <div class="col d-flex justify-content-center align-items-center"><a class="text-reset" href="#"><svg class="bi bi-lock" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 40px;">
+                                    <path fill-rule="evenodd" d="M8 0a4 4 0 0 1 4 4v2.05a2.5 2.5 0 0 1 2 2.45v5a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 2 13.5v-5a2.5 2.5 0 0 1 2-2.45V4a4 4 0 0 1 4-4M4.5 7A1.5 1.5 0 0 0 3 8.5v5A1.5 1.5 0 0 0 4.5 15h7a1.5 1.5 0 0 0 1.5-1.5v-5A1.5 1.5 0 0 0 11.5 7zM8 1a3 3 0 0 0-3 3v2h6V4a3 3 0 0 0-3-3"></path>
+                                </svg></a></div>
+                        <div class="col d-flex justify-content-center align-items-center"><a class="text-reset" href="#"><svg class="bi bi-archive" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 40px;">
+                                    <path d="M0 2a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1v7.5a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 1 12.5V5a1 1 0 0 1-1-1zm2 3v7.5A1.5 1.5 0 0 0 3.5 14h9a1.5 1.5 0 0 0 1.5-1.5V5zm13-3H1v2h14zM5 7.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5"></path>
+                                </svg></a></div>
+                        <div class="col d-flex justify-content-center align-items-center"><a class="text-reset" href="#"><svg class="bi bi-trash" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 40px;">
+                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"></path>
+                                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"></path>
+                                </svg></a></div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-xl-4">
+                    <div class="border rounded-1 border-3 border-primary m-2 p-2"><label class="form-label w-100">Info Text<textarea class="form-control" placeholder="Infotext" spellcheck="true"></textarea></label><label class="form-label w-100">Abschluss Nachricht</label><textarea class="form-control" placeholder="Abschluss Nachricht" spellcheck="true"></textarea></div>
+                </div>
+                <div class="col-md-6 col-xl-4">
+                    <div class="border rounded-1 border-3 border-primary m-2 p-2">
+                        <h4>Zuweisungen</h4>
+                        <div class="border rounded-1 border-2 border-secondary d-flex flex-row justify-content-center align-items-center p-2 mb-2">
+                            <div class="col col-xl-1 d-flex justify-content-center align-items-center"><input type="checkbox"></div>
+                            <div class="col col-xl-9 d-flex align-items-center"><span>Rainer Zufall</span></div><img class="aspect-ratio-1x1 d-flex" src="assets/img/01c_Abzeichen-Silber.png" width="40" height="40" loading="auto">
+                        </div>
+                        <div class="border rounded-1 border-2 border-secondary d-flex flex-row justify-content-center align-items-center p-2 mb-2">
+                            <div class="col col-xl-1 d-flex justify-content-center align-items-center"><input type="checkbox"></div>
+                            <div class="col col-xl-9 d-flex align-items-center"><span>Rainer Zufall</span></div><img class="aspect-ratio-1x1 d-flex" src="assets/img/01c_Abzeichen-Silber.png" width="40" height="40" loading="auto">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-2 mb-2">
+                <div class="col-md-6 col-xl-12">
+                    <div class="border rounded-1 border-3 border-primary m-2 p-2">
+                        <h4>Katalog Übersicht</h4>
+                        <div>
+                            <div class="d-flex align-items-center m-1 p-1"><svg class="bi bi-chevron-right me-1 transition-0-5" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" id="arrow-1" style="font-size: 20px;" onclick="expandRow(&quot;div-1&quot;, &quot;arrow-1&quot;, &quot;rotate-90&quot;)">
+                                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
+                                </svg><input class="me-2 parent-checkbox" type="checkbox" id="parent-1" data-group="1"><label class="form-label mb-0" for="parent-1">LA-01</label></div>
+                            <div class="d-none flex-column transition-0-5" id="div-1">
+                                <div class="ps-5"><input class="me-2 child-checkbox" type="checkbox" id="child-1-1" data-group="1"><label class="form-label mb-0" for="child-1-1">Frage 1</label></div>
+                                <div class="ps-5"><input class="me-2 child-checkbox" type="checkbox" id="child-1-2" data-group="1"><label class="form-label mb-0" for="child-1-2">Frage 2</label></div>
+                                <div class="ps-5"><input class="me-2 child-checkbox" type="checkbox" id="child-1-3" data-group="1"><label class="form-label mb-0" for="child-1-3">Frage 3</label></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="d-flex align-items-center m-1 p-1"><svg class="bi bi-chevron-right me-1 transition-0-5" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" id="arrow-2" style="font-size: 20px;" onclick="expandRow(&quot;div-2&quot;, &quot;arrow-2&quot;, &quot;rotate-90&quot;)">
+                                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
+                                </svg><input class="me-2 parent-checkbox" type="checkbox" id="parent-2" data-group="2"><label class="form-label mb-0" for="parent-2">LA-02</label></div>
+                            <div class="d-none flex-column transition-0-5" id="div-2">
+                                <div class="ps-5"><input class="me-2 child-checkbox" type="checkbox" id="child-2-1" data-group="2"><label class="form-label mb-0" for="child-2-1">Frage 1</label></div>
+                                <div class="ps-5"><input class="me-2 child-checkbox" type="checkbox" id="child-2-2" data-group="2"><label class="form-label mb-0" for="child-2-2">Frage 2</label></div>
+                                <div class="ps-5"><input class="me-2 child-checkbox" type="checkbox" id="child-2-3" data-group="2"><label class="form-label mb-0" for="child-2-3">Frage 3</label></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-2 mb-2">
+                <div class="col d-flex justify-content-end"><button class="btn btn-primary" type="button">Speichern</button></div>
+            </div>
+        </div>
+    </form>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block site_content %}
+    <div class="container py-4 py-xl-5">
+        <div class="row mb-5">
+            <div class="col d-flex flex-column justify-content-center align-items-center"><img src="assets/img/01c_Abzeichen-Silber.png" width="79" height="79"></div>
+            <div class="col-md-8 col-xl-6 text-center d-flex flex-column justify-content-center align-items-center mx-auto">
+                <h2>Dienstthema</h2>
+                <p>Informationen zu diesem Dienst</p>
+            </div>
+            <div class="col d-flex flex-column justify-content-center align-items-center"><span class="fs-4 fw-semibold">06.02.2026</span></div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 d-flex justify-content-center align-items-center p-2">
+                <div class="border rounded-1 border-3 border-primary d-flex w-100 flex-column justify-content-center align-items-center p-2">
+                    <h4>Theorie Fragen</h4>
+                    <div class="border rounded-1 border-2 border-secondary d-flex w-100 flex-column justify-content-evenly align-items-center p-1 mt-2 mb-2">
+                        <div class="d-flex w-100 flex-row">
+                            <div class="col col-xl-5 d-flex justify-content-center align-items-center"><span class="fw-semibold">S-3-3</span></div>
+                            <div class="col d-flex justify-content-center align-items-center"><span>LA 3</span></div>
+                            <div class="col col-xl-2">
+                                <div class="d-flex justify-content-end transition-0-5" id="switch-1" onclick="expandRow(&#39;div1&#39;,&#39;switch-1&#39;,&#39;rotate-90&#39;)"><svg class="bi bi-chevron-right text-primary d-flex justify-content-end" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 41px;">
+                                        <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
+                                    </svg></div>
+                            </div>
+                        </div>
+                        <div class="d-none w-100 flex-column align-items-start" id="div1"><span class="mb-2">Welche Leinen/Seile dürfen zum Sichern von Personen verwendet werden?</span><span class="fw-bold text-success">A: Sicherheitsseile</span><span class="text-danger">B: Arbeitsleinen</span><span class="text-danger">C: Jede Naturfaserleine</span></div>
+                    </div>
+                    <div class="border rounded-1 border-2 border-secondary d-flex w-100 flex-column justify-content-evenly align-items-center p-1 mt-2 mb-2">
+                        <div class="d-flex w-100 flex-row">
+                            <div class="col col-xl-5 d-flex justify-content-center align-items-center"><span class="fw-semibold">S-3-3</span></div>
+                            <div class="col d-flex justify-content-center align-items-center"><span>LA 3</span></div>
+                            <div class="col col-xl-2">
+                                <div class="d-flex justify-content-end transition-0-5" id="switch-2" onclick="expandRow(&#39;div2&#39;,&#39;switch-2&#39;,&#39;rotate-90&#39;)"><svg class="bi bi-chevron-right text-primary d-flex justify-content-end" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 41px;">
+                                        <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
+                                    </svg></div>
+                            </div>
+                        </div>
+                        <div class="d-none w-100 flex-column align-items-start" id="div2"><span class="mb-2">Welche Leinen/Seile dürfen zum Sichern von Personen verwendet werden?</span><span class="fw-bold text-success">A: Sicherheitsseile</span><span class="text-danger">B: Arbeitsleinen</span><span class="text-danger">C: Jede Naturfaserleine</span></div>
+                    </div>
+                    <div class="border rounded-1 border-2 border-secondary d-flex w-100 flex-column justify-content-evenly align-items-center p-1 mt-2 mb-2">
+                        <div class="d-flex w-100 flex-row">
+                            <div class="col col-xl-5 d-flex justify-content-center align-items-center"><span class="fw-semibold">S-3-3</span></div>
+                            <div class="col d-flex justify-content-center align-items-center"><span>LA 3</span></div>
+                            <div class="col col-xl-2">
+                                <div class="d-flex justify-content-end transition-0-5" id="switch-3" onclick="expandRow(&#39;div3&#39;,&#39;switch-3&#39;,&#39;rotate-90&#39;)"><svg class="bi bi-chevron-right text-primary d-flex justify-content-end" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 41px;">
+                                        <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
+                                    </svg></div>
+                            </div>
+                        </div>
+                        <div class="d-none w-100 flex-column align-items-start" id="div3"><span class="mb-2">Welche Leinen/Seile dürfen zum Sichern von Personen verwendet werden?</span><span class="fw-bold text-success">A: Sicherheitsseile</span><span class="text-danger">B: Arbeitsleinen</span><span class="text-danger">C: Jede Naturfaserleine</span></div>
+                    </div><a class="btn btn-primary" role="button" href="exercise-theorie-training-start.html">Üben</a>
+                </div>
+            </div>
+            <div class="col-md-4 d-flex justify-content-center align-items-center p-2">
+                <div class="border rounded-1 border-3 border-primary p-2">
+                    <p>Heute haben wir uns die Dienststellungskennzeichen angeschaut. Diese zeigen uns in welcher Funktion ein THW Helfer ist.</p>
+                </div>
+            </div>
+            <div class="col-md-4 d-flex justify-content-center align-items-center p-2">
+                <div class="border rounded-1 border-3 border-primary d-flex w-100 flex-column justify-content-center align-items-center p-2">
+                    <h4>Praxis Aufgaben</h4>
+                    <div class="border rounded-1 border-2 border-secondary d-flex align-items-center p-1">
+                        <div class="col col-xl-11"><span>Zuordnung von Dienststellungskennzeichen zu Funktionen</span></div>
+                        <div class="col col-xl-1 d-flex justify-content-center"><a href="exercise-pratical-detail.html"><svg class="bi bi-chevron-right text-reset" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 41px;">
+                                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
+                                </svg></a></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
