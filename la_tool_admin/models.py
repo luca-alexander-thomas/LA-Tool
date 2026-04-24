@@ -11,3 +11,13 @@ class Profile(models.Model):
 
     def __str__(self):
         return self.user.username
+
+
+class Changes(models.Model):
+    change = models.CharField(max_length=200)
+    datetime = models.DateTimeField(auto_now=True)
+    username = models.CharField(max_length=100)
+    additional_meta = models.JSONField()
+
+    def __str__(self):
+        return self.change
