@@ -10,7 +10,7 @@ def index(request):
         # Nicht angemeldet, weiterleiten zur Anmeldung
         return redirect('login')
     else:
-        return render(request, "admin.html", {"user": user, "settings": settings})
+        return render(request, "admin-home.html", {"user": user, "settings": settings})
 
 
 def login(request):
@@ -36,12 +36,43 @@ def login(request):
             return render(request, "login.html", {"error": "Ungültige Anmeldeinformationen"})
     return render(request, "login.html")
 
-
-def profile(request):
+def admin_users(request):
     if not request.user.is_authenticated:
-        # Nicht angemeldet, weiterleiten zur Anmeldung
         return redirect('login')
-    if request.method == "GET":
-        user = request.user
+    return render(request, "admin-users.html", {"user": request.user})
 
-    return render(request, "profile.html", {"user": user})
+def admin_catalog(request,vtype=None):
+    if request.method == "GET":
+        if not request.user.is_authenticated:
+            return redirect('login')
+        if vtype == 'edit':
+            return render(request, "admin-catalog-detail.html", {"user": request.user})
+        elif vtype == None:
+            return render(request, "admin-catalog.html", {"user": request.user})
+    return redirect('login')
+
+def admin_exam(request, vtype=None):
+    if request.method == "GET":
+        if not request.user.is_authenticated:
+            return redirect('login')
+        if vtype == 'edit':
+            return render(request, "admin-exams-edit-create.html", {"user": request.user})
+        elif vtype == 'summary':
+            return render(request, "admin-exam-summary.html", {"user": request.user})
+        elif vtype == 'summary-user':
+            return render(request, "admin-exam-summary-user.html", {"user": request.user})
+        elif vtype == None:
+            return render(request, "admin-exams.html", {"user": request.user})
+    return redirect('login')
+
+def admin_work(request, vtype=None):
+    if request.method == "GET":
+        if not request.user.is_authenticated:
+            return redirect('login')
+        if vtype == 'edit':
+            return render(request, "admin-work-edit-create.html", {"user": request.user})
+        if vtype == 'detail':
+            return render(request, "admin-work-edit-create.html", {"user": request.user})
+        elif vtype == None:
+            return render(request, "admin-work.html", {"user": request.user})
+    return redirect('login')
