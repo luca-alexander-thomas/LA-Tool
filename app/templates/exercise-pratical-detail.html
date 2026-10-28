@@ -17,7 +17,7 @@
             {# Info & Selbsteinschätzung #}
             <section class="card card-body">
                 <div class="flex flex-wrap items-center justify-center gap-2">
-                    {% if question.catalog %}<span class="font-semibold text-ink">{{ question.catalog.title }}</span>{% endif %}
+                    {% if question.catalog %}{% if question.catalog.short_title %}<span class="badge badge-neutral">{{ question.catalog.short_title }}</span>{% endif %}<span class="font-semibold text-ink">{{ question.catalog.title }}</span>{% endif %}
                     {% if question.number %}<span class="badge badge-neutral">{{ question.number }}</span>{% endif %}
                 </div>
                 {% if question.catalog %}

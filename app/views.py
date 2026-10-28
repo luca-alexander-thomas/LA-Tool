@@ -382,7 +382,7 @@ def exam_result(request, exam_id):
     answers = result.answers or {}
     questions_data = []
     if is_released:
-        q_map = {q.pk: q for q in Questions_Theory.objects.filter(pk__in=question_ids)}
+        q_map = {q.pk: q for q in Questions_Theory.objects.select_related('catalog').filter(pk__in=question_ids)}
         for q_id in question_ids:
             q = q_map.get(q_id)
             if not q:
@@ -598,7 +598,7 @@ def training_run(request):
 
 
 def _save_training_result(user, question_ids, answers):
-    q_map = {q.pk: q for q in Questions_Theory.objects.filter(pk__in=question_ids)}
+    q_map = {q.pk: q for q in Questions_Theory.objects.select_related('catalog').filter(pk__in=question_ids)}
     score = 0
     for q_id in question_ids:
         q = q_map.get(q_id)
@@ -633,7 +633,7 @@ def training_result(request, result_id):
     answers = result.answers or {}
     meta = result.meta_reference or {}
 
-    q_map = {q.pk: q for q in Questions_Theory.objects.filter(pk__in=question_ids)}
+    q_map = {q.pk: q for q in Questions_Theory.objects.select_related('catalog').filter(pk__in=question_ids)}
     questions_data = []
     for q_id in question_ids:
         q = q_map.get(q_id)

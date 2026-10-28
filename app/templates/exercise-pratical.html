@@ -17,6 +17,7 @@
         <a href="{% url 'practical_detail' question.pk %}" class="list-row min-h-16">
             <span class="w-10 shrink-0 text-center text-xs font-medium text-ink-3 tabular-nums">{{ question.number }}</span>
             <span class="min-w-0 flex-1 text-sm font-semibold text-ink sm:text-base">{{ question.question }}</span>
+            {% if question.catalog.short_title %}<span class="badge badge-neutral shrink-0" title="{{ question.catalog.title }}">{{ question.catalog.short_title }}</span>{% endif %}
             <span class="flex shrink-0 items-center justify-center">
                 {% if question.catalog and question.catalog.level %}
                     {% if question.catalog.level.icon %}

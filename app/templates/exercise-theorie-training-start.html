@@ -32,7 +32,7 @@
                         <input class="form-switch" role="switch" type="checkbox"
                                name="catalogs" value="{{ catalog.pk }}"
                                id="catalog-{{ catalog.pk }}" checked>
-                        <span class="min-w-0 flex-1 text-sm font-semibold">{{ catalog.title }}</span>
+                        <span class="min-w-0 flex-1 text-sm font-semibold">{% if catalog.short_title %}<span class="mr-1.5 text-xs font-semibold text-ink-3">{{ catalog.short_title }}</span>{% endif %}{{ catalog.title }}</span>
                         {% if catalog.level %}
                         <span class="badge {{ catalog.level.badge_bg_class|default:'badge-primary' }} {{ catalog.level.badge_text_class }}">{{ catalog.level.name }}</span>
                         {% else %}

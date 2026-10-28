@@ -21,7 +21,7 @@
         <div class="mb-6" x-data="{ hint: false }">
             <div class="flex items-start gap-3">
                 <div class="min-w-0 flex-1">
-                    {% if question.number %}<p class="eyebrow mb-1">{{ question.number }}</p>{% endif %}
+                    {% if question.number or question.catalog.short_title %}<p class="eyebrow mb-1">{{ question.catalog.short_title }}{% if question.number and question.catalog.short_title %} · {% endif %}{{ question.number|default:"" }}</p>{% endif %}
                     <h1 class="text-xl font-bold tracking-tight text-ink sm:text-2xl">{{ question.question }}</h1>
                 </div>
                 {% if question.help_reference %}

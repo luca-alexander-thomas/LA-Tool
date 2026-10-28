@@ -18,6 +18,7 @@
             <span class="w-10 shrink-0 text-center text-xs font-medium text-ink-3 tabular-nums">{{ question.number }}</span>
             <span class="min-w-0 flex-1 text-sm font-semibold text-ink sm:text-base">{{ question.question }}</span>
             {% if question.catalog %}
+                {% if question.catalog.short_title %}<span class="badge badge-neutral shrink-0" title="{{ question.catalog.title }}">{{ question.catalog.short_title }}</span>{% endif %}
                 {% if question.catalog.level %}
                 <span class="badge {{ question.catalog.level.badge_bg_class|default:'badge-primary' }} {{ question.catalog.level.badge_text_class }} shrink-0">{{ question.catalog.level.name }}</span>
                 {% else %}
