@@ -498,7 +498,7 @@ def training_config(request):
     la = current_la_filter(request)
     catalogs = Questions_Catalogs.objects.select_related('level').filter(
         level__slug=la, is_draft=False, level__is_draft=False,
-    ).order_by('title')
+    ).order_by('order', 'title')
 
     current_level = Levels.objects.filter(slug=la).first()
     default_count = current_level.default_training_count if current_level else 10

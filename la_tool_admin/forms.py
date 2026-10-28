@@ -47,10 +47,11 @@ class LevelForm(forms.ModelForm):
 class CatalogForm(forms.ModelForm):
     class Meta:
         model = Questions_Catalogs
-        fields = ['title', 'short_title', 'level', 'multi_answer_scoring', 'icon', 'is_draft']
+        fields = ['title', 'short_title', 'order', 'level', 'multi_answer_scoring', 'icon', 'is_draft']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Katalog-Name'}),
             'short_title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Kurztitel (max. 20 Zeichen)'}),
+            'order': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
             'level': forms.Select(attrs={'class': 'form-select'}),
             'multi_answer_scoring': forms.Select(attrs={'class': 'form-select'}),
             'icon': forms.FileInput(attrs={'class': 'form-control'}),
@@ -59,6 +60,7 @@ class CatalogForm(forms.ModelForm):
         labels = {
             'title': 'Name',
             'short_title': 'Kurztitel',
+            'order': 'Reihenfolge (kleinere Zahl zuerst)',
             'level': 'LA-Stufe',
             'multi_answer_scoring': 'Bewertung Mehrfachantworten',
             'icon': 'Icon',

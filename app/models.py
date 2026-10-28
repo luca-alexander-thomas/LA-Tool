@@ -75,6 +75,7 @@ class Questions_Catalogs(models.Model):
 
     title = models.CharField(max_length=100)
     short_title = models.CharField(max_length=20)
+    order = models.PositiveIntegerField(default=0)
     level = models.ForeignKey(Levels, on_delete=models.SET_NULL, null=True, blank=True)
     icon = models.ImageField(
         upload_to='ICONs/', blank=True, null=True)
@@ -86,6 +87,7 @@ class Questions_Catalogs(models.Model):
     is_draft = models.BooleanField(default=False)
 
     class Meta:
+        ordering = ['order', 'title']
         permissions = [
             ('manage_catalogs', 'Kataloge verwalten'),
         ]

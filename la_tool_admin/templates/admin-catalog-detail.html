@@ -27,7 +27,7 @@
     <div>
     {% endif %}
         <fieldset {% if not perms.app.manage_catalogs %}disabled{% endif %} class="card-body grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
-            <div class="lg:col-span-4">
+            <div class="lg:col-span-3">
                 <label class="form-label" for="cat-title">Name</label>
                 <input type="text" id="cat-title" name="title" class="form-control" value="{{ catalog.title }}">
             </div>
@@ -39,7 +39,11 @@
                 <label class="form-label" for="{{ form.level.id_for_label }}">LA-Stufe</label>
                 {{ form.level }}
             </div>
-            <div class="lg:col-span-4">
+            <div class="lg:col-span-2">
+                <label class="form-label" for="{{ form.order.id_for_label }}">Reihenfolge</label>
+                {{ form.order }}
+            </div>
+            <div class="lg:col-span-3">
                 <label class="form-label" for="cat-scoring">Mehrfachantworten</label>
                 <select name="multi_answer_scoring" id="cat-scoring" class="form-select">
                     <option value="all_or_nothing" {% if catalog.multi_answer_scoring == 'all_or_nothing' %}selected{% endif %}>Alles oder nichts</option>

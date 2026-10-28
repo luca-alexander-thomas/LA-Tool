@@ -494,7 +494,7 @@ def admin_draft_toggle(request, model, pk):
 
 @admin_required
 def admin_catalog_list(request):
-    catalogs = Questions_Catalogs.objects.select_related('level').all().order_by('level__order', 'title')
+    catalogs = Questions_Catalogs.objects.select_related('level').all().order_by('level__order', 'order', 'title')
     counts = {}
     for c in catalogs:
         counts[c.pk] = {
@@ -1212,7 +1212,7 @@ def admin_exam_list(request):
 
 @admin_permission_required('app.manage_exams')
 def admin_exam_create(request):
-    catalogs = Questions_Catalogs.objects.prefetch_related('questions_theory_set').order_by('level__order', 'title')
+    catalogs = Questions_Catalogs.objects.prefetch_related('questions_theory_set').order_by('level__order', 'order', 'title')
     all_users = User.objects.order_by('last_name', 'first_name')
     all_groups = Group.objects.order_by('name')
     form = ExamForm(request.POST or None)
@@ -1279,7 +1279,7 @@ def admin_exam_create(request):
 @admin_permission_required('app.manage_exams')
 def admin_exam_edit(request, exam_id):
     exam = get_object_or_404(Exams, pk=exam_id)
-    catalogs = Questions_Catalogs.objects.order_by('level__order', 'title')
+    catalogs = Questions_Catalogs.objects.order_by('level__order', 'order', 'title')
     all_users = User.objects.order_by('last_name', 'first_name')
     all_groups = Group.objects.order_by('name')
 
@@ -1477,7 +1477,7 @@ def admin_work_edit(request, work_id):
     work = get_object_or_404(Work, pk=work_id)
     catalogs = Questions_Catalogs.objects.prefetch_related(
         'questions_theory_set'
-    ).order_by('level__order', 'title')
+    ).order_by('level__order', 'order', 'title')
     all_practical = Questions_Practical.objects.select_related('catalog').order_by('catalog__level__order', 'pk')
     all_group = Questions_GroupExercise.objects.select_related('catalog').order_by('catalog__level__order', 'pk')
 
