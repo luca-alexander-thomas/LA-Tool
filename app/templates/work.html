@@ -16,7 +16,14 @@
         <!-- Liste -->
         <section class="card lg:col-span-2">
             <div class="card-header">
-                <h2 class="section-title">Alle Dienste</h2>
+                <h2 class="section-title">Dienste</h2>
+                <form method="get">
+                    <label class="sr-only" for="work-year">Jahr</label>
+                    <select id="work-year" name="jahr" class="form-select w-auto" onchange="this.form.submit()">
+                        {% for y in years %}<option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>{% endfor %}
+                    </select>
+                    <noscript><button type="submit" class="btn btn-sm btn-secondary">Anzeigen</button></noscript>
+                </form>
             </div>
             <div class="space-y-2 p-4">
                 {% for w in works %}
@@ -32,7 +39,7 @@
                     {% include "icons/chevron-right.html" with cls="size-5 shrink-0 text-ink-3" %}
                 </a>
                 {% empty %}
-                <p class="empty-state">Noch keine Dienste erfasst.</p>
+                <p class="empty-state">Keine Dienste in {{ year }}.</p>
                 {% endfor %}
             </div>
         </section>

@@ -456,6 +456,20 @@ def work_list(request):
         return redirect_to_login(request.get_full_path())
     works = _visible_works(request.user).order_by('date')
 
+    # Liste: kommende Dienste und vergangene mit Inhalten (Fragen/Übungen), gefiltert nach Jahr
+    now = timezone.now()
+    list_works = works.filter(
+        Q(date__gte=now) | Q(date_end__gte=now)
+        | Q(theory_questions__isnull=False)
+        | Q(practical_exercises__isnull=False)
+        | Q(group_exercises__isnull=False)
+    ).distinct()
+    current_year = timezone.localtime(now).year
+    years = sorted({d.year for d in list_works.dates('date', 'year')} | {current_year}, reverse=True)
+    year = request.GET.get('jahr', '')
+    year = int(year) if year.isdigit() and int(year) in years else current_year
+    list_works = list_works.filter(date__year=year)
+
     # Für den Kalender: Start- und Endtag in lokaler Zeit (Dienste ohne Ende dauern einen Tag)
     calendar_works = []
     for w in works:
@@ -468,7 +482,12 @@ def work_list(request):
             'end': max(start, end).strftime('%Y-%m-%d'),
             'time': start.strftime('%H:%M'),
         })
-    return render(request, 'work.html', {'works': works, 'calendar_works': calendar_works})
+    return render(request, 'work.html', {
+        'works': list_works,
+        'years': years,
+        'year': year,
+        'calendar_works': calendar_works,
+    })
 
 
 def work_detail(request, work_id):
