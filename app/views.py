@@ -5,6 +5,7 @@ import random
 import time
 from datetime import date
 from django.utils import timezone
+from django.urls import reverse
 from . import login_function as login_func
 from .models import (
     Questions_Catalogs, Questions_Theory, TrainingResultData,
@@ -445,7 +446,20 @@ def work_list(request):
         user_groups = request.user.groups.all()
         qs = qs.filter(_Q(groups__isnull=True) | _Q(groups__in=user_groups)).distinct()
     works = qs.order_by('date')
-    return render(request, 'work.html', {'works': works})
+
+    # Für den Kalender: Start- und Endtag in lokaler Zeit (Dienste ohne Ende dauern einen Tag)
+    calendar_works = []
+    for w in works:
+        start = timezone.localtime(w.date)
+        end = timezone.localtime(w.date_end) if w.date_end else start
+        calendar_works.append({
+            'title': w.title,
+            'url': reverse('work_detail', args=[w.pk]),
+            'start': start.strftime('%Y-%m-%d'),
+            'end': max(start, end).strftime('%Y-%m-%d'),
+            'time': start.strftime('%H:%M'),
+        })
+    return render(request, 'work.html', {'works': works, 'calendar_works': calendar_works})
 
 
 def work_detail(request, work_id):

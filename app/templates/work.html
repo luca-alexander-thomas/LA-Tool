@@ -25,7 +25,7 @@
                     <div class="min-w-0 flex-1">
                         <p class="truncate font-semibold">{{ w.title }}</p>
                         <div class="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-ink-3">
-                            <span>{{ w.date|date:"d.m.Y" }}</span>
+                            <span>{{ w.date|date:"d.m.Y" }}{% if w.date_end and w.date_end|date:"Ymd" != w.date|date:"Ymd" %} – {{ w.date_end|date:"d.m.Y" }}{% endif %}</span>
                             {% if w.level %}<span class="badge {{ w.level.badge_bg_class|default:'badge-primary' }} {{ w.level.badge_text_class }}">{{ w.level.name }}</span>{% endif %}
                         </div>
                     </div>
@@ -37,28 +37,31 @@
             </div>
         </section>
 
-        <!-- Kalender -->
-        <section class="card lg:col-span-3">
-            <div class="card-header flex-nowrap">
-                <button type="button" class="btn btn-secondary px-3" id="prevMonth" aria-label="Vorheriger Monat">
-                    {% include "icons/chevron-left.html" with cls="size-4" %}<span class="hidden sm:inline">Vorher</span>
+        <!-- Kalender (mobil oben) -->
+        <section class="card order-first lg:order-none lg:col-span-3">
+            <div class="flex items-center gap-2 border-b border-line px-3 py-2 sm:px-4">
+                <button type="button" class="btn btn-ghost btn-icon" id="prevMonth" aria-label="Vorheriger Monat">
+                    {% include "icons/chevron-left.html" with cls="size-5" %}
                 </button>
-                <h2 class="section-title flex-1 text-center" id="monthYear" aria-live="polite"></h2>
-                <button type="button" class="btn btn-secondary px-3" id="nextMonth" aria-label="Nächster Monat">
-                    <span class="hidden sm:inline">Nächste</span>{% include "icons/chevron-right.html" with cls="size-4" %}
+                <h2 class="flex-1 text-center text-base font-semibold" id="monthYear" aria-live="polite"></h2>
+                <button type="button" class="btn btn-ghost btn-icon" id="nextMonth" aria-label="Nächster Monat">
+                    {% include "icons/chevron-right.html" with cls="size-5" %}
                 </button>
             </div>
-            <div class="card-body">
-                <div id="calGrid" class="grid grid-cols-7 gap-1 text-center text-sm">
-                    <div class="py-1 text-xs font-semibold text-ink-3">Mo</div>
-                    <div class="py-1 text-xs font-semibold text-ink-3">Di</div>
-                    <div class="py-1 text-xs font-semibold text-ink-3">Mi</div>
-                    <div class="py-1 text-xs font-semibold text-ink-3">Do</div>
-                    <div class="py-1 text-xs font-semibold text-ink-3">Fr</div>
-                    <div class="py-1 text-xs font-semibold text-ink-3">Sa</div>
-                    <div class="py-1 text-xs font-semibold text-ink-3">So</div>
+            <div class="px-2 pt-2 pb-3 sm:px-4">
+                <div class="mx-auto max-w-md">
+                    <div class="grid grid-cols-7 text-center text-[0.6875rem] font-semibold text-ink-3">
+                        <div class="py-1">Mo</div><div class="py-1">Di</div><div class="py-1">Mi</div><div class="py-1">Do</div><div class="py-1">Fr</div><div class="py-1">Sa</div><div class="py-1">So</div>
+                    </div>
+                    <div id="calGrid" class="grid grid-cols-7 gap-y-1 text-sm"></div>
                 </div>
-                <div id="calendarEvents" class="mt-4 border-t border-line pt-4 text-sm"></div>
+                <div class="mx-auto mt-3 max-w-md border-t border-line pt-3 text-sm">
+                    <div class="mb-1 flex items-center justify-between gap-2">
+                        <p id="eventHeading" class="font-semibold text-ink"></p>
+                        <button type="button" id="showMonth" class="btn btn-ghost btn-sm" hidden>Ganzer Monat</button>
+                    </div>
+                    <div id="calendarEvents"></div>
+                </div>
             </div>
         </section>
     </div>
@@ -66,81 +69,127 @@
 {% endblock %}
 
 {% block extra_scripts %}
+{{ calendar_works|json_script:"work-data" }}
 <script>
 (function () {
-    const workDates = {
-        {% for w in works %}
-        '{{ w.date|date:"Y-m-d" }}': {title: '{{ w.title|escapejs }}', url: '{% url "work_detail" w.pk %}'},
-        {% endfor %}
-    };
+    // Dienste als JSON (Titel werden nur per textContent eingesetzt).
+    // start/end sind lokale Tage "YYYY-MM-DD"; Dienste ohne Enddatum dauern einen Tag.
+    const works = JSON.parse(document.getElementById('work-data').textContent);
 
     const monthNames = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+    const pad = n => String(n).padStart(2, '0');
+    const keyOf = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    const parse = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
+    const fmt = k => { const [, m, d] = k.split('-'); return d + '.' + m + '.'; };
+
+    // Tag -> Dienste an diesem Tag (mehrtägige Dienste auf jeden Tag verteilt)
+    const byDay = {};
+    works.forEach(w => {
+        for (let d = parse(w.start); keyOf(d) <= w.end; d.setDate(d.getDate() + 1)) {
+            (byDay[keyOf(d)] = byDay[keyOf(d)] || []).push(w);
+        }
+    });
+
+    const todayKey = keyOf(new Date());
     let current = new Date();
     current.setDate(1);
+    let selected = null;
 
-    const today = new Date();
-    const todayKey = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+    const grid = document.getElementById('calGrid');
+    const list = document.getElementById('calendarEvents');
+    const heading = document.getElementById('eventHeading');
+    const showMonth = document.getElementById('showMonth');
 
-    // Tailwind-Klassen der Kalenderzellen (cal-cell dient nur als JS-Markierung)
-    const cellBase  = 'cal-cell flex aspect-square items-center justify-center rounded-lg';
-    const dayCls    = cellBase + ' text-ink-2';
-    const todayCls  = cellBase + ' bg-accent-soft font-semibold text-accent-ink';
-    const eventCls  = cellBase + ' bg-accent font-semibold text-white shadow-sm transition hover:brightness-115';
+    function el(tag, cls, text) {
+        const e = document.createElement(tag);
+        if (cls) e.className = cls;
+        if (text !== undefined) e.textContent = text;
+        return e;
+    }
 
-    function render() {
+    function renderGrid() {
         const year = current.getFullYear();
         const month = current.getMonth();
         document.getElementById('monthYear').textContent = monthNames[month] + ' ' + year;
+        grid.replaceChildren();
 
-        const grid = document.getElementById('calGrid');
-        // remove all day cells (keep the 7 header cells)
-        const cells = grid.querySelectorAll('.cal-cell');
-        cells.forEach(c => c.remove());
-
-        const firstDay = new Date(year, month, 1).getDay();
-        const offset = firstDay === 0 ? 6 : firstDay - 1;
+        const offset = (new Date(year, month, 1).getDay() + 6) % 7;
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const pad = n => String(n).padStart(2, '0');
+        for (let i = 0; i < offset; i++) grid.appendChild(el('div'));
 
-        let html = '';
-        for (let i = 0; i < offset; i++) {
-            html += '<div class="cal-cell"></div>';
-        }
         for (let d = 1; d <= daysInMonth; d++) {
             const key = year + '-' + pad(month + 1) + '-' + pad(d);
-            const ev = workDates[key];
-            const isToday = key === todayKey;
-            if (ev) {
-                html += `<a class="${eventCls}" href="${ev.url}" title="${ev.title}">${d}</a>`;
-            } else if (isToday) {
-                html += `<div class="${todayCls}" aria-current="date">${d}</div>`;
-            } else {
-                html += `<div class="${dayCls}">${d}</div>`;
-            }
-        }
-        grid.insertAdjacentHTML('beforeend', html);
+            const evs = byDay[key] || [];
+            const col = (offset + d - 1) % 7;
+            const cell = el('button', 'relative flex h-10 items-center justify-center sm:h-11');
+            cell.type = 'button';
+            cell.setAttribute('aria-label', d + '. ' + monthNames[month] + (evs.length ? ', ' + evs.length + ' Dienst(e)' : ''));
 
-        // upcoming events list below calendar
-        const evDiv = document.getElementById('calendarEvents');
-        const monthEvents = Object.entries(workDates)
-            .filter(([k]) => k.startsWith(year + '-' + pad(month + 1)))
-            .sort(([a],[b]) => a.localeCompare(b));
-        if (monthEvents.length) {
-            evDiv.innerHTML = '<p class="mb-1 font-semibold text-ink">Dienste im ' + monthNames[month] + ':</p>' +
-                monthEvents.map(([k, ev]) => {
-                    const day = k.split('-')[2];
-                    return `<a href="${ev.url}" class="flex min-h-11 items-center gap-3 border-b border-line py-2 text-ink transition last:border-b-0 hover:text-accent-ink">
-                        <span class="badge badge-primary tabular-nums">${day}.</span>
-                        <span class="min-w-0 flex-1 truncate">${ev.title}</span>
-                    </a>`;
-                }).join('');
-        } else {
-            evDiv.innerHTML = '<p class="text-ink-3">Keine Dienste in diesem Monat.</p>';
+            // Band für mehrtägige Dienste: läuft über die Zellgrenzen, an Start/Ende und Zeilenrand abgerundet
+            const multi = evs.filter(w => w.start !== w.end);
+            if (multi.length) {
+                const isStart = multi.some(w => w.start === key) || col === 0 || d === 1;
+                const isEnd = multi.some(w => w.end === key) || col === 6 || d === daysInMonth;
+                cell.appendChild(el('span', 'absolute inset-y-1.5 bg-accent-soft '
+                    + (isStart ? 'left-1 rounded-l-full ' : 'left-0 ')
+                    + (isEnd ? 'right-1 rounded-r-full' : 'right-0')));
+            }
+
+            let numCls = 'relative flex size-8 items-center justify-center rounded-full tabular-nums transition ';
+            if (evs.some(w => w.start === key || w.end === key)) numCls += 'bg-accent font-semibold text-white';
+            else if (evs.length) numCls += 'font-semibold text-accent-ink';
+            else numCls += 'text-ink-2 hover:bg-surface-2';
+            if (key === todayKey) numCls += ' ring-2 ring-accent ring-offset-1 ring-offset-surface';
+            if (key === selected) numCls += ' outline-2 outline-offset-2 outline-jugend-orange';
+            cell.appendChild(el('span', numCls, d));
+
+            if (evs.length > 1) {
+                cell.appendChild(el('span', 'absolute bottom-0.5 left-1/2 size-1 -translate-x-1/2 rounded-full bg-jugend-orange'));
+            }
+            if (key === todayKey) cell.setAttribute('aria-current', 'date');
+            cell.addEventListener('click', () => { selected = selected === key ? null : key; render(); });
+            grid.appendChild(cell);
         }
     }
 
-    document.getElementById('prevMonth').addEventListener('click', () => { current.setMonth(current.getMonth() - 1); render(); });
-    document.getElementById('nextMonth').addEventListener('click', () => { current.setMonth(current.getMonth() + 1); render(); });
+    function renderList() {
+        const year = current.getFullYear();
+        const month = current.getMonth();
+        const first = year + '-' + pad(month + 1) + '-01';
+        const last = year + '-' + pad(month + 1) + '-' + pad(new Date(year, month + 1, 0).getDate());
+
+        const shown = selected
+            ? (byDay[selected] || [])
+            : works.filter(w => w.start <= last && w.end >= first);   // auch Dienste, die in den Monat hineinreichen
+        heading.textContent = selected ? 'Dienste am ' + fmt(selected) : 'Dienste im ' + monthNames[month];
+        showMonth.hidden = !selected;
+
+        list.replaceChildren();
+        if (!shown.length) {
+            list.appendChild(el('p', 'py-2 text-ink-3', selected ? 'Kein Dienst an diesem Tag.' : 'Keine Dienste in diesem Monat.'));
+            return;
+        }
+        shown.forEach(w => {
+            const a = el('a', 'flex min-h-11 items-center gap-3 border-b border-line py-2 text-ink transition last:border-b-0 hover:text-accent-ink');
+            a.href = w.url;
+            a.appendChild(el('span', 'badge badge-primary shrink-0 tabular-nums', w.start === w.end ? fmt(w.start) : fmt(w.start) + '–' + fmt(w.end)));
+            a.appendChild(el('span', 'min-w-0 flex-1 truncate', w.title));
+            if (w.time) a.appendChild(el('span', 'shrink-0 text-xs text-ink-3', w.time + ' Uhr'));
+            list.appendChild(a);
+        });
+    }
+
+    function render() { renderGrid(); renderList(); }
+
+    function goMonth(delta) {
+        current.setMonth(current.getMonth() + delta);
+        selected = null;
+        render();
+    }
+
+    document.getElementById('prevMonth').addEventListener('click', () => goMonth(-1));
+    document.getElementById('nextMonth').addEventListener('click', () => goMonth(1));
+    showMonth.addEventListener('click', () => { selected = null; render(); });
     render();
 })();
 </script>
