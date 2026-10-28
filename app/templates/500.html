@@ -1,0 +1,35 @@
+{% load static tailwind_cli %}<!DOCTYPE html>
+<html lang="de" data-theme="light">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Fehler · LA-Tool</title>
+    <script>
+        (function () {
+            var t = null;
+            try { t = localStorage.getItem('theme'); } catch (e) {}
+            if (t !== 'light' && t !== 'dark') {
+                t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.dataset.theme = t;
+        })();
+    </script>
+    {% tailwind_css %}
+</head>
+
+<body class="flex min-h-dvh items-center justify-center p-6">
+    {# Eigenständig ohne base.html: wird ohne Request-Kontext gerendert, auch wenn die Datenbank nicht erreichbar ist #}
+    <div class="card card-body w-full max-w-sm text-center">
+        <img src="{% static 'img/thw-jugend-ge-logo.png' %}" alt="THW-Jugend Gelsenkirchen" class="mx-auto mb-6 h-14 w-auto">
+        <p class="eyebrow">Fehler 500</p>
+        <h1 class="mt-2 text-xl font-bold tracking-tight">Da ist etwas schiefgelaufen</h1>
+        <p class="mt-2 text-sm text-ink-2">Ein unerwarteter Fehler ist aufgetreten. Versuche es gleich noch einmal. Bleibt der Fehler, melde ihn bitte der Jugendbetreuung.</p>
+        <div class="mt-6 flex flex-col gap-2">
+            <button type="button" class="btn btn-primary w-full" onclick="location.reload()">Erneut versuchen</button>
+            <a href="/" class="btn btn-secondary w-full">Zur Startseite</a>
+        </div>
+    </div>
+</body>
+
+</html>

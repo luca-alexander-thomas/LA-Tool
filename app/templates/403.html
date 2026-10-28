@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block page_title %}Kein Zugriff{% endblock %}
+
+{% block site_content %}
+<div class="page-narrow">
+    <div class="card card-body flex flex-col items-center py-12 text-center sm:py-16">
+        <span class="flex size-14 items-center justify-center rounded-xl bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">{% include "icons/lock-closed.html" with cls="size-8" %}</span>
+        <p class="eyebrow mt-6">Fehler 403</p>
+        <h1 class="page-title mt-2">Kein Zugriff</h1>
+        <p class="page-subtitle max-w-md">Für diese Seite oder Aktion hast du keine Berechtigung.</p>
+        {% if exception %}
+        <p class="alert alert-warning mt-4 max-w-md text-left">{{ exception }}</p>
+        {% endif %}
+        <p class="mt-4 max-w-md text-sm text-ink-3">Wenn du meinst, dass das ein Fehler ist, wende dich an die Jugendbetreuung.</p>
+        <div class="mt-8 flex flex-wrap justify-center gap-3">
+            <a href="{% url 'home' %}" class="btn btn-primary">{% include "icons/home.html" %} Zur Startseite</a>
+            {% if user_has_admin_access %}
+            <a href="{% url 'admin_index' %}" class="btn btn-secondary">{% include "icons/squares-2x2.html" %} Admin-Übersicht</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

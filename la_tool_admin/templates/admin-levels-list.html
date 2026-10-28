@@ -3,14 +3,18 @@
 {% block page_title %}LA-Stufen · Admin{% endblock %}
 
 {% block admin_content %}
+{% if perms.app.manage_settings %}
 <a href="{% url 'admin_settings' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Einstellungen</a>
+{% endif %}
 
 <div class="page-header">
     <div>
         <p class="eyebrow">Konfiguration</p>
         <h1 class="page-title mt-1">LA-Stufen</h1>
     </div>
+    {% if perms.app.manage_levels %}
     <a href="{% url 'admin_level_create' %}" class="btn btn-primary">{% include "icons/plus.html" %} Neue Stufe</a>
+    {% endif %}
 </div>
 
 {% if levels %}
@@ -24,7 +28,7 @@
                 <th>Badge</th>
                 <th>Standard Training</th>
                 <th>Standard Prüfung</th>
-                <th><span class="sr-only">Aktionen</span></th>
+                {% if perms.app.manage_levels %}<th><span class="sr-only">Aktionen</span></th>{% endif %}
             </tr>
         </thead>
         <tbody>
@@ -46,6 +50,7 @@
                 </td>
                 <td class="text-xs whitespace-nowrap text-ink-2">{{ level.default_training_count }} Fragen &middot; {{ level.default_training_pass_pct }}% Bestehen</td>
                 <td class="text-xs whitespace-nowrap text-ink-2">{{ level.default_exam_count }} Fragen &middot; {{ level.default_exam_pass_pct }}% Bestehen</td>
+                {% if perms.app.manage_levels %}
                 <td>
                     <div class="flex justify-end gap-2">
                         <form method="post" action="{% url 'admin_draft_toggle' 'level' level.pk %}">
@@ -57,6 +62,7 @@
                         <a href="{% url 'admin_level_edit' level.pk %}" class="btn btn-sm btn-secondary">{% include "icons/pencil-square.html" with cls="size-4" %} Bearbeiten</a>
                     </div>
                 </td>
+                {% endif %}
             </tr>
             {% endfor %}
         </tbody>
@@ -65,7 +71,9 @@
 {% else %}
 <div class="empty-state">
     <p class="mb-4">Noch keine LA-Stufen angelegt.</p>
+    {% if perms.app.manage_levels %}
     <a href="{% url 'admin_level_create' %}" class="btn btn-primary">{% include "icons/plus.html" %} Erste Stufe anlegen</a>
+    {% endif %}
 </div>
 {% endif %}
 {% endblock %}

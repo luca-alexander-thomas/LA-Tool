@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import auth
+from django.contrib.auth.views import redirect_to_login
 from django.db.models import Q
 import random
 import time
@@ -60,7 +61,7 @@ def index(request):
 
 def first_run_wizard(request):
     if not request.user.is_authenticated:
-        return redirect('login')
+        return redirect_to_login(request.get_full_path())
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -119,8 +120,10 @@ def first_run_wizard(request):
 
 
 def login(request):
+    # Rücksprung nach dem Login (z.B. von einer geschützten Seite)
+    next_url = login_func.safe_next_url(request, request.POST.get('next') or request.GET.get('next'))
     if request.user.is_authenticated:
-        return redirect('home')
+        return redirect(next_url or 'home')
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
@@ -131,17 +134,17 @@ def login(request):
         if user is not None:
             auth.login(request, user)
             login_func.post_login_setup(request, user)
-            return redirect('home')
+            return redirect(next_url or 'home')
         else:
             error_message = request.session.pop(
                 'login_error', 'Ungültige Anmeldeinformationen')
-            return render(request, "login.html", {"error": error_message})
-    return render(request, "login.html")
+            return render(request, "login.html", {"error": error_message, "next": next_url})
+    return render(request, "login.html", {"next": next_url})
 
 
 def profile(request):
     if not request.user.is_authenticated:
-        return redirect('login')
+        return redirect_to_login(request.get_full_path())
 
     training_results = TrainingResultData.objects.filter(
         user=request.user
@@ -172,7 +175,7 @@ def logout(request):
 
 def exam_list(request):
     if not request.user.is_authenticated:
-        return redirect('login')
+        return redirect_to_login(request.get_full_path())
 
     open_exams = Exams.objects.filter(
         _user_exam_filter(request.user), visible=True, archived=False
@@ -197,7 +200,7 @@ def exam_list(request):
 
 def exam_start(request, exam_id):
     if not request.user.is_authenticated:
-        return redirect('login')
+        return redirect_to_login(request.get_full_path())
 
     exam = get_object_or_404(
         Exams.objects.filter(_user_exam_filter(request.user), visible=True).distinct(),
@@ -228,7 +231,7 @@ def exam_start(request, exam_id):
 
 def exam_run(request, exam_id):
     if not request.user.is_authenticated:
-        return redirect('login')
+        return redirect_to_login(request.get_full_path())
 
     exam = get_object_or_404(
         Exams.objects.filter(_user_exam_filter(request.user), visible=True).distinct(),
@@ -359,7 +362,7 @@ def _save_exam_result(user, exam, question_ids, answers):
 
 def exam_result(request, exam_id):
     if not request.user.is_authenticated:
-        return redirect('login')
+        return redirect_to_login(request.get_full_path())
 
     exam = get_object_or_404(Exams, pk=exam_id)
     result = ExamResultData.objects.filter(user=request.user, exam=exam).order_by('-meta_time').first()
@@ -422,7 +425,7 @@ def exam_result(request, exam_id):
 
 def excercise(request):
     if not request.user.is_authenticated:
-        return redirect('login')
+        return redirect_to_login(request.get_full_path())
 
     last_trainings = TrainingResultData.objects.filter(
         user=request.user
@@ -438,15 +441,17 @@ def excercise(request):
         'sample_group': sample_group,
     })
 
+def _visible_works(user):
+    """Dienste, die der Nutzer sehen darf: keine Entwürfe, nur ohne Gruppe oder für seine Gruppen."""
+    return Work.objects.filter(is_draft=False).filter(
+        Q(groups__isnull=True) | Q(groups__in=user.groups.all())
+    ).distinct()
+
+
 def work_list(request):
     if not request.user.is_authenticated:
-        return redirect('login')
-    from django.db.models import Q as _Q
-    qs = Work.objects.filter(is_draft=False)
-    if request.user.is_authenticated:
-        user_groups = request.user.groups.all()
-        qs = qs.filter(_Q(groups__isnull=True) | _Q(groups__in=user_groups)).distinct()
-    works = qs.order_by('date')
+        return redirect_to_login(request.get_full_path())
+    works = _visible_works(request.user).order_by('date')
 
     # Für den Kalender: Start- und Endtag in lokaler Zeit (Dienste ohne Ende dauern einen Tag)
     calendar_works = []
@@ -465,15 +470,15 @@ def work_list(request):
 
 def work_detail(request, work_id):
     if not request.user.is_authenticated:
-        return redirect('login')
-    work = get_object_or_404(Work, pk=work_id)
+        return redirect_to_login(request.get_full_path())
+    work = get_object_or_404(_visible_works(request.user), pk=work_id)
     return render(request, 'work-detail.html', {'work': work})
 
 
 def work_training_start(request, work_id):
     if not request.user.is_authenticated:
-        return redirect('login')
-    work = get_object_or_404(Work, pk=work_id)
+        return redirect_to_login(request.get_full_path())
+    work = get_object_or_404(_visible_works(request.user), pk=work_id)
     question_ids = list(work.theory_questions.values_list('pk', flat=True))
     if not question_ids:
         return redirect('work_detail', work_id=work_id)
@@ -618,7 +623,7 @@ def _save_training_result(user, question_ids, answers):
 
 def training_result(request, result_id):
     if not request.user.is_authenticated:
-        return redirect('login')
+        return redirect_to_login(request.get_full_path())
 
     result = get_object_or_404(TrainingResultData, pk=result_id, user=request.user)
     question_ids = result.questions or []
@@ -674,6 +679,11 @@ def training_result(request, result_id):
     })
 
 
+def _published(model):
+    """Nur freigegebene Aufgaben: weder die Aufgabe noch Katalog oder Stufe im Entwurf."""
+    return model.objects.filter(is_draft=False, catalog__is_draft=False, catalog__level__is_draft=False)
+
+
 # ── PRAKTISCHE AUFGABEN ───────────────────────────────────────────────────────
 
 def practical_list(request):
@@ -699,7 +709,7 @@ def practical_list(request):
 
 
 def practical_detail(request, q_id):
-    question = get_object_or_404(Questions_Practical, pk=q_id)
+    question = get_object_or_404(_published(Questions_Practical), pk=q_id)
     assessment = None
     if request.user.is_authenticated:
         assessment = PracticalSelfAssessment.objects.filter(user=request.user, question=question).first()
@@ -750,7 +760,7 @@ def group_list(request):
 
 
 def group_detail(request, q_id):
-    question = get_object_or_404(Questions_GroupExercise, pk=q_id)
+    question = get_object_or_404(_published(Questions_GroupExercise), pk=q_id)
     assessment = None
     if request.user.is_authenticated:
         assessment = GroupExerciseSelfAssessment.objects.filter(user=request.user, question=question).first()

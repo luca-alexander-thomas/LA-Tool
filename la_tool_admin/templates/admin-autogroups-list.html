@@ -3,7 +3,9 @@
 {% block page_title %}Automatische Gruppen · Admin{% endblock %}
 
 {% block admin_content %}
+{% if perms.app.manage_settings %}
 <a href="{% url 'admin_settings' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Einstellungen</a>
+{% endif %}
 
 <div class="page-header">
     <div class="max-w-2xl">
@@ -13,7 +15,9 @@
             Gruppenregeln werden bei jedem Login ausgewertet – Mitgliedschaften werden automatisch hinzugefügt oder entfernt.
         </p>
     </div>
+    {% if perms.app.manage_groups %}
     <a href="{% url 'admin_autogroup_create' %}" class="btn btn-primary">{% include "icons/plus.html" %} Neue Gruppe</a>
+    {% endif %}
 </div>
 
 {% if rules %}
@@ -25,7 +29,7 @@
                 <th>Divera-Qualifikationen</th>
                 <th>Entra-Gruppen-IDs</th>
                 <th>Mitglieder</th>
-                <th><span class="sr-only">Aktionen</span></th>
+                {% if perms.app.manage_groups %}<th><span class="sr-only">Aktionen</span></th>{% endif %}
             </tr>
         </thead>
         <tbody>
@@ -47,9 +51,11 @@
                     {% endif %}
                 </td>
                 <td class="text-xs whitespace-nowrap text-ink-2">{{ rule.group.user_set.count }} Nutzer</td>
+                {% if perms.app.manage_groups %}
                 <td class="text-right">
                     <a href="{% url 'admin_autogroup_edit' rule.group.pk %}" class="btn btn-sm btn-secondary">{% include "icons/pencil-square.html" with cls="size-4" %} Bearbeiten</a>
                 </td>
+                {% endif %}
             </tr>
             {% endfor %}
         </tbody>
@@ -58,7 +64,9 @@
 {% else %}
 <div class="empty-state">
     <p class="mb-4">Noch keine automatischen Gruppen angelegt.</p>
+    {% if perms.app.manage_groups %}
     <a href="{% url 'admin_autogroup_create' %}" class="btn btn-primary">{% include "icons/plus.html" %} Erste Gruppe anlegen</a>
+    {% endif %}
 </div>
 {% endif %}
 {% endblock %}

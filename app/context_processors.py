@@ -52,13 +52,18 @@ def la_filter(request):
     all_levels = list(Levels.objects.order_by('order'))
     valid_slugs = {l.slug for l in all_levels}
 
-    level_slug = request.session.get('la_filter')
+    # Fehlerseiten können ohne Session/Auth-Middleware gerendert werden
+    session = getattr(request, 'session', {})
+    user = getattr(request, 'user', None)
+    is_authenticated = bool(user and user.is_authenticated)
+
+    level_slug = session.get('la_filter')
 
     if not level_slug or level_slug not in valid_slugs:
         current_slug = None
-        if request.user.is_authenticated:
+        if is_authenticated:
             try:
-                current_slug = request.user.profile.divera_la_level
+                current_slug = user.profile.divera_la_level
             except Exception:
                 pass
 
@@ -73,7 +78,7 @@ def la_filter(request):
             level_slug = all_levels[0].slug if all_levels else ''
 
         if level_slug:
-            request.session['la_filter'] = level_slug
+            session['la_filter'] = level_slug
 
     current_level = next((l for l in all_levels if l.slug == level_slug), None)
 
@@ -81,5 +86,5 @@ def la_filter(request):
         'la_filter': level_slug or '',
         'current_level': current_level,
         'all_levels': all_levels,
-        'user_has_admin_access': _user_has_admin_access(request.user),
+        'user_has_admin_access': is_authenticated and _user_has_admin_access(user),
     }

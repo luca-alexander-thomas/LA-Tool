@@ -2,7 +2,16 @@ from django.contrib.auth.models import User
 from django.contrib import auth
 import requests
 import la_tool.env as env
+from django.utils.http import url_has_allowed_host_and_scheme
 from la_tool_admin.models import Profile
+
+
+def safe_next_url(request, url):
+    """Rücksprung-Adresse nach dem Login, nur wenn sie auf diese Seite zeigt (kein Open Redirect)."""
+    if url and url_has_allowed_host_and_scheme(url, allowed_hosts={request.get_host()},
+                                               require_https=request.is_secure()):
+        return url
+    return None
 
 
 def _store_divera_cluster_quals(cluster_data):

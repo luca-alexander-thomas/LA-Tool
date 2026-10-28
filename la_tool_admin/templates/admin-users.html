@@ -80,6 +80,7 @@
                         {# Lokaler Nutzer: volle Verwaltung #}
                         <div class="flex flex-wrap justify-end gap-2">
                             <button class="btn btn-sm btn-secondary" type="button" @click="perms = !perms" :aria-expanded="perms" aria-controls="perms-{{ u.pk }}">{% include "icons/shield-check.html" with cls="size-4" %} Berechtigungen</button>
+                            {% if perms.app.manage_groups %}
                             {% if u.is_la_admin %}
                                 <form method="post">
                                     {% csrf_token %}
@@ -95,6 +96,8 @@
                                     <button type="submit" class="btn btn-sm btn-soft">Admin machen</button>
                                 </form>
                             {% endif %}
+                            {% endif %}
+                            {% if perms.app.manage_groups or not u.has_admin_access %}
                             <form method="post">
                                 {% csrf_token %}
                                 <input type="hidden" name="user_id" value="{{ u.pk }}">
@@ -113,11 +116,13 @@
                                     {% include "icons/trash.html" with cls="size-4" %} Löschen
                                 </button>
                             </form>
+                            {% endif %}
                         </div>
                     {% else %}
                         {# Divera / Entra Nutzer: Berechtigungen + löschen #}
                         <div class="flex flex-wrap justify-end gap-2">
                             <button class="btn btn-sm btn-secondary" type="button" @click="perms = !perms" :aria-expanded="perms" aria-controls="perms-{{ u.pk }}">{% include "icons/shield-check.html" with cls="size-4" %} Berechtigungen</button>
+                            {% if perms.app.manage_groups or not u.has_admin_access %}
                             <form method="post">
                                 {% csrf_token %}
                                 <input type="hidden" name="user_id" value="{{ u.pk }}">
@@ -127,6 +132,7 @@
                                     {% include "icons/trash.html" with cls="size-4" %} Löschen
                                 </button>
                             </form>
+                            {% endif %}
                         </div>
                     {% endif %}
                 </td>
@@ -140,7 +146,7 @@
                         {% if codename in u.la_perms_group %}
                         {# Permission comes from a group — show as info badge, not clickable #}
                         <span class="inline-flex min-h-9 cursor-default items-center rounded-lg bg-sky-100 px-3 py-1.5 text-xs font-semibold text-sky-800 dark:bg-sky-500/15 dark:text-sky-300" title="Berechtigung über Gruppe">{{ label }}</span>
-                        {% else %}
+                        {% elif perms.app.manage_groups %}
                         <form method="post">
                             {% csrf_token %}
                             <input type="hidden" name="user_id" value="{{ u.pk }}">
@@ -151,6 +157,10 @@
                                 {{ label }}
                             </button>
                         </form>
+                        {% elif codename in u.la_perms_direct %}
+                        <span class="inline-flex min-h-9 cursor-default items-center gap-1 rounded-lg bg-green-100 px-3 py-1.5 text-xs font-semibold text-green-800 dark:bg-green-500/15 dark:text-green-300" title="Direkt zugewiesen">{% include "icons/check.html" with cls="size-4" %} {{ label }}</span>
+                        {% else %}
+                        <span class="inline-flex min-h-9 cursor-default items-center rounded-lg bg-surface-2 px-3 py-1.5 text-xs font-semibold text-ink-3" title="Nicht zugewiesen">{{ label }}</span>
                         {% endif %}
                         {% endfor %}
                     </div>

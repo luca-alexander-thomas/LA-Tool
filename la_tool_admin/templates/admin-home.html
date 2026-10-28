@@ -39,7 +39,7 @@
         <div class="flex-1 space-y-2 p-4">
             {% for r in recent_results %}
             {% with meta=r.meta_reference %}
-            <a href="{% url 'admin_exam_result_user' r.exam.pk r.pk %}" class="list-row">
+            {% if perms.app.view_exam_results %}<a href="{% url 'admin_exam_result_user' r.exam.pk r.pk %}" class="list-row">{% else %}<div class="list-row">{% endif %}
                 <div class="min-w-0 flex-1">
                     <p class="truncate text-sm font-semibold">{{ r.user.last_name }}, {{ r.user.first_name }}</p>
                     <p class="truncate text-xs text-ink-3">{{ r.exam.name }} · {{ r.meta_time|date:"d.m.Y H:i" }}</p>
@@ -54,7 +54,7 @@
                     <span class="badge badge-neutral">offen</span>
                     {% endif %}
                 </div>
-            </a>
+            {% if perms.app.view_exam_results %}</a>{% else %}</div>{% endif %}
             {% endwith %}
             {% empty %}
             <p class="empty-state">Noch keine Prüfungsabgaben.</p>
@@ -72,7 +72,7 @@
         </div>
         <div class="flex-1 space-y-2 p-4">
             {% for w in upcoming_works %}
-            <a href="{% url 'admin_work_edit' w.pk %}" class="list-row">
+            {% if perms.app.manage_work %}<a href="{% url 'admin_work_edit' w.pk %}" class="list-row">{% else %}<div class="list-row">{% endif %}
                 <div class="min-w-0 flex-1">
                     <p class="truncate text-sm font-semibold">{{ w.title }}</p>
                     <p class="truncate text-xs text-ink-3">{{ w.date|date:"d.m.Y" }}{% if w.location %} · {{ w.location }}{% endif %}</p>
@@ -80,7 +80,7 @@
                 {% if w.level %}
                 <span class="badge {{ w.level.badge_bg_class|default:'badge-primary' }} {{ w.level.badge_text_class }}">{{ w.level.name }}</span>
                 {% endif %}
-            </a>
+            {% if perms.app.manage_work %}</a>{% else %}</div>{% endif %}
             {% empty %}
             <p class="empty-state">Keine kommenden Dienste.</p>
             {% endfor %}

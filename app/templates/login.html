@@ -20,6 +20,7 @@
 
         <form method="post" class="space-y-4">
             {% csrf_token %}
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
             <div>
                 <label class="form-label" for="login-username">Benutzername</label>
                 <input class="form-control" type="text" id="login-username" name="username" placeholder="Benutzername"
@@ -40,7 +41,7 @@
                 <span class="h-px flex-1 bg-line"></span>
             </div>
 
-            <a class="btn btn-secondary w-full" href="{% url 'microsoft_login' %}">
+            <a class="btn btn-secondary w-full" href="{% url 'microsoft_login' %}{% if next %}?next={{ next|urlencode }}{% endif %}">
                 <svg class="size-5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
                     <path d="M7.462 0H0v7.19h7.462zM16 0H8.538v7.19H16zM7.462 8.211H0V16h7.462zm8.538 0H8.538V16H16z"></path>
                 </svg>

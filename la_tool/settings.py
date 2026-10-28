@@ -59,6 +59,8 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'la_tool.urls'
 
 # Authentication Backends für MS Entra ID SSO + lokales Fallback
+LOGIN_URL = 'login'
+
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]

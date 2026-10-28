@@ -9,7 +9,9 @@
         <h1 class="page-title mt-1">Admin Prüfungen</h1>
         <p class="page-subtitle">Prüfungen erstellen, einsehen und bearbeiten</p>
     </div>
+    {% if perms.app.manage_exams %}
     <a class="btn btn-primary" href="{% url 'admin_exam_create' %}">{% include "icons/plus.html" %} Prüfung</a>
+    {% endif %}
 </div>
 
 <div class="grid gap-6 xl:grid-cols-3">
@@ -48,7 +50,9 @@
                         </div>
                     </div>
                 </div>
+                {% if perms.app.manage_exams or perms.app.view_exam_results %}
                 <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4">
+                    {% if perms.app.manage_exams %}
                     <form method="post" action="{% url 'admin_exam_toggle' item.exam.pk 'archived' %}">{% csrf_token %}
                         <button type="submit" class="btn btn-sm btn-secondary" title="Archivieren"
                                 onclick="return confirm('Prüfung archivieren?')">
@@ -70,11 +74,17 @@
                             {% if item.exam.closed %}Entsperren{% else %}Sperren{% endif %}
                         </button>
                     </form>
+                    {% endif %}
                     <div class="ml-auto flex gap-2">
+                        {% if perms.app.view_exam_results %}
                         <a class="btn btn-sm btn-soft" href="{% url 'admin_exam_results' item.exam.pk %}">{% include "icons/chart-bar.html" with cls="size-4" %} Ergebnisse</a>
+                        {% endif %}
+                        {% if perms.app.manage_exams %}
                         <a class="btn btn-sm btn-secondary" href="{% url 'admin_exam_edit' item.exam.pk %}">{% include "icons/pencil-square.html" with cls="size-4" %} Bearbeiten</a>
+                        {% endif %}
                     </div>
                 </div>
+                {% endif %}
             </div>
             {% empty %}
             <p class="empty-state">Noch keine Prüfungen angelegt.</p>
@@ -96,8 +106,12 @@
                         <span class="text-red-700 dark:text-red-400">{{ item.failed }} nicht bestanden</span>
                     </div>
                 </div>
+                {% if perms.app.view_exam_results %}
                 <a class="btn btn-ghost btn-icon" href="{% url 'admin_exam_results' item.exam.pk %}" title="Ergebnisse" aria-label="Ergebnisse">{% include "icons/chart-bar.html" %}</a>
+                {% endif %}
+                {% if perms.app.manage_exams %}
                 <a class="btn btn-ghost btn-icon" href="{% url 'admin_exam_edit' item.exam.pk %}" title="Bearbeiten" aria-label="Bearbeiten">{% include "icons/pencil-square.html" %}</a>
+                {% endif %}
             </div>
             {% empty %}
             <p class="empty-state">Kein Archiv</p>

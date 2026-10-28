@@ -2,15 +2,18 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, Http404
 from django.contrib import auth
 from django.conf import settings
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User, Group, Permission
+from django.contrib.auth.views import redirect_to_login
+from django.core.exceptions import PermissionDenied
+from functools import wraps
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Exists, OuterRef
 from app.models import (
     Questions_Catalogs, Questions_Theory, Questions_Practical,
     Questions_GroupExercise, Exams, ExamResultData, Work, SiteSettings, Levels,
 )
-from app.login_function import post_login_setup
+from app.login_function import post_login_setup, safe_next_url
 from .forms import CatalogForm, TheoryQuestionForm, PracticalForm, GroupExerciseForm, ExamForm, WorkForm, WorkCreateForm, ImportQuestionForm, LevelForm
 from .models import Profile
 import msal
@@ -43,16 +46,33 @@ APP_PERMISSIONS = [
 ]
 
 
-def admin_required(view_func):
-    """Decorator: Zugriff nur für Nutzer mit der 'access_admin'-Berechtigung (oder Superuser)."""
-    def wrapper(request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return redirect('login')
-        if not request.user.has_perm('app.access_admin'):
-            return redirect('home')
-        return view_func(request, *args, **kwargs)
-    wrapper.__name__ = view_func.__name__
-    return wrapper
+def admin_permission_required(*perms):
+    """Decorator für Admin-Seiten: Anmeldung, 'access_admin' und alle übergebenen Rechte nötig.
+
+    Nicht angemeldet -> Login (mit Rücksprung), fehlendes Recht -> 403-Seite mit Begründung.
+    """
+    required = ('app.access_admin',) + perms
+
+    def decorator(view_func):
+        @wraps(view_func)
+        def wrapper(request, *args, **kwargs):
+            if not request.user.is_authenticated:
+                return redirect_to_login(request.get_full_path())
+            if not request.user.has_perms(required):
+                raise PermissionDenied(_missing_permission_text(request.user, required))
+            return view_func(request, *args, **kwargs)
+        return wrapper
+    return decorator
+
+
+def _missing_permission_text(user, required):
+    labels = dict(APP_PERMISSIONS)
+    missing = [labels.get(p.split('.', 1)[1], p) for p in required if not user.has_perm(p)]
+    return 'Dir fehlt die Berechtigung: ' + ', '.join(missing) + '.'
+
+
+# Zugriff auf den Admin-Bereich ohne weiteres Einzelrecht
+admin_required = admin_permission_required()
 
 
 def send_divera_notification(user_profile, subject, message):
@@ -199,6 +219,7 @@ def microsoft_login(request):
     # State generieren für CSRF-Protection
     state = str(uuid.uuid4())
     request.session['oauth_state'] = state
+    request.session['login_next'] = safe_next_url(request, request.GET.get('next'))
 
     # Authorization URL erstellen
     auth_url = client.get_authorization_request_url(
@@ -307,7 +328,7 @@ def microsoft_callback(request):
         if 'oauth_state' in request.session:
             del request.session['oauth_state']
 
-        return redirect('home')
+        return redirect(request.session.pop('login_next', None) or 'home')
 
     except Exception as e:
         return render(request, 'login.html', {
@@ -316,7 +337,7 @@ def microsoft_callback(request):
 
 # ── NUTZERVERWALTUNG ─────────────────────────────────────────────────────────
 
-@permission_required('app.manage_users', raise_exception=True)
+@admin_permission_required('app.manage_users')
 def admin_users(request):
     admin_group = Group.objects.filter(name='LA-Tool-Admins').first()
 
@@ -324,6 +345,14 @@ def admin_users(request):
         user_id = request.POST.get('user_id')
         action = request.POST.get('action')
         target = get_object_or_404(User, pk=user_id)
+
+        # Rechte vergeben/entziehen und Eingriffe in Admin-Konten (Passwort, Löschen) nur mit
+        # 'manage_groups' – sonst könnte 'manage_users' sich über Dritte Rechte verschaffen.
+        needs_group_perm = action in ('make_admin', 'remove_admin', 'toggle_perm') or (
+            action in ('reset_password', 'delete_user') and target.has_perm('app.access_admin')
+        )
+        if needs_group_perm and not request.user.has_perm('app.manage_groups'):
+            raise PermissionDenied(_missing_permission_text(request.user, ('app.manage_groups',)))
 
         if not target.is_superuser and target.pk != request.user.pk:
             if action == 'make_admin':
@@ -398,6 +427,7 @@ def admin_users(request):
             c for c, _ in APP_PERMISSIONS
             if c not in u.la_perms_direct and u.has_perm(f'app.{c}')
         }
+        u.has_admin_access = u.is_superuser or 'access_admin' in u.la_perms_direct | u.la_perms_group
 
     return render(request, 'admin-users.html', {
         'user': request.user,
@@ -424,8 +454,7 @@ def admin_draft_toggle(request, model, pk):
     }
     required_perm = perm_map.get(model)
     if required_perm and not request.user.has_perm(f'app.{required_perm}'):
-        from django.core.exceptions import PermissionDenied
-        raise PermissionDenied
+        raise PermissionDenied(_missing_permission_text(request.user, (f'app.{required_perm}',)))
     model_map = {
         'level': Levels,
         'catalog': Questions_Catalogs,
@@ -470,7 +499,7 @@ def admin_catalog_list(request):
     })
 
 
-@permission_required('app.manage_catalogs', raise_exception=True)
+@admin_permission_required('app.manage_catalogs')
 def admin_catalog_create(request):
     form = CatalogForm(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():
@@ -501,7 +530,7 @@ def admin_catalog_detail(request, catalog_id):
     })
 
 
-@permission_required('app.manage_catalogs', raise_exception=True)
+@admin_permission_required('app.manage_catalogs')
 def admin_catalog_update(request, catalog_id):
     catalog = get_object_or_404(Questions_Catalogs, pk=catalog_id)
     if request.method == 'POST':
@@ -511,7 +540,7 @@ def admin_catalog_update(request, catalog_id):
     return redirect('admin_catalog_detail', catalog_id=catalog_id)
 
 
-@permission_required('app.manage_catalogs', raise_exception=True)
+@admin_permission_required('app.manage_catalogs')
 def admin_catalog_delete(request, catalog_id):
     catalog = get_object_or_404(Questions_Catalogs, pk=catalog_id)
     if request.method == 'POST':
@@ -522,7 +551,7 @@ def admin_catalog_delete(request, catalog_id):
 
 # ── THEORIEFRAGEN ─────────────────────────────────────────────────────────────
 
-@permission_required('app.manage_theory', raise_exception=True)
+@admin_permission_required('app.manage_theory')
 def admin_theory_create(request, catalog_id):
     catalog = get_object_or_404(Questions_Catalogs, pk=catalog_id)
     if request.method == 'POST':
@@ -548,7 +577,7 @@ def admin_theory_create(request, catalog_id):
     })
 
 
-@permission_required('app.manage_theory', raise_exception=True)
+@admin_permission_required('app.manage_theory')
 def admin_theory_edit(request, catalog_id, q_id):
     catalog = get_object_or_404(Questions_Catalogs, pk=catalog_id)
     question = get_object_or_404(Questions_Theory, pk=q_id, catalog=catalog)
@@ -585,7 +614,7 @@ def admin_theory_edit(request, catalog_id, q_id):
     })
 
 
-@permission_required('app.manage_theory', raise_exception=True)
+@admin_permission_required('app.manage_theory')
 def admin_theory_delete(request, catalog_id, q_id):
     question = get_object_or_404(Questions_Theory, pk=q_id, catalog_id=catalog_id)
     if request.method == 'POST':
@@ -746,7 +775,7 @@ def _parse_import_file(file_obj, filename):
         return rows
 
 
-@permission_required('app.manage_theory', raise_exception=True)
+@admin_permission_required('app.manage_theory')
 def admin_import_questions(request):
     catalog_id = request.GET.get('catalog')
     initial = {}
@@ -829,7 +858,7 @@ def admin_import_questions(request):
     })
 
 
-@permission_required('app.manage_theory', raise_exception=True)
+@admin_permission_required('app.manage_theory')
 def admin_import_example(request, fmt):
     if fmt == 'xlsx':
         try:
@@ -900,7 +929,7 @@ def admin_import_example(request, fmt):
 
 # ── PRAKTISCHE AUFGABEN ───────────────────────────────────────────────────────
 
-@permission_required('app.manage_practical', raise_exception=True)
+@admin_permission_required('app.manage_practical')
 def admin_practical_create(request, catalog_id):
     import uuid as _uuid
     from django.core.files.storage import default_storage
@@ -945,7 +974,7 @@ def admin_practical_create(request, catalog_id):
     })
 
 
-@permission_required('app.manage_practical', raise_exception=True)
+@admin_permission_required('app.manage_practical')
 def admin_practical_edit(request, catalog_id, q_id):
     catalog = get_object_or_404(Questions_Catalogs, pk=catalog_id)
     question = get_object_or_404(Questions_Practical, pk=q_id, catalog=catalog)
@@ -968,7 +997,7 @@ def admin_practical_edit(request, catalog_id, q_id):
     })
 
 
-@permission_required('app.manage_practical', raise_exception=True)
+@admin_permission_required('app.manage_practical')
 def admin_practical_delete(request, catalog_id, q_id):
     question = get_object_or_404(Questions_Practical, pk=q_id, catalog_id=catalog_id)
     if request.method == 'POST':
@@ -978,7 +1007,7 @@ def admin_practical_delete(request, catalog_id, q_id):
 
 # ── GRUPPENAUFGABEN ───────────────────────────────────────────────────────────
 
-@permission_required('app.manage_group_exercises', raise_exception=True)
+@admin_permission_required('app.manage_group_exercises')
 def admin_group_create(request, catalog_id):
     import uuid as _uuid
     from django.core.files.storage import default_storage
@@ -1022,7 +1051,7 @@ def admin_group_create(request, catalog_id):
     })
 
 
-@permission_required('app.manage_group_exercises', raise_exception=True)
+@admin_permission_required('app.manage_group_exercises')
 def admin_group_edit(request, catalog_id, q_id):
     catalog = get_object_or_404(Questions_Catalogs, pk=catalog_id)
     question = get_object_or_404(Questions_GroupExercise, pk=q_id, catalog=catalog)
@@ -1045,7 +1074,7 @@ def admin_group_edit(request, catalog_id, q_id):
     })
 
 
-@permission_required('app.manage_group_exercises', raise_exception=True)
+@admin_permission_required('app.manage_group_exercises')
 def admin_group_delete(request, catalog_id, q_id):
     question = get_object_or_404(Questions_GroupExercise, pk=q_id, catalog_id=catalog_id)
     if request.method == 'POST':
@@ -1069,8 +1098,7 @@ def admin_file_confirm(request):
     model = pending['model']
     file_perm = 'manage_practical' if model == 'practical' else 'manage_group_exercises'
     if not request.user.has_perm(f'app.{file_perm}'):
-        from django.core.exceptions import PermissionDenied
-        raise PermissionDenied
+        raise PermissionDenied(_missing_permission_text(request.user, (f'app.{file_perm}',)))
     temp_path = pending['temp_path']
     existing_path = pending['existing_path']
     form_data = pending['form_data']
@@ -1172,7 +1200,7 @@ def admin_exam_list(request):
     })
 
 
-@permission_required('app.manage_exams', raise_exception=True)
+@admin_permission_required('app.manage_exams')
 def admin_exam_create(request):
     catalogs = Questions_Catalogs.objects.prefetch_related('questions_theory_set').order_by('level__order', 'title')
     all_users = User.objects.order_by('last_name', 'first_name')
@@ -1228,7 +1256,7 @@ def admin_exam_create(request):
     })
 
 
-@permission_required('app.manage_exams', raise_exception=True)
+@admin_permission_required('app.manage_exams')
 def admin_exam_edit(request, exam_id):
     exam = get_object_or_404(Exams, pk=exam_id)
     catalogs = Questions_Catalogs.objects.order_by('level__order', 'title')
@@ -1278,7 +1306,7 @@ def admin_exam_edit(request, exam_id):
     })
 
 
-@permission_required('app.manage_exams', raise_exception=True)
+@admin_permission_required('app.manage_exams')
 def admin_exam_delete(request, exam_id):
     exam = get_object_or_404(Exams, pk=exam_id)
     if request.method == 'POST':
@@ -1286,7 +1314,7 @@ def admin_exam_delete(request, exam_id):
     return redirect('admin_exam_list')
 
 
-@permission_required('app.manage_exams', raise_exception=True)
+@admin_permission_required('app.manage_exams')
 def admin_exam_toggle(request, exam_id, field):
     if request.method != 'POST':
         return redirect('admin_exam_list')
@@ -1297,7 +1325,7 @@ def admin_exam_toggle(request, exam_id, field):
     return redirect('admin_exam_list')
 
 
-@permission_required('app.view_exam_results', raise_exception=True)
+@admin_permission_required('app.view_exam_results')
 def admin_exam_results(request, exam_id):
     exam = get_object_or_404(Exams, pk=exam_id)
     results = ExamResultData.objects.filter(exam=exam).select_related('user').order_by('-meta_time')
@@ -1317,7 +1345,7 @@ def admin_exam_results(request, exam_id):
     })
 
 
-@permission_required('app.view_exam_results', raise_exception=True)
+@admin_permission_required('app.view_exam_results')
 def admin_exam_result_user(request, exam_id, result_id):
     exam = get_object_or_404(Exams, pk=exam_id)
     result = get_object_or_404(ExamResultData, pk=result_id, exam=exam)
@@ -1365,7 +1393,7 @@ def admin_exam_result_user(request, exam_id, result_id):
     })
 
 
-@permission_required('app.release_exam_results', raise_exception=True)
+@admin_permission_required('app.release_exam_results')
 def admin_exam_result_release(request, exam_id, result_id):
     if request.method != 'POST':
         return redirect('admin_exam_results', exam_id=exam_id)
@@ -1400,7 +1428,7 @@ def admin_work_list(request):
     return render(request, 'admin-work.html', {'works': works})
 
 
-@permission_required('app.manage_work', raise_exception=True)
+@admin_permission_required('app.manage_work')
 def admin_work_create(request):
     form = WorkCreateForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
@@ -1416,7 +1444,7 @@ def admin_work_create(request):
     })
 
 
-@permission_required('app.manage_work', raise_exception=True)
+@admin_permission_required('app.manage_work')
 def admin_work_edit(request, work_id):
     work = get_object_or_404(Work, pk=work_id)
     catalogs = Questions_Catalogs.objects.prefetch_related(
@@ -1453,7 +1481,7 @@ def admin_work_edit(request, work_id):
     })
 
 
-@permission_required('app.manage_work', raise_exception=True)
+@admin_permission_required('app.manage_work')
 def admin_work_delete(request, work_id):
     if request.method == 'POST':
         work = get_object_or_404(Work, pk=work_id)
@@ -1461,7 +1489,7 @@ def admin_work_delete(request, work_id):
     return redirect('admin_work_list')
 
 
-@permission_required('app.sync_divera_work', raise_exception=True)
+@admin_permission_required('app.sync_divera_work')
 def admin_work_sync(request):
     if request.method == 'POST':
         from django.core.management import call_command
@@ -1471,7 +1499,7 @@ def admin_work_sync(request):
 
 # ── EINSTELLUNGEN ─────────────────────────────────────────────────────────────
 
-@permission_required('app.manage_settings', raise_exception=True)
+@admin_permission_required('app.manage_settings')
 def admin_settings(request):
     settings_obj = SiteSettings.get()
     error = None
@@ -1501,7 +1529,7 @@ def admin_level_list(request):
     })
 
 
-@permission_required('app.manage_levels', raise_exception=True)
+@admin_permission_required('app.manage_levels')
 def admin_level_create(request):
     form = LevelForm(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():
@@ -1514,7 +1542,7 @@ def admin_level_create(request):
     })
 
 
-@permission_required('app.manage_levels', raise_exception=True)
+@admin_permission_required('app.manage_levels')
 def admin_level_edit(request, level_id):
     level = get_object_or_404(Levels, pk=level_id)
     if request.method == 'POST':
@@ -1532,7 +1560,7 @@ def admin_level_edit(request, level_id):
     })
 
 
-@permission_required('app.manage_levels', raise_exception=True)
+@admin_permission_required('app.manage_levels')
 def admin_level_delete(request, level_id):
     level = get_object_or_404(Levels, pk=level_id)
     if request.method == 'POST':
@@ -1549,7 +1577,7 @@ def admin_level_delete(request, level_id):
 
 # ── AUTOMATISCHE GRUPPEN ──────────────────────────────────────────────────────
 
-@permission_required('app.manage_groups', raise_exception=True)
+@admin_permission_required('app.manage_groups')
 def admin_autogroup_list(request):
     from .models import AutoGroupRule
     rules = AutoGroupRule.objects.select_related('group').order_by('group__name')
@@ -1559,7 +1587,7 @@ def admin_autogroup_list(request):
     })
 
 
-@permission_required('app.manage_groups', raise_exception=True)
+@admin_permission_required('app.manage_groups')
 def admin_autogroup_create(request):
     from .models import AutoGroupRule, DiveraQualification
     from .forms import AutoGroupRuleForm
@@ -1592,7 +1620,7 @@ def admin_autogroup_create(request):
     })
 
 
-@permission_required('app.manage_groups', raise_exception=True)
+@admin_permission_required('app.manage_groups')
 def admin_autogroup_edit(request, group_id):
     from .models import AutoGroupRule, DiveraQualification
     from .forms import AutoGroupRuleForm
@@ -1630,7 +1658,7 @@ def admin_autogroup_edit(request, group_id):
     })
 
 
-@permission_required('app.manage_groups', raise_exception=True)
+@admin_permission_required('app.manage_groups')
 def admin_autogroup_delete(request, group_id):
     group = get_object_or_404(Group, pk=group_id)
     if request.method == 'POST':

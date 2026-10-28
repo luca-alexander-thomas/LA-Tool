@@ -8,13 +8,19 @@
         <p class="eyebrow">Admin</p>
         <h1 class="page-title mt-1">Admin — Dienste</h1>
     </div>
+    {% if perms.app.sync_divera_work or perms.app.manage_work %}
     <div class="flex flex-wrap gap-2">
+        {% if perms.app.sync_divera_work %}
         <form method="post" action="{% url 'admin_work_sync' %}">
             {% csrf_token %}
             <button type="submit" class="btn btn-secondary">{% include "icons/arrow-path.html" %} Divera synchronisieren</button>
         </form>
+        {% endif %}
+        {% if perms.app.manage_work %}
         <a href="{% url 'admin_work_create' %}" class="btn btn-primary">{% include "icons/plus.html" %} Manuell erstellen</a>
+        {% endif %}
     </div>
+    {% endif %}
 </div>
 
 {% if works %}
@@ -24,7 +30,7 @@
             <tr>
                 <th>Datum</th>
                 <th>Dienst</th>
-                <th class="text-right">Aktionen</th>
+                {% if perms.app.manage_work %}<th class="text-right">Aktionen</th>{% endif %}
             </tr>
         </thead>
         <tbody>
@@ -32,7 +38,11 @@
             <tr>
                 <td class="font-semibold whitespace-nowrap tabular-nums">{{ w.date|date:"d.m.Y" }}</td>
                 <td class="min-w-56">
+                    {% if perms.app.manage_work %}
                     <a href="{% url 'admin_work_edit' w.pk %}" class="font-semibold text-ink hover:text-accent-ink">{{ w.title }}</a>
+                    {% else %}
+                    <span class="font-semibold text-ink">{{ w.title }}</span>
+                    {% endif %}
                     <div class="mt-1 flex flex-wrap items-center gap-1.5">
                         {% if w.level %}
                         <span class="badge {{ w.level.badge_bg_class|default:'badge-primary' }} {{ w.level.badge_text_class }}">{{ w.level.name }}</span>
@@ -42,6 +52,7 @@
                         {% if w.location %}<span class="inline-flex items-center gap-1 text-xs text-ink-3">{% include "icons/map-pin.html" with cls="size-3.5" %} {{ w.location }}</span>{% endif %}
                     </div>
                 </td>
+                {% if perms.app.manage_work %}
                 <td>
                     <div class="flex items-center justify-end gap-2">
                         <form method="post" action="{% url 'admin_draft_toggle' 'work' w.pk %}">
@@ -57,6 +68,7 @@
                         <a class="btn btn-sm btn-secondary" href="{% url 'admin_work_edit' w.pk %}">{% include "icons/pencil-square.html" with cls="size-4" %} Bearbeiten</a>
                     </div>
                 </td>
+                {% endif %}
             </tr>
             {% endfor %}
         </tbody>
@@ -65,7 +77,9 @@
 {% else %}
 <div class="empty-state">
     <p>Noch keine Dienste vorhanden.</p>
+    {% if perms.app.sync_divera_work %}
     <p class="mt-1">Klicke auf "Divera synchronisieren" um Dienste aus Divera 24/7 zu importieren.</p>
+    {% endif %}
 </div>
 {% endif %}
 {% endblock %}

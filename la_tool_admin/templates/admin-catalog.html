@@ -9,7 +9,9 @@
         <h1 class="page-title mt-1">Fragenkataloge</h1>
         <p class="page-subtitle">Inhalte verwalten</p>
     </div>
+    {% if perms.app.manage_catalogs %}
     <a href="{% url 'admin_catalog_create' %}" class="btn btn-primary">{% include "icons/plus.html" %} Neuer Katalog</a>
+    {% endif %}
 </div>
 
 {% if catalogs %}
@@ -43,6 +45,7 @@
             </div>
         </div>
         <div class="flex flex-wrap items-center gap-2 sm:justify-end">
+            {% if perms.app.manage_catalogs %}
             <form method="post" action="{% url 'admin_draft_toggle' 'catalog' catalog.pk %}">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-sm {% if catalog.is_draft %}btn-soft{% else %}btn-secondary{% endif %}">
@@ -54,6 +57,9 @@
                 {% csrf_token %}
                 <button type="submit" class="btn btn-sm btn-danger-soft">{% include "icons/trash.html" with cls="size-4" %} Löschen</button>
             </form>
+            {% else %}
+            <a href="{% url 'admin_catalog_detail' catalog.pk %}" class="btn btn-sm btn-soft">{% include "icons/eye.html" with cls="size-4" %} Ansehen</a>
+            {% endif %}
         </div>
     </div>
     {% endfor %}
@@ -61,7 +67,9 @@
 {% else %}
     <div class="empty-state">
         <p>Noch keine Kataloge vorhanden.</p>
+        {% if perms.app.manage_catalogs %}
         <a href="{% url 'admin_catalog_create' %}" class="btn btn-primary mt-4">{% include "icons/plus.html" %} Ersten Katalog erstellen</a>
+        {% endif %}
     </div>
 {% endif %}
 {% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% comment %}
+Wird von Django bei fehlgeschlagener CSRF-Prüfung gezeigt – meist ist die Sitzung abgelaufen
+oder das Formular war zu lange offen.
+{% endcomment %}
+
+{% block page_title %}Sitzung abgelaufen{% endblock %}
+
+{% block site_content %}
+<div class="page-narrow">
+    <div class="card card-body flex flex-col items-center py-12 text-center sm:py-16">
+        <span class="icon-tile size-14">{% include "icons/arrow-path.html" with cls="size-8" %}</span>
+        <p class="eyebrow mt-6">Fehler 403</p>
+        <h1 class="page-title mt-2">Formular abgelaufen</h1>
+        <p class="page-subtitle max-w-md">Deine Sitzung ist abgelaufen oder das Formular war zu lange geöffnet. Lade die Seite neu und versuche es noch einmal.</p>
+        <div class="mt-8 flex flex-wrap justify-center gap-3">
+            <button type="button" class="btn btn-primary" onclick="history.back()">{% include "icons/arrow-left.html" %} Zurück</button>
+            <a href="{% url 'home' %}" class="btn btn-secondary">{% include "icons/home.html" %} Zur Startseite</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

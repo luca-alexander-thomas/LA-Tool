@@ -24,7 +24,15 @@
         <p class="mt-4 text-center text-2xl font-bold text-red-700 tabular-nums dark:text-red-400">{{ score }} von {{ total }} Punkten</p>
         {% endif %}
         <p class="mt-1 text-center text-xs text-ink-3">Abgegeben: {{ result.meta_time|date:"d.m.Y H:i" }}</p>
+        <p class="mt-3 text-center">
+            {% if result.state == 'published' %}
+            <span class="badge badge-success">freigegeben</span>
+            {% else %}
+            <span class="badge badge-neutral">nicht freigegeben</span>
+            {% endif %}
+        </p>
 
+        {% if perms.app.release_exam_results %}
         <form method="post" action="{% url 'admin_exam_result_release' exam.pk result.pk %}" class="mt-5 border-t border-line pt-5">
             {% csrf_token %}
             {% if result.state == 'published' %}
@@ -37,6 +45,7 @@
             <button type="submit" class="btn btn-success w-full">{% include "icons/check.html" with cls="size-4" %} Ergebnis freigeben</button>
             {% endif %}
         </form>
+        {% endif %}
     </section>
 
     {# Fragendetails #}
