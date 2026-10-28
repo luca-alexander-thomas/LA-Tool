@@ -116,6 +116,17 @@
         display: none !important;
     }
 
+    /* Grid-Elemente dürfen schmaler als ihr Inhalt werden. Sonst drücken lange einzeilige Texte
+       (truncate) oder Tabellen die Spalte über die Bildschirmbreite und der Browser zoomt die
+       ganze Seite heraus (v.a. mobil/PWA). */
+    .grid > * {
+        min-width: 0;
+    }
+
+    pre {
+        @apply max-w-full overflow-x-auto;
+    }
+
     ::selection {
         @apply bg-accent/20;
     }
@@ -401,8 +412,10 @@
     }
 
     /* Tabellen */
+    /* relative: absolut positionierte Inhalte (z.B. sr-only-Texte) bleiben im Scroll-Container,
+       statt die Seite zu verbreitern */
     .table-wrap {
-        @apply overflow-x-auto rounded-2xl border border-line bg-surface;
+        @apply relative overflow-x-auto rounded-2xl border border-line bg-surface;
     }
 
     .table {
