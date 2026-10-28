@@ -28,6 +28,7 @@
             {% endif %}
             <div class="min-w-0">
                 <div class="flex flex-wrap items-center gap-2">
+                    {% if catalog.short_title %}<span class="badge badge-neutral">{{ catalog.short_title }}</span>{% endif %}
                     <h2 class="section-title">{{ catalog.title }}</h2>
                     {% if catalog.is_draft %}<span class="badge badge-warning">Entwurf</span>{% endif %}
                 </div>

@@ -4,7 +4,7 @@
 
 {% block admin_content %}
 <div class="max-w-2xl">
-    <a href="{% url 'admin_catalog_detail' catalog.pk %}?tab=practical" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} {{ catalog.title }}</a>
+    <a href="{% url 'admin_catalog_detail' catalog.pk %}?tab=practical" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} {% if catalog.short_title %}{{ catalog.short_title }} · {% endif %}{{ catalog.title }}</a>
     <div class="page-header">
         <div>
             <p class="eyebrow">Praktische Aufgabe</p>

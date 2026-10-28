@@ -87,7 +87,7 @@
                            name="practical_ids" value="{{ p.pk }}" id="pp-{{ p.pk }}"
                            {% if p.pk in sel_practical_ids %}checked{% endif %}>
                     <label class="form-check-label" for="pp-{{ p.pk }}">
-                        {% if p.catalog %}{% if p.catalog.level %}<span class="badge {{ p.catalog.level.badge_bg_class|default:'badge-primary' }} {{ p.catalog.level.badge_text_class }} mr-1">{{ p.catalog.level.name }}</span>{% else %}<span class="badge badge-neutral mr-1">–</span>{% endif %}{% endif %}
+                        {% if p.catalog %}{% if p.catalog.short_title %}<span class="badge badge-neutral mr-1">{{ p.catalog.short_title }}</span>{% endif %}{% if p.catalog.level %}<span class="badge {{ p.catalog.level.badge_bg_class|default:'badge-primary' }} {{ p.catalog.level.badge_text_class }} mr-1">{{ p.catalog.level.name }}</span>{% else %}<span class="badge badge-neutral mr-1">–</span>{% endif %}{% endif %}
                         {% if p.number %}<span class="mr-1 text-ink-3">{{ p.number }}</span>{% endif %}{{ p.question|truncatechars:60 }}
                     </label>
                 </div>
@@ -104,7 +104,7 @@
                            name="group_ids" value="{{ g.pk }}" id="gp-{{ g.pk }}"
                            {% if g.pk in sel_group_ids %}checked{% endif %}>
                     <label class="form-check-label" for="gp-{{ g.pk }}">
-                        {% if g.catalog %}{% if g.catalog.level %}<span class="badge {{ g.catalog.level.badge_bg_class|default:'badge-primary' }} {{ g.catalog.level.badge_text_class }} mr-1">{{ g.catalog.level.name }}</span>{% else %}<span class="badge badge-neutral mr-1">–</span>{% endif %}{% endif %}
+                        {% if g.catalog %}{% if g.catalog.short_title %}<span class="badge badge-neutral mr-1">{{ g.catalog.short_title }}</span>{% endif %}{% if g.catalog.level %}<span class="badge {{ g.catalog.level.badge_bg_class|default:'badge-primary' }} {{ g.catalog.level.badge_text_class }} mr-1">{{ g.catalog.level.name }}</span>{% else %}<span class="badge badge-neutral mr-1">–</span>{% endif %}{% endif %}
                         {% if g.number %}<span class="mr-1 text-ink-3">{{ g.number }}</span>{% endif %}{{ g.question|truncatechars:60 }}
                     </label>
                 </div>

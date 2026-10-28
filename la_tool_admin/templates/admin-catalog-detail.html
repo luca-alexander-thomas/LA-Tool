@@ -9,6 +9,7 @@
     <div>
         <p class="eyebrow">Fragenkatalog</p>
         <div class="mt-1 flex flex-wrap items-center gap-2">
+            {% if catalog.short_title %}<span class="badge badge-neutral">{{ catalog.short_title }}</span>{% endif %}
             <h1 class="page-title">{{ catalog.title }}</h1>
             {% if catalog.is_draft %}<span class="badge badge-warning">Entwurf</span>{% endif %}
         </div>

@@ -93,6 +93,8 @@ class Questions_Catalogs(models.Model):
         ]
 
     def __str__(self):
+        if self.short_title:
+            return f'{self.short_title} – {self.title}'
         return self.title
 
 

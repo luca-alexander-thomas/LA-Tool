@@ -146,6 +146,7 @@
                                data-catalog="{{ entry.catalog.pk }}"
                                onclick="event.stopPropagation();toggleParent(this)">
                         <label class="flex flex-wrap items-center gap-2 text-sm font-semibold" for="parent-{{ entry.catalog.pk }}">
+                            {% if entry.catalog.short_title %}<span class="badge badge-neutral">{{ entry.catalog.short_title }}</span>{% endif %}
                             {{ entry.catalog.title }}
                             {% if entry.catalog.level %}
                             <span class="badge {{ entry.catalog.level.badge_bg_class|default:'badge-primary' }} {{ entry.catalog.level.badge_text_class }}">{{ entry.catalog.level.name }}</span>
