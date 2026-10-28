@@ -1,4 +1,4 @@
-# LA-Tool Design-System (Branch `design-v2`)
+# LA-Tool Design-System
 
 Frontend-Stack: **Django-Templates + Tailwind CSS v4 + Alpine.js + PWA**. Kein Bootstrap, kein Node.js.
 

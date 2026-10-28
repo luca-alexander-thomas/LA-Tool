@@ -7,6 +7,7 @@ from datetime import date
 from django.utils import timezone
 from django.urls import reverse
 from . import login_function as login_func
+from .context_processors import current_la_filter
 from .models import (
     Questions_Catalogs, Questions_Theory, TrainingResultData,
     Questions_Practical, Questions_GroupExercise,
@@ -486,7 +487,7 @@ def work_training_start(request, work_id):
 # ── THEORIE-TRAINING ─────────────────────────────────────────────────────────
 
 def training_config(request):
-    la = request.session.get('la_filter', '')
+    la = current_la_filter(request)
     catalogs = Questions_Catalogs.objects.select_related('level').filter(
         level__slug=la, is_draft=False, level__is_draft=False,
     ).order_by('title')
@@ -676,7 +677,7 @@ def training_result(request, result_id):
 # ── PRAKTISCHE AUFGABEN ───────────────────────────────────────────────────────
 
 def practical_list(request):
-    complexity = request.session.get('la_filter', '')
+    complexity = current_la_filter(request)
     qs = Questions_Practical.objects.select_related('catalog').filter(
         catalog__level__slug=complexity,
         is_draft=False,
@@ -727,7 +728,7 @@ def practical_detail(request, q_id):
 # ── GRUPPENAUFGABEN ───────────────────────────────────────────────────────────
 
 def group_list(request):
-    complexity = request.session.get('la_filter', '')
+    complexity = current_la_filter(request)
     qs = Questions_GroupExercise.objects.select_related('catalog').filter(
         catalog__level__slug=complexity,
         is_draft=False,

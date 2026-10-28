@@ -144,7 +144,10 @@
             <p class="text-sm font-semibold tracking-wider text-white/70 uppercase">THW-Jugend Gelsenkirchen</p>
             <h1 class="mt-2 text-3xl font-bold tracking-tight sm:text-5xl">Fit fürs Leistungsabzeichen.</h1>
             <p class="mt-4 text-base text-white/85 sm:text-lg">Theorie trainieren, Praxisaufgaben nachschlagen und Übungsprüfungen ablegen – für Bronze, Silber und Gold.</p>
-            <a class="btn btn-lg mt-8 bg-white text-thw-700 hover:bg-thw-50" href="{% url 'login' %}">Jetzt anmelden {% include "icons/arrow-right.html" %}</a>
+            <div class="mt-8 flex flex-wrap gap-3">
+                <a class="btn btn-lg bg-white text-thw-700 hover:bg-thw-50" href="{% url 'login' %}">Jetzt anmelden {% include "icons/arrow-right.html" %}</a>
+                <a class="btn btn-lg border border-white/40 text-white hover:bg-white/10" href="{% url 'training_config' %}">Ohne Anmeldung üben</a>
+            </div>
         </div>
     </section>
 

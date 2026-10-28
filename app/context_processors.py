@@ -39,6 +39,15 @@ def nav_section(request):
     return {'nav_section': _NAV_SECTIONS.get(match.url_name if match else None, '')}
 
 
+def current_la_filter(request):
+    """Slug der aktiven LA-Stufe; legt ihn beim ersten Aufruf in der Session ab.
+
+    Views nutzen das statt session['la_filter'] direkt, weil der Context-Processor
+    erst nach der View läuft (sonst ist die Session beim ersten Besuch leer).
+    """
+    return la_filter(request)['la_filter']
+
+
 def la_filter(request):
     all_levels = list(Levels.objects.order_by('order'))
     valid_slugs = {l.slug for l in all_levels}

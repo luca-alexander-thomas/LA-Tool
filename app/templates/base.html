@@ -35,7 +35,7 @@
     {% block extra_head %}{% endblock %}
 </head>
 
-<body class="flex min-h-dvh flex-col {% if user.is_authenticated %}pb-[calc(4.25rem+env(safe-area-inset-bottom))] md:pb-0{% endif %}">
+<body class="flex min-h-dvh flex-col pb-[calc(4.25rem+env(safe-area-inset-bottom))] md:pb-0">
     <a href="#inhalt" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2 focus:shadow-lg">Zum Inhalt springen</a>
 
     {# ------------------------------------------------------------ Kopfzeile #}
@@ -49,7 +49,7 @@
                 </span>
             </a>
 
-            {% if user.is_authenticated %}
+            {# Übungen sind auch ohne Anmeldung nutzbar; Dienste/Prüfungen leiten zum Login #}
             <nav class="hidden items-center gap-0.5 md:flex" aria-label="Hauptnavigation">
                 <a href="{% url 'home' %}" class="nav-link {% if nav_section == 'home' %}nav-link-active{% endif %}">Start</a>
                 <a href="{% url 'training_config' %}" class="nav-link {% if nav_section == 'theory' %}nav-link-active{% endif %}">Theorie</a>
@@ -58,7 +58,6 @@
                 <a href="{% url 'work' %}" class="nav-link {% if nav_section == 'work' %}nav-link-active{% endif %}">Dienste</a>
                 <a href="{% url 'exam_list' %}" class="nav-link {% if nav_section == 'exam' %}nav-link-active{% endif %}">Prüfungen</a>
             </nav>
-            {% endif %}
 
             <div class="ml-auto flex items-center gap-1 sm:gap-2">
                 {# LA-Stufe wählen #}
@@ -154,17 +153,19 @@
     </footer>
 
     {# ------------------------------------------------- Tab-Leiste (Mobil) #}
-    {% if user.is_authenticated %}
     <nav class="fixed inset-x-0 bottom-0 z-40 border-t border-line/70 bg-surface/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden" aria-label="Hauptnavigation mobil">
         <div class="mx-auto flex max-w-lg">
             <a href="{% url 'home' %}" class="tabbar-item {% if nav_section == 'home' %}tabbar-item-active{% endif %}">{% include "icons/home.html" %}Start</a>
-            <a href="{% url 'excercise' %}" class="tabbar-item {% if nav_section == 'excercise' or nav_section == 'theory' or nav_section == 'practical' or nav_section == 'group' %}tabbar-item-active{% endif %}">{% include "icons/academic-cap.html" %}Üben</a>
+            <a href="{% if user.is_authenticated %}{% url 'excercise' %}{% else %}{% url 'training_config' %}{% endif %}" class="tabbar-item {% if nav_section == 'excercise' or nav_section == 'theory' or nav_section == 'practical' or nav_section == 'group' %}tabbar-item-active{% endif %}">{% include "icons/academic-cap.html" %}Üben</a>
             <a href="{% url 'work' %}" class="tabbar-item {% if nav_section == 'work' %}tabbar-item-active{% endif %}">{% include "icons/calendar-days.html" %}Dienste</a>
             <a href="{% url 'exam_list' %}" class="tabbar-item {% if nav_section == 'exam' %}tabbar-item-active{% endif %}">{% include "icons/clipboard-document-check.html" %}Prüfungen</a>
+            {% if user.is_authenticated %}
             <a href="{% url 'profile' %}" class="tabbar-item {% if nav_section == 'profile' %}tabbar-item-active{% endif %}">{% include "icons/user-circle.html" %}Konto</a>
+            {% else %}
+            <a href="{% url 'login' %}" class="tabbar-item">{% include "icons/arrow-right-end-on-rectangle.html" %}Anmelden</a>
+            {% endif %}
         </div>
     </nav>
-    {% endif %}
 
     <script>
         if ('serviceWorker' in navigator) {

@@ -1,13 +1,10 @@
 ﻿db.sqlite3
 */__pycache__/
 */migrations/
-la_tool/env.py
 .env
 *.pyc
-la_tool/media/
+media/
 divera.json
 old/
 staticfiles/
-
-media/
 .django_tailwind_cli/
