@@ -1,0 +1,31 @@
+{% load static tailwind_cli %}<!DOCTYPE html>
+<html lang="de" data-theme="light">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Offline · LA-Tool</title>
+    <script>
+        (function () {
+            var t = null;
+            try { t = localStorage.getItem('theme'); } catch (e) {}
+            if (t !== 'light' && t !== 'dark') {
+                t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.dataset.theme = t;
+        })();
+    </script>
+    {% tailwind_css %}
+</head>
+
+<body class="flex min-h-dvh items-center justify-center p-6">
+    {# Eigenständige Seite ohne Navigation: wird vom Service Worker gecacht und darf keine Nutzerdaten enthalten #}
+    <div class="card card-body w-full max-w-sm text-center">
+        <img src="{% static 'img/thw-jugend-ge-logo.png' %}" alt="THW-Jugend Gelsenkirchen" class="mx-auto mb-6 h-14 w-auto">
+        <h1 class="text-xl font-bold tracking-tight">Keine Verbindung</h1>
+        <p class="mt-2 text-sm text-ink-2">Das LA-Tool braucht eine Internetverbindung. Prüfe dein Netz und versuche es erneut.</p>
+        <button type="button" class="btn btn-primary mt-6 w-full" onclick="location.reload()">Erneut versuchen</button>
+    </div>
+</body>
+
+</html>

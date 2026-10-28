@@ -5,6 +5,40 @@ def _user_has_admin_access(user):
     return user.is_authenticated and user.has_perm('app.access_admin')
 
 
+# URL-Name -> Navigationsbereich, damit Templates den aktiven Menüpunkt markieren können
+_NAV_SECTIONS = {
+    'home': 'home',
+    'excercise': 'excercise',
+    'training_config': 'theory', 'training_run': 'theory', 'training_result': 'theory',
+    'practical_list': 'practical', 'practical_detail': 'practical',
+    'group_list': 'group', 'group_detail': 'group',
+    'work': 'work', 'work_detail': 'work', 'work_training_start': 'work',
+    'exam_list': 'exam', 'exam_start': 'exam', 'exam_run': 'exam', 'exam_result': 'exam',
+    'profile': 'profile', 'first_run_wizard': 'profile',
+    'admin_index': 'admin_home',
+    'admin_users': 'admin_users',
+    'admin_catalog': 'admin_catalog', 'admin_catalog_create': 'admin_catalog',
+    'admin_catalog_detail': 'admin_catalog', 'admin_catalog_update': 'admin_catalog',
+    'admin_theory_create': 'admin_catalog', 'admin_theory_edit': 'admin_catalog',
+    'admin_practical_create': 'admin_catalog', 'admin_practical_edit': 'admin_catalog',
+    'admin_group_create': 'admin_catalog', 'admin_group_edit': 'admin_catalog',
+    'admin_file_confirm': 'admin_catalog',
+    'admin_import_questions': 'admin_import',
+    'admin_exam_list': 'admin_exam', 'admin_exam_create': 'admin_exam', 'admin_exam_edit': 'admin_exam',
+    'admin_exam_results': 'admin_exam', 'admin_exam_result_user': 'admin_exam',
+    'admin_work_list': 'admin_work', 'admin_work_create': 'admin_work', 'admin_work_edit': 'admin_work',
+    'admin_level_list': 'admin_level', 'admin_level_create': 'admin_level', 'admin_level_edit': 'admin_level',
+    'admin_autogroup_list': 'admin_autogroup', 'admin_autogroup_create': 'admin_autogroup',
+    'admin_autogroup_edit': 'admin_autogroup',
+    'admin_settings': 'admin_settings',
+}
+
+
+def nav_section(request):
+    match = getattr(request, 'resolver_match', None)
+    return {'nav_section': _NAV_SECTIONS.get(match.url_name if match else None, '')}
+
+
 def la_filter(request):
     all_levels = list(Levels.objects.order_by('order'))
     valid_slugs = {l.slug for l in all_levels}

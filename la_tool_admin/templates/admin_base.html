@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% comment %}
+Grundlayout des Admin-Bereichs: Seitenleiste (Desktop) bzw. scrollbare Leiste (Mobil).
+Admin-Seiten füllen {% block admin_content %}.
+{% endcomment %}
+
+{% block page_title %}Admin{% endblock %}
+
+{% block site_content %}
+<div class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-8 lg:px-8 lg:py-10">
+
+    {# Mobil: horizontale Navigation #}
+    <nav class="-mx-4 mb-6 flex gap-1 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:hidden" aria-label="Admin-Navigation">
+        <a href="{% url 'admin_index' %}" class="nav-link shrink-0 {% if nav_section == 'admin_home' %}nav-link-active{% endif %}">Übersicht</a>
+        <a href="{% url 'admin_users' %}" class="nav-link shrink-0 {% if nav_section == 'admin_users' %}nav-link-active{% endif %}">Benutzer</a>
+        <a href="{% url 'admin_catalog' %}" class="nav-link shrink-0 {% if nav_section == 'admin_catalog' %}nav-link-active{% endif %}">Kataloge</a>
+        <a href="{% url 'admin_import_questions' %}" class="nav-link shrink-0 {% if nav_section == 'admin_import' %}nav-link-active{% endif %}">Import</a>
+        <a href="{% url 'admin_exam_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_exam' %}nav-link-active{% endif %}">Prüfungen</a>
+        <a href="{% url 'admin_work_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_work' %}nav-link-active{% endif %}">Dienste</a>
+        <a href="{% url 'admin_level_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_level' %}nav-link-active{% endif %}">Stufen</a>
+        <a href="{% url 'admin_autogroup_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_autogroup' %}nav-link-active{% endif %}">Autogruppen</a>
+        <a href="{% url 'admin_settings' %}" class="nav-link shrink-0 {% if nav_section == 'admin_settings' %}nav-link-active{% endif %}">Einstellungen</a>
+    </nav>
+
+    {# Desktop: Seitenleiste #}
+    <aside class="hidden lg:block">
+        <nav class="sticky top-24 space-y-0.5" aria-label="Admin-Navigation">
+            <p class="sidebar-heading pt-0">Admin-Bereich</p>
+            <a href="{% url 'admin_index' %}" class="sidebar-link {% if nav_section == 'admin_home' %}sidebar-link-active{% endif %}">{% include "icons/squares-2x2.html" %} Übersicht</a>
+            <a href="{% url 'admin_users' %}" class="sidebar-link {% if nav_section == 'admin_users' %}sidebar-link-active{% endif %}">{% include "icons/users.html" %} Benutzer</a>
+
+            <p class="sidebar-heading">Inhalte</p>
+            <a href="{% url 'admin_catalog' %}" class="sidebar-link {% if nav_section == 'admin_catalog' %}sidebar-link-active{% endif %}">{% include "icons/rectangle-stack.html" %} Kataloge</a>
+            <a href="{% url 'admin_import_questions' %}" class="sidebar-link {% if nav_section == 'admin_import' %}sidebar-link-active{% endif %}">{% include "icons/arrow-up-tray.html" %} Fragen-Import</a>
+            <a href="{% url 'admin_exam_list' %}" class="sidebar-link {% if nav_section == 'admin_exam' %}sidebar-link-active{% endif %}">{% include "icons/clipboard-document-check.html" %} Prüfungen</a>
+            <a href="{% url 'admin_work_list' %}" class="sidebar-link {% if nav_section == 'admin_work' %}sidebar-link-active{% endif %}">{% include "icons/calendar-days.html" %} Dienste</a>
+
+            <p class="sidebar-heading">Konfiguration</p>
+            <a href="{% url 'admin_level_list' %}" class="sidebar-link {% if nav_section == 'admin_level' %}sidebar-link-active{% endif %}">{% include "icons/trophy.html" %} LA-Stufen</a>
+            <a href="{% url 'admin_autogroup_list' %}" class="sidebar-link {% if nav_section == 'admin_autogroup' %}sidebar-link-active{% endif %}">{% include "icons/bolt.html" %} Autogruppen</a>
+            <a href="{% url 'admin_settings' %}" class="sidebar-link {% if nav_section == 'admin_settings' %}sidebar-link-active{% endif %}">{% include "icons/cog-6-tooth.html" %} Einstellungen</a>
+
+            <div class="my-3 h-px bg-line"></div>
+            <a href="{% url 'home' %}" class="sidebar-link">{% include "icons/arrow-left.html" %} Zur App</a>
+        </nav>
+    </aside>
+
+    <div class="min-w-0">
+        {% block admin_content %}{% endblock %}
+    </div>
+</div>
+{% endblock %}

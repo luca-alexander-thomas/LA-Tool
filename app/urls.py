@@ -1,9 +1,12 @@
 from django.urls import path
 
-from . import views
+from . import views, pwa
 from la_tool_admin import views as views_admin
 
 urlpatterns = [
+    path('manifest.webmanifest', pwa.manifest, name='manifest'),
+    path('sw.js', pwa.service_worker, name='service_worker'),
+    path('offline/', pwa.offline, name='offline'),
     path('', views.index, name='home'),
     path('first-run/', views.first_run_wizard, name='first_run_wizard'),
     path('login/', views.login, name='login'),

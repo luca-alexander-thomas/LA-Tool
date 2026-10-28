@@ -1,138 +1,168 @@
 {% extends "base.html" %}
 
+{% block page_title %}Start{% endblock %}
+
 {% block site_content %}
-<div class="container py-4">
-    <div class="row mb-4">
-        <div class="col-md-8 col-xl-6 text-center mx-auto">
-            <h2>Leistungsabzeichen Tool</h2>
-            <p class="text-muted">Das LA-Tool der THW-Jugend Gelsenkirchen</p>
-        </div>
-    </div>
+<div class="page">
 
     {% if user.is_authenticated %}
-    <!-- Fortschritts-Dashboard -->
-    <div class="row mb-4 gy-3">
+    <div class="page-header">
+        <div>
+            <p class="eyebrow">Leistungsabzeichen{% if current_level %} · {{ current_level.name }}{% endif %}</p>
+            <h1 class="page-title mt-1">Hallo {{ user.first_name|default:user.username }}!</h1>
+            <p class="page-subtitle">Schön, dass du da bist. Weiter geht's mit deiner Vorbereitung.</p>
+        </div>
+        <a href="{% url 'training_config' %}" class="btn btn-primary">{% include "icons/play.html" %} Training starten</a>
+    </div>
 
-        <!-- Letzte Trainings -->
-        <div class="col-md-4">
-            <div class="border rounded-1 border-3 border-primary p-3 h-100">
-                <h5 class="mb-3">Letzte Trainings</h5>
+    {# Schnellzugriff #}
+    <div class="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <a href="{% url 'training_config' %}" class="card-link card-body flex flex-col gap-3">
+            <span class="icon-tile">{% include "icons/academic-cap.html" with cls="size-6" %}</span>
+            <span class="font-semibold">Theorie</span>
+        </a>
+        <a href="{% url 'practical_list' %}" class="card-link card-body flex flex-col gap-3">
+            <span class="icon-tile">{% include "icons/wrench-screwdriver.html" with cls="size-6" %}</span>
+            <span class="font-semibold">Praxis</span>
+        </a>
+        <a href="{% url 'group_list' %}" class="card-link card-body flex flex-col gap-3">
+            <span class="icon-tile">{% include "icons/user-group.html" with cls="size-6" %}</span>
+            <span class="font-semibold">Gruppenaufgaben</span>
+        </a>
+        <a href="{% url 'exam_list' %}" class="card-link card-body flex flex-col gap-3">
+            <span class="icon-tile">{% include "icons/clipboard-document-check.html" with cls="size-6" %}</span>
+            <span class="font-semibold">Prüfungen</span>
+        </a>
+    </div>
+
+    {# Fortschritts-Dashboard #}
+    <div class="grid gap-4 lg:grid-cols-3">
+
+        {# Letzte Trainings #}
+        <section class="card flex flex-col">
+            <div class="card-header">
+                <h2 class="section-title">Letzte Trainings</h2>
+            </div>
+            <div class="flex-1 space-y-2 p-4">
                 {% for r in training_results %}
                 {% with meta=r.meta_reference %}
-                <a href="{% url 'training_result' r.pk %}" class="text-decoration-none text-reset">
-                    <div class="border rounded-1 border-2 border-primary d-flex align-items-center p-2 mb-2">
-                        <div class="col ms-1">
-                            <div class="small fw-semibold">{{ r.name }}</div>
-                            <div class="text-muted small">{{ r.meta_time|date:"d.m.Y" }}</div>
-                        </div>
-                        <div class="col-auto me-2">
-                            {% if meta %}
-                            {% if meta.score >= meta.total|add:"-1" %}
-                            <span class="small fw-semibold text-success">{{ meta.score }}/{{ meta.total }}</span>
-                            {% else %}
-                            <span class="small fw-semibold text-danger">{{ meta.score }}/{{ meta.total }}</span>
-                            {% endif %}
-                            {% endif %}
-                        </div>
+                <a href="{% url 'training_result' r.pk %}" class="list-row">
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-semibold">{{ r.name }}</p>
+                        <p class="text-xs text-ink-3">{{ r.meta_time|date:"d.m.Y" }}</p>
                     </div>
+                    {% if meta %}
+                    {% if meta.score >= meta.total|add:"-1" %}
+                    <span class="badge badge-success tabular-nums">{{ meta.score }}/{{ meta.total }}</span>
+                    {% else %}
+                    <span class="badge badge-danger tabular-nums">{{ meta.score }}/{{ meta.total }}</span>
+                    {% endif %}
+                    {% endif %}
+                    {% include "icons/chevron-right.html" with cls="size-4 text-ink-3" %}
                 </a>
                 {% endwith %}
                 {% empty %}
-                <p class="text-muted small text-center py-2">Noch keine Trainings</p>
+                <p class="empty-state">Noch keine Trainings</p>
                 {% endfor %}
-                <div class="d-flex justify-content-center mt-2">
-                    <a class="btn btn-sm btn-outline-primary" href="{% url 'training_config' %}">Zu Theorie</a>
-                </div>
             </div>
-        </div>
+            <div class="card-footer justify-center">
+                <a class="btn btn-ghost btn-sm" href="{% url 'training_config' %}">Zur Theorie {% include "icons/arrow-right.html" with cls="size-4" %}</a>
+            </div>
+        </section>
 
-        <!-- Prüfungen -->
-        <div class="col-md-4">
-            <div class="border rounded-1 border-3 border-primary p-3 h-100">
-                <h5 class="mb-3">Prüfungen</h5>
+        {# Prüfungen #}
+        <section class="card flex flex-col">
+            <div class="card-header">
+                <h2 class="section-title">Prüfungen</h2>
                 {% if open_exams_count > 0 %}
-                <div class="alert alert-info text-center py-2">
-                    <strong>{{ open_exams_count }}</strong> offene Prüfung{{ open_exams_count|pluralize:"en" }} zugewiesen
-                </div>
+                <span class="badge badge-primary">{{ open_exams_count }} offen</span>
+                {% endif %}
+            </div>
+            <div class="flex-1 space-y-2 p-4">
+                {% if open_exams_count > 0 %}
+                <a href="{% url 'exam_list' %}" class="alert alert-info">
+                    {% include "icons/information-circle.html" with cls="size-5 shrink-0" %}
+                    <span><strong>{{ open_exams_count }}</strong> offene Prüfung{{ open_exams_count|pluralize:"en" }} zugewiesen</span>
+                </a>
                 {% endif %}
                 {% for r in unreleased_results %}
                 {% with meta=r.meta_reference %}
-                <div class="border rounded-1 border-2 border-primary d-flex align-items-center p-2 mb-2">
-                    <div class="col ms-1">
-                        <div class="small fw-semibold">{{ r.exam.name }}</div>
-                        <div class="text-muted small">{{ r.meta_time|date:"d.m.Y" }}</div>
+                <div class="list-row">
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-semibold">{{ r.exam.name }}</p>
+                        <p class="text-xs text-ink-3">{{ r.meta_time|date:"d.m.Y" }}</p>
                     </div>
-                    <div class="col-auto me-2">
-                        {% if meta.passed %}<span class="badge bg-success small">Bestanden</span>
-                        {% else %}<span class="badge bg-danger small">Nicht bestanden</span>{% endif %}
-                    </div>
+                    {% if meta.passed %}<span class="badge badge-success">Bestanden</span>
+                    {% else %}<span class="badge badge-danger">Nicht bestanden</span>{% endif %}
                 </div>
                 {% endwith %}
                 {% empty %}
                 {% if open_exams_count == 0 %}
-                <p class="text-muted small text-center py-2">Keine offenen Prüfungen</p>
+                <p class="empty-state">Keine offenen Prüfungen</p>
                 {% endif %}
                 {% endfor %}
-                <div class="d-flex justify-content-center mt-2">
-                    <a class="btn btn-sm btn-outline-primary" href="{% url 'exam_list' %}">Zu den Prüfungen</a>
-                </div>
             </div>
-        </div>
+            <div class="card-footer justify-center">
+                <a class="btn btn-ghost btn-sm" href="{% url 'exam_list' %}">Zu den Prüfungen {% include "icons/arrow-right.html" with cls="size-4" %}</a>
+            </div>
+        </section>
 
-        <!-- Nächster Dienst -->
-        <div class="col-md-4">
-            <div class="border rounded-1 border-3 border-primary p-3 h-100">
-                <h5 class="mb-3">Nächster Dienst</h5>
+        {# Nächster Dienst #}
+        <section class="card flex flex-col">
+            <div class="card-header">
+                <h2 class="section-title">Nächster Dienst</h2>
+            </div>
+            <div class="flex-1 p-4">
                 {% if next_work %}
-                <a href="{% url 'work_detail' next_work.pk %}" class="text-decoration-none text-reset">
-                    <div class="border rounded-1 border-2 border-primary p-3 text-center">
-                        <div class="fw-bold fs-5">{{ next_work.title }}</div>
-                        <div class="text-muted">{{ next_work.date|date:"d.m.Y" }}</div>
-                        {% if next_work.location %}<div class="text-muted small">{{ next_work.location }}</div>{% endif %}
-                        {% if next_work.level %}
-                        <span class="badge {{ next_work.level.badge_bg_class }} {{ next_work.level.badge_text_class }} mt-2">{{ next_work.level.name }}</span>
-                        {% endif %}
+                <a href="{% url 'work_detail' next_work.pk %}" class="block rounded-xl bg-gradient-to-br from-thw-700 to-thw-500 p-5 text-white shadow-sm transition hover:brightness-110">
+                    <p class="text-xs font-semibold tracking-wider text-white/70 uppercase">{{ next_work.date|date:"l, d.m.Y" }}</p>
+                    <p class="mt-1 text-lg font-bold">{{ next_work.title }}</p>
+                    <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/85">
+                        <span class="inline-flex items-center gap-1.5">{% include "icons/clock.html" with cls="size-4" %} {{ next_work.date|date:"H:i" }} Uhr</span>
+                        {% if next_work.location %}<span class="inline-flex items-center gap-1.5">{% include "icons/map-pin.html" with cls="size-4" %} {{ next_work.location }}</span>{% endif %}
                     </div>
+                    {% if next_work.level %}
+                    <span class="badge {{ next_work.level.badge_bg_class|default:'badge-primary' }} {{ next_work.level.badge_text_class }} mt-3">{{ next_work.level.name }}</span>
+                    {% endif %}
                 </a>
                 {% else %}
-                <p class="text-muted small text-center py-2">Keine kommenden Dienste geplant</p>
+                <p class="empty-state">Keine kommenden Dienste geplant</p>
                 {% endif %}
-                <div class="d-flex justify-content-center mt-2">
-                    <a class="btn btn-sm btn-outline-primary" href="{% url 'work' %}">Alle Dienste</a>
-                </div>
             </div>
-        </div>
+            <div class="card-footer justify-center">
+                <a class="btn btn-ghost btn-sm" href="{% url 'work' %}">Alle Dienste {% include "icons/arrow-right.html" with cls="size-4" %}</a>
+            </div>
+        </section>
     </div>
 
     {% else %}
-    <!-- Landing für nicht-eingeloggte -->
-    <div class="row gy-4 row-cols-1 row-cols-md-3">
-        <div class="col">
-            <div class="card h-100">
-                <div class="card-body p-4">
-                    <h4 class="card-title">Übungen</h4>
-                    <p class="card-text">Theorie-, Praxis- und Gruppenaufgaben zum Üben und nachschlagen.</p>
-                    <a class="btn btn-primary" href="{% url 'login' %}">Anmelden</a>
-                </div>
-            </div>
+    {# Startseite für nicht angemeldete Besucher #}
+    <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-thw-800 via-thw-700 to-thw-500 px-6 py-12 text-white sm:px-12 sm:py-16">
+        <div class="pointer-events-none absolute -top-24 -right-24 size-72 rounded-full bg-jugend-sky/25 blur-3xl"></div>
+        <div class="pointer-events-none absolute -bottom-24 left-1/3 size-72 rounded-full bg-jugend-orange/20 blur-3xl"></div>
+        <div class="relative max-w-xl">
+            <p class="text-sm font-semibold tracking-wider text-white/70 uppercase">THW-Jugend Gelsenkirchen</p>
+            <h1 class="mt-2 text-3xl font-bold tracking-tight sm:text-5xl">Fit fürs Leistungsabzeichen.</h1>
+            <p class="mt-4 text-base text-white/85 sm:text-lg">Theorie trainieren, Praxisaufgaben nachschlagen und Übungsprüfungen ablegen – für Bronze, Silber und Gold.</p>
+            <a class="btn btn-lg mt-8 bg-white text-thw-700 hover:bg-thw-50" href="{% url 'login' %}">Jetzt anmelden {% include "icons/arrow-right.html" %}</a>
         </div>
-        <div class="col">
-            <div class="card h-100">
-                <div class="card-body p-4">
-                    <h4 class="card-title">Dienste</h4>
-                    <p class="card-text">Vergangene und kommende Dienste mit behandelten Themen.</p>
-                    <a class="btn btn-primary" href="{% url 'login' %}">Anmelden</a>
-                </div>
-            </div>
+    </section>
+
+    <div class="mt-6 grid gap-4 md:grid-cols-3">
+        <div class="card card-body">
+            <span class="icon-tile">{% include "icons/academic-cap.html" with cls="size-6" %}</span>
+            <h2 class="section-title mt-4">Übungen</h2>
+            <p class="mt-1 text-sm text-ink-2">Theorie-, Praxis- und Gruppenaufgaben zum Üben und Nachschlagen.</p>
         </div>
-        <div class="col">
-            <div class="card h-100">
-                <div class="card-body p-4">
-                    <h4 class="card-title">Prüfungen</h4>
-                    <p class="card-text">Übungsprüfungen und freigegebene Ergebnisse einsehen.</p>
-                    <a class="btn btn-primary" href="{% url 'login' %}">Anmelden</a>
-                </div>
-            </div>
+        <div class="card card-body">
+            <span class="icon-tile">{% include "icons/calendar-days.html" with cls="size-6" %}</span>
+            <h2 class="section-title mt-4">Dienste</h2>
+            <p class="mt-1 text-sm text-ink-2">Vergangene und kommende Dienste mit behandelten Themen.</p>
+        </div>
+        <div class="card card-body">
+            <span class="icon-tile">{% include "icons/clipboard-document-check.html" with cls="size-6" %}</span>
+            <h2 class="section-title mt-4">Prüfungen</h2>
+            <p class="mt-1 text-sm text-ink-2">Übungsprüfungen ablegen und freigegebene Ergebnisse einsehen.</p>
         </div>
     </div>
     {% endif %}

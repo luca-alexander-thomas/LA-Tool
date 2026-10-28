@@ -1,0 +1,542 @@
+/*
+ * LA-Tool Design-System (Tailwind CSS v4)
+ * Quelle für assets/css/tailwind.css – bauen mit: python manage.py tailwind build
+ *
+ * Aufbau:
+ *  1. Quellen, die Tailwind nach Klassen durchsucht
+ *  2. Design-Tokens (Farben, Schrift) inkl. Dark Mode
+ *  3. Basis-Styles
+ *  4. Komponenten-Klassen (.btn, .card, .form-control, ...)
+ */
+
+@import "tailwindcss" source(none);
+
+@source "../app/templates";
+@source "../la_tool_admin/templates";
+@source "../la_tool_admin/forms.py";
+@source "../app/static/js";
+
+/* Badge-Klassen der LA-Stufen kommen aus der Datenbank (Levels.badge_bg_class / badge_text_class)
+   und stehen in keinem Template – deshalb explizit erzeugen. */
+@source inline("{bg,text,border}-{primary,secondary,success,danger,warning,info,light,dark}");
+@source inline("text-white text-black");
+
+/* Dark Mode über <html data-theme="dark"> (gesetzt vom Theme-Umschalter) */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+/* ---------------------------------------------------------------- Tokens */
+
+@theme {
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+
+    /* THW-Blau mit Abstufungen */
+    --color-thw-50: #eef3fb;
+    --color-thw-100: #dae5f6;
+    --color-thw-200: #b5cbed;
+    --color-thw-300: #86a8de;
+    --color-thw-400: #4f7cc8;
+    --color-thw-500: #1f55b0;
+    --color-thw-600: #0a4092;
+    --color-thw-700: #00337f;
+    --color-thw-800: #002866;
+    --color-thw-900: #001c4a;
+
+    /* Farben aus dem THW-Jugend-Logo */
+    --color-jugend-orange: #f39200;
+    --color-jugend-sky: #2aa8e0;
+
+    /* Bootstrap-kompatible Namen für Stufen-Badges aus der Datenbank */
+    --color-secondary: #6b7280;
+    --color-success: #15803d;
+    --color-danger: #b42318;
+    --color-warning: #f5b301;
+    --color-info: #0ea5e9;
+    --color-light: #f3f4f6;
+    --color-dark: #1f2937;
+}
+
+/* Semantische Farben, die im Dark Mode wechseln */
+@theme inline {
+    --color-bg: var(--bg);
+    --color-surface: var(--surface);
+    --color-surface-2: var(--surface-2);
+    --color-ink: var(--ink);
+    --color-ink-2: var(--ink-2);
+    --color-ink-3: var(--ink-3);
+    --color-line: var(--line);
+    --color-accent: var(--accent);
+    --color-accent-soft: var(--accent-soft);
+    --color-accent-ink: var(--accent-ink);
+    --color-primary: var(--accent);
+}
+
+:root {
+    --bg: #f4f6fa;
+    --surface: #ffffff;
+    --surface-2: #eef2f8;
+    --ink: #141821;
+    --ink-2: #545e6e;
+    --ink-3: #8a93a1;
+    --line: #e1e6ee;
+    --accent: #00337f;
+    --accent-soft: #e7eef9;
+    --accent-ink: #00337f;
+    color-scheme: light;
+}
+
+[data-theme="dark"] {
+    --bg: #0a101c;
+    --surface: #111a2b;
+    --surface-2: #192439;
+    --ink: #e8edf5;
+    --ink-2: #a5afc0;
+    --ink-3: #78839a;
+    --line: #243049;
+    --accent: #3d6fd6;
+    --accent-soft: rgb(61 111 214 / 0.16);
+    --accent-ink: #9dbcf7;
+    color-scheme: dark;
+}
+
+/* ------------------------------------------------------------------ Basis */
+
+@layer base {
+    html {
+        @apply bg-bg text-ink antialiased;
+        -webkit-tap-highlight-color: transparent;
+        scroll-padding-top: 5rem;
+    }
+
+    body {
+        @apply min-h-dvh font-sans;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+
+    ::selection {
+        @apply bg-accent/20;
+    }
+}
+
+/* Sanfte Seitenübergänge ohne JavaScript (Chrome, Edge, Safari 18.2+) */
+@view-transition {
+    navigation: auto;
+}
+
+/* ------------------------------------------------------------ Komponenten */
+
+@layer components {
+    /* Layout */
+    .container-app {
+        @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+    }
+
+    .page {
+        @apply mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8;
+    }
+
+    .page-narrow {
+        @apply mx-auto w-full max-w-2xl px-4 py-6 sm:px-6 sm:py-10;
+    }
+
+    .page-header {
+        @apply mb-6 flex flex-wrap items-end justify-between gap-4 sm:mb-8;
+    }
+
+    .page-title {
+        @apply text-2xl font-bold tracking-tight text-ink sm:text-3xl;
+    }
+
+    .page-subtitle {
+        @apply mt-1 text-sm text-ink-2 sm:text-base;
+    }
+
+    .eyebrow {
+        @apply text-xs font-semibold tracking-wider text-accent-ink uppercase;
+    }
+
+    .section-title {
+        @apply text-lg font-semibold tracking-tight text-ink;
+    }
+
+    .back-link {
+        @apply mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-ink-2 transition hover:text-ink;
+    }
+
+    .link {
+        @apply font-medium text-accent-ink underline-offset-4 hover:underline;
+    }
+
+    /* Karten & Listen */
+    .card {
+        @apply rounded-2xl border border-line bg-surface shadow-[0_1px_2px_rgb(16_24_40/0.04)];
+    }
+
+    .card-body {
+        @apply p-4 sm:p-6;
+    }
+
+    .card-header {
+        @apply flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 sm:px-6;
+    }
+
+    .card-footer {
+        @apply flex flex-wrap items-center justify-end gap-2 border-t border-line px-4 py-3 sm:px-6;
+    }
+
+    .card-link {
+        @apply block rounded-2xl border border-line bg-surface shadow-[0_1px_2px_rgb(16_24_40/0.04)] transition hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md active:translate-y-0;
+    }
+
+    .list-row {
+        @apply flex items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3 transition hover:border-accent/40 hover:bg-surface-2;
+    }
+
+    .list-divided {
+        @apply divide-y divide-line;
+    }
+
+    .icon-tile {
+        @apply flex size-11 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent-ink;
+    }
+
+    .stat-value {
+        @apply text-3xl font-bold tracking-tight text-ink tabular-nums;
+    }
+
+    .stat-label {
+        @apply text-xs font-medium text-ink-2;
+    }
+
+    .empty-state {
+        @apply rounded-2xl border border-dashed border-line px-6 py-10 text-center text-sm text-ink-2;
+    }
+
+    .prose-content {
+        @apply text-sm leading-relaxed text-ink-2 sm:text-base;
+
+        & p + p {
+            @apply mt-3;
+        }
+
+        & ul {
+            @apply list-disc space-y-1 pl-5;
+        }
+    }
+
+    /* Buttons */
+    .btn {
+        @apply inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:scale-[.98] disabled:pointer-events-none disabled:opacity-50;
+    }
+
+    .btn-primary {
+        @apply bg-accent text-white shadow-sm hover:brightness-115;
+    }
+
+    .btn-secondary {
+        @apply border border-line bg-surface text-ink shadow-xs hover:bg-surface-2;
+    }
+
+    .btn-ghost {
+        @apply text-ink-2 hover:bg-surface-2 hover:text-ink;
+    }
+
+    .btn-soft {
+        @apply bg-accent-soft text-accent-ink hover:brightness-95 dark:hover:brightness-125;
+    }
+
+    .btn-success {
+        @apply bg-green-600 text-white shadow-sm hover:bg-green-700;
+    }
+
+    .btn-danger {
+        @apply bg-red-600 text-white shadow-sm hover:bg-red-700;
+    }
+
+    .btn-danger-soft {
+        @apply bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20;
+    }
+
+    .btn-sm {
+        @apply min-h-9 rounded-lg px-3 py-1.5 text-xs;
+    }
+
+    .btn-lg {
+        @apply min-h-13 rounded-2xl px-6 py-3.5 text-base;
+    }
+
+    .btn-icon {
+        @apply size-10 min-h-0 p-0;
+    }
+
+    /* Badges */
+    .badge {
+        @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap;
+    }
+
+    .badge-neutral {
+        @apply bg-surface-2 text-ink-2;
+    }
+
+    .badge-primary {
+        @apply bg-accent-soft text-accent-ink;
+    }
+
+    .badge-success {
+        @apply bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-300;
+    }
+
+    .badge-danger {
+        @apply bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-300;
+    }
+
+    .badge-warning {
+        @apply bg-amber-100 text-amber-900 dark:bg-amber-500/15 dark:text-amber-300;
+    }
+
+    .badge-info {
+        @apply bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-300;
+    }
+
+    /* Hinweise */
+    .alert {
+        @apply flex gap-3 rounded-xl border px-4 py-3 text-sm;
+    }
+
+    .alert-success {
+        @apply border-green-200 bg-green-50 text-green-900 dark:border-green-500/25 dark:bg-green-500/10 dark:text-green-200;
+    }
+
+    .alert-danger {
+        @apply border-red-200 bg-red-50 text-red-900 dark:border-red-500/25 dark:bg-red-500/10 dark:text-red-200;
+    }
+
+    .alert-warning {
+        @apply border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-200;
+    }
+
+    .alert-info {
+        @apply border-sky-200 bg-sky-50 text-sky-900 dark:border-sky-500/25 dark:bg-sky-500/10 dark:text-sky-200;
+    }
+
+    /* Formulare – Klassennamen passen zu den Widgets in la_tool_admin/forms.py */
+    .form-label {
+        @apply mb-1.5 block text-sm font-medium text-ink;
+    }
+
+    .form-control,
+    .form-select {
+        @apply block w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-base text-ink shadow-xs transition outline-none placeholder:text-ink-3 focus:border-accent focus:ring-4 focus:ring-accent/15 disabled:opacity-60 sm:text-sm;
+    }
+
+    .form-control[type="file"] {
+        @apply p-1.5 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-2 file:text-sm file:font-medium file:text-ink;
+    }
+
+    .form-control[type="range"] {
+        @apply border-0 bg-transparent p-0 shadow-none accent-accent focus:ring-0;
+    }
+
+    .form-select {
+        @apply appearance-none pr-10;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238a93a1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='m4 6 4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.85rem center;
+        background-repeat: no-repeat;
+        background-size: 1rem;
+    }
+
+    .form-select[multiple] {
+        @apply pr-3.5;
+        background-image: none;
+    }
+
+    .form-check {
+        @apply flex items-start gap-3;
+    }
+
+    .form-check-input {
+        @apply mt-0.5 size-5 shrink-0 cursor-pointer accent-accent;
+    }
+
+    .form-check-label {
+        @apply cursor-pointer text-sm text-ink;
+    }
+
+    /* Schalter: <input type="checkbox" class="form-switch" role="switch"> */
+    .form-switch {
+        @apply h-6 w-11 shrink-0 cursor-pointer appearance-none rounded-full bg-line transition-[background-color,background-position] checked:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3.2' fill='white'/%3e%3c/svg%3e");
+        background-position: left center;
+        background-repeat: no-repeat;
+        background-size: contain;
+
+        &:checked {
+            background-position: right center;
+        }
+    }
+
+    .form-text {
+        @apply mt-1.5 text-xs text-ink-2;
+    }
+
+    .form-error,
+    .errorlist {
+        @apply mt-1.5 text-xs font-medium text-red-600 dark:text-red-400;
+    }
+
+    .input-group {
+        @apply flex items-stretch;
+
+        & > .form-control,
+        & > .form-select {
+            @apply min-w-0 flex-1 rounded-none first:rounded-l-xl last:rounded-r-xl;
+        }
+    }
+
+    .input-group-text {
+        @apply flex items-center border border-line bg-surface-2 px-3 text-sm text-ink-2 first:rounded-l-xl first:border-r-0 last:rounded-r-xl last:border-l-0;
+    }
+
+    /* Tabellen */
+    .table-wrap {
+        @apply overflow-x-auto rounded-2xl border border-line bg-surface;
+    }
+
+    .table {
+        @apply w-full text-left text-sm;
+
+        & th {
+            @apply bg-surface-2 px-4 py-3 text-xs font-semibold tracking-wide whitespace-nowrap text-ink-2 uppercase;
+        }
+
+        & td {
+            @apply border-t border-line px-4 py-3 align-middle;
+        }
+
+        & tbody tr {
+            @apply transition-colors hover:bg-surface-2/60;
+        }
+    }
+
+    /* Fortschritt */
+    .progress {
+        @apply h-2 w-full overflow-hidden rounded-full bg-surface-2;
+    }
+
+    .progress-bar {
+        @apply h-full rounded-full bg-accent transition-[width] duration-500;
+    }
+
+    /* Tabs (mit Alpine.js) */
+    .tabs {
+        @apply flex gap-1 rounded-xl bg-surface-2 p-1;
+    }
+
+    .tab {
+        @apply flex-1 cursor-pointer rounded-lg px-3 py-2 text-center text-sm font-medium text-ink-2 transition hover:text-ink;
+    }
+
+    .tab-active {
+        @apply bg-surface text-ink shadow-sm;
+    }
+
+    /* Dropdown-Menüs (mit Alpine.js) */
+    .dropdown-menu {
+        @apply absolute z-50 mt-2 min-w-52 origin-top-right rounded-xl border border-line bg-surface p-1.5 shadow-xl;
+    }
+
+    .dropdown-item {
+        @apply flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-ink transition hover:bg-surface-2;
+    }
+
+    .dropdown-divider {
+        @apply my-1.5 h-px bg-line;
+    }
+
+    /* Modal: <dialog class="modal"> + dialog.showModal() */
+    .modal {
+        @apply m-auto w-[min(32rem,calc(100%-2rem))] rounded-2xl border border-line bg-surface p-0 text-ink shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm;
+    }
+
+    .modal-header {
+        @apply flex items-center justify-between gap-3 px-5 pt-5 pb-2;
+    }
+
+    .modal-body {
+        @apply px-5 pb-5;
+    }
+
+    /* Quiz: Antwortmöglichkeit (Theorie-Training & Prüfung) */
+    .answer-option {
+        @apply flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-line bg-surface p-3.5 transition select-none hover:border-accent/50 sm:p-4;
+
+        &:has(:checked),
+        &.is-selected {
+            @apply border-accent bg-accent-soft;
+        }
+
+        &.is-correct {
+            @apply border-green-500 bg-green-50 dark:bg-green-500/10;
+        }
+
+        &.is-wrong {
+            @apply border-red-500 bg-red-50 dark:bg-red-500/10;
+        }
+    }
+
+    .answer-letter {
+        @apply flex size-9 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-sm font-bold text-ink-2 transition;
+
+        :is(.answer-option:has(:checked), .answer-option.is-selected) & {
+            @apply bg-accent text-white;
+        }
+
+        .answer-option.is-correct & {
+            @apply bg-green-600 text-white;
+        }
+
+        .answer-option.is-wrong & {
+            @apply bg-red-600 text-white;
+        }
+    }
+
+    /* Navigation */
+    .nav-link {
+        @apply rounded-lg px-3 py-2 text-sm font-medium text-ink-2 transition hover:bg-surface-2 hover:text-ink;
+    }
+
+    .nav-link-active {
+        @apply bg-accent-soft text-accent-ink hover:bg-accent-soft hover:text-accent-ink;
+    }
+
+    .tabbar-item {
+        @apply flex flex-1 flex-col items-center gap-0.5 py-2 text-[0.6875rem] font-medium text-ink-3 transition;
+
+        & svg {
+            @apply size-6;
+        }
+    }
+
+    .tabbar-item-active {
+        @apply text-accent-ink;
+    }
+
+    .sidebar-link {
+        @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-ink-2 transition hover:bg-surface-2 hover:text-ink;
+
+        & svg {
+            @apply size-5 shrink-0;
+        }
+    }
+
+    .sidebar-link-active {
+        @apply bg-accent-soft text-accent-ink hover:bg-accent-soft hover:text-accent-ink;
+    }
+
+    .sidebar-heading {
+        @apply px-3 pt-4 pb-1 text-[0.6875rem] font-semibold tracking-wider text-ink-3 uppercase;
+    }
+}

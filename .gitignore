@@ -10,3 +10,4 @@ old/
 staticfiles/
 
 media/
+.django_tailwind_cli/

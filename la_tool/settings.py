@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'django_tailwind_cli',
     'app',
     'la_tool_admin',
 ]
@@ -83,6 +84,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.media',
                 'app.context_processors.la_filter',
+                'app.context_processors.nav_section',
             ],
         },
     },
@@ -147,6 +149,13 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [BASE_DIR / 'assets']
+
+# Tailwind CSS (django-tailwind-cli): Quelle tailwind/source.css -> assets/css/tailwind.css
+# Bauen: python manage.py tailwind build  |  Entwicklung: python manage.py tailwind runserver
+TAILWIND_CLI_VERSION = '4.1.18'
+TAILWIND_CLI_SRC_CSS = 'tailwind/source.css'
+TAILWIND_CLI_DIST_CSS = 'css/tailwind.css'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'

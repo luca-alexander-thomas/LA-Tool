@@ -1,236 +1,179 @@
-{% load static %}
-<!DOCTYPE html>
-<html data-bs-theme="light" lang="de">
+{% load static tailwind_cli %}<!DOCTYPE html>
+<html lang="de" data-theme="light">
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-    <title>THW-Jugend LA-Tool</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>{% block page_title %}LA-Tool{% endblock %} · THW-Jugend Gelsenkirchen</title>
+    <meta name="description" content="Das LA-Tool der THW-Jugend Gelsenkirchen: Vorbereitung auf das Leistungsabzeichen.">
     <script>
-        (function() {
-
-            // JavaScript snippet handling Dark/Light mode switching
-
-            const getStoredTheme = () => localStorage.getItem('theme');
-            const setStoredTheme = theme => localStorage.setItem('theme', theme);
-            const forcedTheme = document.documentElement.getAttribute('data-bss-forced-theme');
-
-            const getPreferredTheme = () => {
-
-                if (forcedTheme) return forcedTheme;
-
-                const storedTheme = getStoredTheme();
-                if (storedTheme) {
-                    return storedTheme;
-                }
-
-                const pageTheme = document.documentElement.getAttribute('data-bs-theme');
-
-                if (pageTheme) {
-                    return pageTheme;
-                }
-
-                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        // Farbschema vor dem ersten Rendern setzen (verhindert Aufblitzen)
+        (function () {
+            var t = null;
+            try { t = localStorage.getItem('theme'); } catch (e) {}
+            if (t !== 'light' && t !== 'dark') {
+                t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             }
-
-            const setTheme = theme => {
-                if (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    document.documentElement.setAttribute('data-bs-theme', 'dark');
-                } else {
-                    document.documentElement.setAttribute('data-bs-theme', theme);
-                }
-            }
-
-            setTheme(getPreferredTheme());
-
-            const showActiveTheme = (theme, focus = false) => {
-                const themeSwitchers = [].slice.call(document.querySelectorAll('.theme-switcher'));
-
-                if (!themeSwitchers.length) return;
-
-                document.querySelectorAll('[data-bs-theme-value]').forEach(element => {
-                    element.classList.remove('active');
-                    element.setAttribute('aria-pressed', 'false');
-                });
-
-                const iconTheme = theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme;
-
-                for (const themeSwitcher of themeSwitchers) {
-
-                    const adaptIcon = !!themeSwitcher.dataset.bsAdaptIcon;
-
-                    if (adaptIcon) {
-                        const btnIcon = themeSwitcher.querySelector('[data-bss-adaptable]');
-
-                        try {
-                            const themeIcons = JSON.parse(themeSwitcher.dataset.bssIcons || "{}");
-                            const newIconMarkup = themeIcons[iconTheme];
-
-                            const template = document.createElement("template");
-                            template.innerHTML = newIconMarkup;
-
-                            const newIconFragment = template.content.cloneNode(true);
-
-                            if (newIconFragment?.children?.length) {
-                                newIconFragment.children[0].dataset.bssAdaptable = true;
-                            }
-
-                            btnIcon.replaceWith(newIconFragment);
-                        } catch (e) {}
-                    }
-
-                    const btnToActivate = themeSwitcher.querySelector('[data-bs-theme-value="' + theme + '"]');
-
-                    if (btnToActivate) {
-                        btnToActivate.classList.add('active');
-                        btnToActivate.setAttribute('aria-pressed', 'true');
-                    }
-                }
-            }
-
-            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-                const storedTheme = getStoredTheme();
-                if (storedTheme !== 'light' && storedTheme !== 'dark') {
-                    setTheme(getPreferredTheme());
-                }
-            });
-
-            window.addEventListener('DOMContentLoaded', () => {
-                showActiveTheme(getPreferredTheme());
-
-                document.querySelectorAll('[data-bs-theme-value]')
-                    .forEach(toggle => {
-                        toggle.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            const theme = toggle.getAttribute('data-bs-theme-value');
-                            setStoredTheme(theme);
-                            setTheme(theme);
-                            showActiveTheme(theme);
-                        })
-                    })
-            });
+            document.documentElement.dataset.theme = t;
         })();
     </script>
-    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
-    <!--<link rel="manifest" href="manifest.json" crossorigin="use-credentials">-->
-    <link rel="stylesheet" href="{% static 'css/bss-overrides.css' %}">
-    <link rel="stylesheet" href="{% static 'css/calendar.css' %}">
-    <link rel="stylesheet" href="{% static 'css/Features-Cards-icons.css' %}">
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 
+    {# PWA #}
+    <link rel="manifest" href="{% url 'manifest' %}">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#111a2b" media="(prefers-color-scheme: dark)">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="LA-Tool">
+    <link rel="icon" type="image/png" href="{% static 'pwa/favicon.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'pwa/apple-touch-icon.png' %}">
+
+    {% tailwind_css %}
+    <script src="{% static 'js/app.js' %}"></script>
+    <script defer src="{% static 'vendor/alpine.min.js' %}"></script>
+    {% block extra_head %}{% endblock %}
 </head>
 
-<body class="d-flex flex-column min-vh-100">
-    <div class="container-fluid d-flex justify-content-center align-items-center" style="background: linear-gradient(95deg, var(--bs-primary) 35%, var(--bs-primary-bg-subtle));"><a class="navbar-brand text-center d-flex align-items-center m-3" href="{% url 'home' %}"><img class="w-25 h-25" src="https://sp-ao.shortpixel.ai/client/to_auto,q_glossy,ret_img,w_159/https://thw-jugend-ge.de/wp-content/uploads/2024/03/thw-jugend-ge-logo_2560-159x91.png" loading="lazy" width="135" height="77"><span class="fs-3 fw-bold text-center p-2" style="color: var(--bs-light);">THW-Jugend LA-Tool</span></a></div>
-    <nav class="navbar navbar-expand-md bg-body d-flex align-items-center py-3" style="background: var(--bs-background);position: relative;">
-        <div class="container"><button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navcol-3"><span class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
-            <div class="collapse navbar-collapse pb-0" id="navcol-3">
-                <div class="dropdown border rounded-1 border-2 border-primary d-flex me-0">
-                    <a data-bs-toggle="dropdown" aria-expanded="false" href="#" title="LA-Stufe wählen" class="d-flex align-items-center px-1">
+<body class="flex min-h-dvh flex-col {% if user.is_authenticated %}pb-[calc(4.25rem+env(safe-area-inset-bottom))] md:pb-0{% endif %}">
+    <a href="#inhalt" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2 focus:shadow-lg">Zum Inhalt springen</a>
+
+    {# ------------------------------------------------------------ Kopfzeile #}
+    <header class="sticky top-0 z-40 border-b border-line/70 bg-surface/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+        <div class="container-app flex h-16 items-center gap-2 sm:gap-3">
+            <a href="{% url 'home' %}" class="mr-2 flex shrink-0 items-center gap-2.5">
+                <img src="{% static 'img/thw-jugend-ge-logo.png' %}" alt="THW-Jugend Gelsenkirchen" class="h-9 w-auto" width="64" height="36">
+                <span class="hidden leading-tight sm:block">
+                    <span class="block text-sm font-bold tracking-tight text-ink">LA-Tool</span>
+                    <span class="block text-[0.6875rem] text-ink-3">THW-Jugend GE</span>
+                </span>
+            </a>
+
+            {% if user.is_authenticated %}
+            <nav class="hidden items-center gap-0.5 md:flex" aria-label="Hauptnavigation">
+                <a href="{% url 'home' %}" class="nav-link {% if nav_section == 'home' %}nav-link-active{% endif %}">Start</a>
+                <a href="{% url 'training_config' %}" class="nav-link {% if nav_section == 'theory' %}nav-link-active{% endif %}">Theorie</a>
+                <a href="{% url 'practical_list' %}" class="nav-link {% if nav_section == 'practical' %}nav-link-active{% endif %}">Praxis</a>
+                <a href="{% url 'group_list' %}" class="nav-link {% if nav_section == 'group' %}nav-link-active{% endif %}">Gruppen</a>
+                <a href="{% url 'work' %}" class="nav-link {% if nav_section == 'work' %}nav-link-active{% endif %}">Dienste</a>
+                <a href="{% url 'exam_list' %}" class="nav-link {% if nav_section == 'exam' %}nav-link-active{% endif %}">Prüfungen</a>
+            </nav>
+            {% endif %}
+
+            <div class="ml-auto flex items-center gap-1 sm:gap-2">
+                {# LA-Stufe wählen #}
+                {% if all_levels %}
+                <div class="relative" x-data="{ open: false }" @keydown.escape="open = false">
+                    <button type="button" @click="open = !open" :aria-expanded="open" aria-haspopup="true" title="LA-Stufe wählen"
+                            class="flex h-10 items-center gap-1.5 rounded-xl border border-line bg-surface px-2 transition hover:bg-surface-2">
                         {% if current_level %}
                             {% if current_level.icon %}
-                                <img src="{{ current_level.icon.url }}" width="57" height="49" alt="{{ current_level.name }}">
+                            <img src="{{ current_level.icon.url }}" alt="" class="h-7 w-auto">
                             {% else %}
-                                <span class="badge {{ current_level.badge_bg_class }} {{ current_level.badge_text_class }} mx-2">{{ current_level.name }}</span>
+                            <span class="badge {{ current_level.badge_bg_class|default:'badge-primary' }} {{ current_level.badge_text_class }}">{{ current_level.name }}</span>
                             {% endif %}
+                            <span class="hidden text-sm font-medium lg:inline">{{ current_level.name }}</span>
                         {% else %}
-                            <span class="text-muted small mx-2">Stufe</span>
+                            <span class="px-1 text-sm text-ink-2">Stufe</span>
                         {% endif %}
-                    </a>
-                    <div class="dropdown-menu">
+                        {% include "icons/chevron-down.html" with cls="size-4 text-ink-3" %}
+                    </button>
+                    <div x-show="open" x-cloak x-transition.origin.top.right @click.outside="open = false" class="dropdown-menu right-0">
+                        <p class="px-3 pt-1.5 pb-1 text-xs font-semibold text-ink-3">LA-Stufe</p>
                         {% for level in all_levels %}
-                        <a class="dropdown-item d-flex align-items-center gap-2 {% if la_filter == level.slug %}fw-bold{% endif %}"
-                           href="{% url 'set_la_filter' level.slug %}">
+                        <a href="{% url 'set_la_filter' level.slug %}" class="dropdown-item {% if la_filter == level.slug %}font-semibold{% endif %}">
                             {% if level.icon %}
-                                <img src="{{ level.icon.url }}" width="40" height="34" alt="{{ level.name }}">
+                            <img src="{{ level.icon.url }}" alt="" class="h-7 w-9 object-contain">
                             {% else %}
-                                <span class="badge {{ level.badge_bg_class }} {{ level.badge_text_class }}" style="width:40px;">&nbsp;</span>
+                            <span class="badge {{ level.badge_bg_class|default:'badge-primary' }} {{ level.badge_text_class }} w-9 justify-center">&nbsp;</span>
                             {% endif %}
-                            {{ level.name }}{% if la_filter == level.slug %} ✓{% endif %}
+                            <span class="flex-1">{{ level.name }}</span>
+                            {% if la_filter == level.slug %}{% include "icons/check.html" with cls="size-4 text-accent-ink" %}{% endif %}
                         </a>
-                        {% empty %}
-                        <span class="dropdown-item text-muted small">Keine Stufen konfiguriert</span>
                         {% endfor %}
                     </div>
                 </div>
-                <ul class="navbar-nav mx-auto">
-                    <li class="nav-item"><a class="nav-link active" href="{% url 'home' %}">Start</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'training_config' %}">Theorie</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'practical_list' %}">Praxis</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'group_list' %}">Gruppenaufgaben</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'work' %}">Dienste</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{% url 'exam_list' %}">Prüfungen</a></li>
-                    {% if user_has_admin_access %}
-                    <li class="nav-item dropdown">
-                        <a class="dropdown-toggle nav-link" data-bs-toggle="dropdown" aria-expanded="false" href="#">Admin</a>
-                        <div class="dropdown-menu">
-                            <a class="dropdown-item" href="{% url 'admin_index' %}">Dashboard</a>
-                            <a class="dropdown-item" href="{% url 'admin_users' %}">Benutzer</a>
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="{% url 'admin_catalog' %}">Kataloge</a>
-                            <a class="dropdown-item" href="{% url 'admin_exam_list' %}">Prüfungen</a>
-                            <a class="dropdown-item" href="{% url 'admin_work_list' %}">Dienste</a>
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="{% url 'admin_settings' %}">Einstellungen</a>
-                        </div>
-                    </li>
-                    {% endif %}
-                </ul>
-                <div class="theme-switcher dropdown me-3"><a class="dropdown-toggle ms-3" data-bs-toggle="dropdown" aria-expanded="false" href="#" aria-label="Farbschema wechseln"><svg class="bi bi-sun-fill mb-1" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"></path>
-                        </svg></a>
-                    <div class="dropdown-menu"><a class="dropdown-item d-flex align-items-center" href="#" data-bs-theme-value="light"><svg class="bi bi-sun-fill opacity-50 me-2" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"></path>
-                            </svg>Light</a><a class="dropdown-item d-flex align-items-center" href="#" data-bs-theme-value="dark"><svg class="bi bi-moon-stars-fill opacity-50 me-2" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"></path>
-                                <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"></path>
-                            </svg>Dark</a><a class="dropdown-item d-flex align-items-center" href="#" data-bs-theme-value="auto"><svg class="bi bi-circle-half opacity-50 me-2" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M8 15A7 7 0 1 0 8 1zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16"></path>
-                            </svg>Auto</a></div>
-                </div>
-                {% if user.is_authenticated %}
-                <a class="btn btn-primary" role="button" href="{% url 'profile' %}">Konto</a>
-
-                <a class="btn btn-primary d-flex align-items-center gap-2 ms-3" role="button" href="{% url 'logout' %}">
-                    <svg class="bi bi-box-arrow-right" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0z"></path>
-                        <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"></path>
-                    </svg>Abmelden</a>
-
-                {% else %}
-                <a class="btn btn-primary" role="button" href="{% url 'login' %}">Anmelden</a>
                 {% endif %}
-                
 
+                {# Farbschema #}
+                <div class="relative" x-data="themeSwitcher" @keydown.escape="open = false">
+                    <button type="button" class="btn btn-ghost btn-icon" aria-label="Farbschema wechseln" @click="open = !open" :aria-expanded="open">
+                        <span x-show="choice === 'light'" x-cloak>{% include "icons/sun.html" %}</span>
+                        <span x-show="choice === 'dark'" x-cloak>{% include "icons/moon.html" %}</span>
+                        <span x-show="choice === 'auto'" x-cloak>{% include "icons/computer-desktop.html" %}</span>
+                    </button>
+                    <div x-show="open" x-cloak x-transition.origin.top.right @click.outside="open = false" class="dropdown-menu right-0 min-w-40">
+                        <button type="button" class="dropdown-item" :class="choice === 'light' && 'font-semibold'" @click="set('light')">{% include "icons/sun.html" with cls="size-4" %} Hell</button>
+                        <button type="button" class="dropdown-item" :class="choice === 'dark' && 'font-semibold'" @click="set('dark')">{% include "icons/moon.html" with cls="size-4" %} Dunkel</button>
+                        <button type="button" class="dropdown-item" :class="choice === 'auto' && 'font-semibold'" @click="set('auto')">{% include "icons/computer-desktop.html" with cls="size-4" %} Automatisch</button>
+                    </div>
+                </div>
+
+                {# Konto #}
+                {% if user.is_authenticated %}
+                <div class="relative" x-data="{ open: false }" @keydown.escape="open = false">
+                    <button type="button" @click="open = !open" :aria-expanded="open" aria-haspopup="true" aria-label="Kontomenü"
+                            class="flex size-10 items-center justify-center rounded-full bg-accent text-sm font-bold text-white transition hover:brightness-115">
+                        {{ user.first_name|default:user.username|first|upper }}{{ user.last_name|first|upper }}
+                    </button>
+                    <div x-show="open" x-cloak x-transition.origin.top.right @click.outside="open = false" class="dropdown-menu right-0">
+                        <div class="px-3 pt-1.5 pb-2">
+                            <p class="truncate text-sm font-semibold">{{ user.get_full_name|default:user.username }}</p>
+                            {% if user.email %}<p class="truncate text-xs text-ink-3">{{ user.email }}</p>{% endif %}
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <a href="{% url 'profile' %}" class="dropdown-item">{% include "icons/user-circle.html" with cls="size-4" %} Mein Konto</a>
+                        {% if user_has_admin_access %}
+                        <a href="{% url 'admin_index' %}" class="dropdown-item">{% include "icons/cog-6-tooth.html" with cls="size-4" %} Admin-Bereich</a>
+                        {% endif %}
+                        <div class="dropdown-divider"></div>
+                        <a href="{% url 'logout' %}" class="dropdown-item text-red-600 dark:text-red-400">{% include "icons/arrow-right-start-on-rectangle.html" with cls="size-4" %} Abmelden</a>
+                    </div>
+                </div>
+                {% else %}
+                <a href="{% url 'login' %}" class="btn btn-primary btn-sm">Anmelden</a>
+                {% endif %}
             </div>
         </div>
-    </nav>
+    </header>
 
-
-    <main class="flex-grow-1">
-    {% block site_content %}
-    {% endblock %}
+    {# ---------------------------------------------------------------- Inhalt #}
+    <main id="inhalt" class="flex-1">
+        {% block site_content %}
+        {% endblock %}
     </main>
 
-
-
-    <footer class="text-center bg-body py-4" style="position: relative;overflow: visible;">
-        <div class="container">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
-                <p class="text-body my-0">© 2026 Luca-Alexander Thomas · THW-Jugend Gelsenkirchen</p>
-                <ul class="list-inline my-0">
-                    <li class="list-inline-item"><a class="link-body-emphasis" href="#">Datenschutz</a></li>
-                    <li class="list-inline-item"><a class="link-body-emphasis" href="#">Nutzungsbedingungen</a></li>
-                </ul>
-            </div>
+    <footer class="border-t border-line/70 py-6 text-xs text-ink-3">
+        <div class="container-app flex flex-col items-center justify-between gap-2 sm:flex-row">
+            <p>© 2026 Luca-Alexander Thomas · THW-Jugend Gelsenkirchen</p>
+            <nav class="flex gap-4">
+                <a href="#" class="hover:text-ink">Datenschutz</a>
+                <a href="#" class="hover:text-ink">Nutzungsbedingungen</a>
+            </nav>
         </div>
     </footer>
-    <script src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
-    <script src="{% static 'js/bs-init.js' %}"></script>
-    <script src="{% static 'js/calendar.js' %}"></script>
-    <script src="{% static 'js/js-functions.js' %}"></script>
+
+    {# ------------------------------------------------- Tab-Leiste (Mobil) #}
+    {% if user.is_authenticated %}
+    <nav class="fixed inset-x-0 bottom-0 z-40 border-t border-line/70 bg-surface/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden" aria-label="Hauptnavigation mobil">
+        <div class="mx-auto flex max-w-lg">
+            <a href="{% url 'home' %}" class="tabbar-item {% if nav_section == 'home' %}tabbar-item-active{% endif %}">{% include "icons/home.html" %}Start</a>
+            <a href="{% url 'excercise' %}" class="tabbar-item {% if nav_section == 'excercise' or nav_section == 'theory' or nav_section == 'practical' or nav_section == 'group' %}tabbar-item-active{% endif %}">{% include "icons/academic-cap.html" %}Üben</a>
+            <a href="{% url 'work' %}" class="tabbar-item {% if nav_section == 'work' %}tabbar-item-active{% endif %}">{% include "icons/calendar-days.html" %}Dienste</a>
+            <a href="{% url 'exam_list' %}" class="tabbar-item {% if nav_section == 'exam' %}tabbar-item-active{% endif %}">{% include "icons/clipboard-document-check.html" %}Prüfungen</a>
+            <a href="{% url 'profile' %}" class="tabbar-item {% if nav_section == 'profile' %}tabbar-item-active{% endif %}">{% include "icons/user-circle.html" %}Konto</a>
+        </div>
+    </nav>
+    {% endif %}
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('{% url "service_worker" %}').catch(function () {});
+            });
+        }
+    </script>
     {% block extra_scripts %}{% endblock %}
-    <script src="{% static 'js/Popover-init.js' %}"></script>
 </body>
 
 </html>
