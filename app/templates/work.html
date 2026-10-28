@@ -1,102 +1,144 @@
 {% extends "base.html" %}
 
 {% block site_content %}
-<div class="container py-4 py-xl-5">
-    <div class="row mb-5">
+<div class="container py-4">
+    <div class="row mb-4">
         <div class="col-md-8 col-xl-6 text-center mx-auto">
             <h2>Dienste</h2>
-            <p>Hier findest du die letzten Dienste mit den Behandelten Themen</p>
+            <p class="text-muted">Vergangene und kommende Dienste mit behandelten Themen</p>
         </div>
     </div>
-</div>
-<div class="container">
+
     <div class="row">
-        <div class="col-md-6 col-xl-4 pt-2 pb-2">
-            <div
-                class="border rounded-1 border-3 border-primary d-flex flex-column justify-content-center align-items-center ps-3 pe-3 pt-2 pb-2">
-                <h4>Letzte Dienste</h4>
-                <div class="row border rounded-1 border-3 border-primary w-100 pe-0 mt-2 pt-1 mb-2 pb-1">
-                    <div class="col fs-5 fw-semibold d-flex justify-content-center align-items-center">
-                        <span>Thema</span></div>
-                    <div class="col col-xl-3 d-flex justify-content-center align-items-center"><span>02.02.2026</span>
+        <!-- Liste -->
+        <div class="col-md-5 col-xl-4">
+            <div class="border rounded-1 border-3 border-primary p-3 mb-3">
+                <h5 class="text-center mb-3">Alle Dienste</h5>
+                {% for w in works %}
+                <a class="text-decoration-none text-reset" href="{% url 'work_detail' w.pk %}">
+                    <div class="border rounded-1 border-2 border-primary d-flex flex-row align-items-center p-2 mb-2">
+                        <div class="col ms-2">
+                            <div class="fw-semibold">{{ w.title }}</div>
+                            <div class="text-muted small">
+                                {{ w.date|date:"d.m.Y" }}
+                                {% if w.level %}<span class="badge {{ w.level.badge_bg_class }} {{ w.level.badge_text_class }} ms-1">{{ w.level.name }}</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="col-auto me-1">
+                            <svg class="bi bi-chevron-right text-dark" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size:32px;">
+                                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
+                            </svg>
+                        </div>
                     </div>
-                    <div class="col col-xl-1 d-flex justify-content-center"><a class="text-reset"
-                            href="work-detail.html"><svg class="bi bi-chevron-right text-reset"
-                                xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor"
-                                viewBox="0 0 16 16" style="font-size: 32px;">
-                                <path fill-rule="evenodd"
-                                    d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708">
-                                </path>
-                            </svg></a></div>
-                </div>
-                <div class="row border rounded-1 border-3 border-primary w-100 pe-0 mt-2 pt-1 mb-2 pb-1">
-                    <div class="col fs-5 fw-semibold d-flex justify-content-center align-items-center">
-                        <span>Thema</span></div>
-                    <div class="col col-xl-3 d-flex justify-content-center align-items-center"><span>02.02.2026</span>
-                    </div>
-                    <div class="col col-xl-1 d-flex justify-content-center"><a class="text-reset"
-                            href="work-detail.html"><svg class="bi bi-chevron-right text-reset"
-                                xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor"
-                                viewBox="0 0 16 16" style="font-size: 32px;">
-                                <path fill-rule="evenodd"
-                                    d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708">
-                                </path>
-                            </svg></a></div>
-                </div>
-                <div class="row border rounded-1 border-3 border-primary w-100 pe-0 mt-2 pt-1 mb-2 pb-1">
-                    <div class="col fs-5 fw-semibold d-flex justify-content-center align-items-center">
-                        <span>Thema</span></div>
-                    <div class="col col-xl-3 d-flex justify-content-center align-items-center"><span>02.02.2026</span>
-                    </div>
-                    <div class="col col-xl-1 d-flex justify-content-center"><a class="text-reset"
-                            href="work-detail.html"><svg class="bi bi-chevron-right text-reset"
-                                xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor"
-                                viewBox="0 0 16 16" style="font-size: 32px;">
-                                <path fill-rule="evenodd"
-                                    d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708">
-                                </path>
-                            </svg></a></div>
-                </div>
+                </a>
+                {% empty %}
+                <p class="text-muted text-center py-3">Noch keine Dienste erfasst.</p>
+                {% endfor %}
             </div>
         </div>
-        <div class="col-md-6 col-xl-8 pt-0 pb-2">
-            <div class="col-md-6 col-xl-8 pt-2 pb-2 w-100">
-                <div
-                    class="border rounded-1 border-3 border-primary d-flex flex-column justify-content-center align-items-center ps-3 pe-3 pt-2 pb-2">
-                    <!-- Kalender Header -->
-                    <div class="calendar-header">
-                        <button class="btn btn-sm btn-outline-primary" id="prevMonth">← Vorher</button>
-                        <h4 id="monthYear" class="mb-0"></h4>
-                        <button class="btn btn-sm btn-outline-primary" id="nextMonth">Nächste →</button>
-                    </div>
 
-                    <!-- Kalender Container -->
-                    <div class="calendar-container">
-                        <div class="calendar-grid-wrapper">
-                            <div class="calendar-weekdays">
-                                <div class="weekday">Mo</div>
-                                <div class="weekday">Di</div>
-                                <div class="weekday">Mi</div>
-                                <div class="weekday">Do</div>
-                                <div class="weekday">Fr</div>
-                                <div class="weekday">Sa</div>
-                                <div class="weekday">So</div>
-                            </div>
-
-                            <div class="calendar-days" id="calendarDays"></div>
-                        </div>
-                    </div>
-
-                    <!-- Event-Liste unter dem Kalender -->
-                    <div class="event-list-container">
-                        <h5 id="selectedDateTitle" class="mb-3">Events wählen Sie ein Datum</h5>
-                        <div id="eventList" class="event-list">
-                            <p class="text-muted">Kein Event ausgewählt</p>
-                        </div>
-                    </div>
+        <!-- Kalender -->
+        <div class="col-md-7 col-xl-8">
+            <div class="border rounded-1 border-3 border-primary p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <button class="btn btn-sm btn-outline-primary" id="prevMonth">← Vorher</button>
+                    <h5 class="mb-0" id="monthYear"></h5>
+                    <button class="btn btn-sm btn-outline-primary" id="nextMonth">Nächste →</button>
                 </div>
+                <style>
+                    #calGrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+                    #calGrid .cal-day { text-align: center; padding: 4px 2px; font-size: .85rem; }
+                    #calGrid .cal-header { font-weight: 600; color: var(--bs-secondary-color); }
+                    #calGrid .cal-event a { display: block; border-radius: 4px; background: var(--bs-primary); color: #fff; text-decoration: none; }
+                    #calGrid .cal-today span { background: var(--bs-primary-bg-subtle); border-radius: 4px; display: block; }
+                </style>
+                <div id="calGrid">
+                    <div class="cal-day cal-header">Mo</div>
+                    <div class="cal-day cal-header">Di</div>
+                    <div class="cal-day cal-header">Mi</div>
+                    <div class="cal-day cal-header">Do</div>
+                    <div class="cal-day cal-header">Fr</div>
+                    <div class="cal-day cal-header">Sa</div>
+                    <div class="cal-day cal-header">So</div>
+                </div>
+                <div id="calendarEvents" class="mt-3 small"></div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+(function () {
+    const workDates = {
+        {% for w in works %}
+        '{{ w.date|date:"Y-m-d" }}': {title: '{{ w.title|escapejs }}', url: '{% url "work_detail" w.pk %}'},
+        {% endfor %}
+    };
+
+    const monthNames = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+    let current = new Date();
+    current.setDate(1);
+
+    const today = new Date();
+    const todayKey = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+
+    function render() {
+        const year = current.getFullYear();
+        const month = current.getMonth();
+        document.getElementById('monthYear').textContent = monthNames[month] + ' ' + year;
+
+        const grid = document.getElementById('calGrid');
+        // remove all day cells (keep the 7 header cells)
+        const cells = grid.querySelectorAll('.cal-cell');
+        cells.forEach(c => c.remove());
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const offset = firstDay === 0 ? 6 : firstDay - 1;
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const pad = n => String(n).padStart(2, '0');
+
+        let html = '';
+        for (let i = 0; i < offset; i++) {
+            html += '<div class="cal-cell cal-day"></div>';
+        }
+        for (let d = 1; d <= daysInMonth; d++) {
+            const key = year + '-' + pad(month + 1) + '-' + pad(d);
+            const ev = workDates[key];
+            const isToday = key === todayKey;
+            let inner;
+            if (ev) {
+                inner = `<a href="${ev.url}" title="${ev.title}">${d}</a>`;
+                html += `<div class="cal-cell cal-day cal-event">${inner}</div>`;
+            } else if (isToday) {
+                html += `<div class="cal-cell cal-day cal-today"><span>${d}</span></div>`;
+            } else {
+                html += `<div class="cal-cell cal-day">${d}</div>`;
+            }
+        }
+        grid.insertAdjacentHTML('beforeend', html);
+
+        // upcoming events list below calendar
+        const evDiv = document.getElementById('calendarEvents');
+        const monthEvents = Object.entries(workDates)
+            .filter(([k]) => k.startsWith(year + '-' + pad(month + 1)))
+            .sort(([a],[b]) => a.localeCompare(b));
+        if (monthEvents.length) {
+            evDiv.innerHTML = '<div class="fw-semibold mb-1">Dienste im ' + monthNames[month] + ':</div>' +
+                monthEvents.map(([k, ev]) => {
+                    const day = k.split('-')[2];
+                    return `<a href="${ev.url}" class="text-decoration-none text-reset d-flex align-items-center gap-2 py-1 border-bottom">
+                        <span class="badge bg-primary">${day}.</span>
+                        <span>${ev.title}</span>
+                    </a>`;
+                }).join('');
+        } else {
+            evDiv.innerHTML = '<span class="text-muted">Keine Dienste in diesem Monat.</span>';
+        }
+    }
+
+    document.getElementById('prevMonth').addEventListener('click', () => { current.setMonth(current.getMonth() - 1); render(); });
+    document.getElementById('nextMonth').addEventListener('click', () => { current.setMonth(current.getMonth() + 1); render(); });
+    render();
+})();
+</script>
 {% endblock %}

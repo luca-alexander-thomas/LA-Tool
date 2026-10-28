@@ -1,39 +1,53 @@
 {% extends "base.html" %}
 
 {% block site_content %}
-    <div class="container py-4 py-xl-5">
-        <div class="row mb-5">
-            <div class="col-md-8 col-xl-6 text-center mx-auto">
-                <h2>Admin Dienste</h2>
-                <p>Übersicht über alle Dienste</p>
-            </div>
+<div class="container py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0">Admin — Dienste</h3>
+        <div class="d-flex gap-2">
+            <a href="{% url 'admin_work_create' %}" class="btn btn-primary">+ Manuell erstellen</a>
+            <form method="post" action="{% url 'admin_work_sync' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-primary">Divera synchronisieren</button>
+            </form>
         </div>
     </div>
-    <div class="container">
-        <div class="row">
-            <div class="col-md-12">
-                <div class="border rounded-1 border-2 border-primary d-flex flex-row align-items-center p-1 mb-2">
-                    <div class="col col-xl-2 text-center"><span class="fw-semibold">19.04.2026</span></div>
-                    <div class="col"><span class="fs-5">Dienstthema</span></div>
-                    <div class="col col-xl-1 d-flex justify-content-end"><a href="/admin/work/detail"><svg class="bi bi-chevron-right" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 39px;">
-                                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
-                            </svg></a></div>
-                </div>
-                <div class="border rounded-1 border-2 border-primary d-flex flex-row align-items-center p-1 mb-2">
-                    <div class="col col-xl-2 text-center"><span class="fw-semibold">19.04.2026</span></div>
-                    <div class="col"><span class="fs-5">Dienstthema</span></div>
-                    <div class="col col-xl-1 d-flex justify-content-end"><a href="/admin/work/detail"><svg class="bi bi-chevron-right" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 39px;">
-                                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
-                            </svg></a></div>
-                </div>
-                <div class="border rounded-1 border-2 border-primary d-flex flex-row align-items-center p-1 mb-2">
-                    <div class="col col-xl-2 text-center"><span class="fw-semibold">19.04.2026</span></div>
-                    <div class="col"><span class="fs-5">Dienstthema</span></div>
-                    <div class="col col-xl-1 d-flex justify-content-end"><a href="/admin/work/detail"><svg class="bi bi-chevron-right" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 39px;">
-                                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
-                            </svg></a></div>
-                </div>
-            </div>
+
+    {% for w in works %}
+    <div class="border rounded-1 border-2 border-primary d-flex flex-row align-items-center p-2 mb-2">
+        <div class="col-md-2 text-center fw-semibold">{{ w.date|date:"d.m.Y" }}</div>
+        <div class="col">
+            <span class="fs-5">{{ w.title }}</span>
+            {% if w.level %}
+            <span class="badge {{ w.level.badge_bg_class }} {{ w.level.badge_text_class }} ms-2">{{ w.level.name }}</span>
+            {% endif %}
+            {% if w.is_draft %}<span class="badge bg-warning text-dark ms-1">Entwurf</span>{% endif %}
+            {% if w.is_manual %}<span class="badge bg-info text-dark ms-1">Manuell</span>{% endif %}
+            {% if w.location %}<span class="text-muted small ms-2">{{ w.location }}</span>{% endif %}
+        </div>
+        <div class="col-auto d-flex gap-2 align-items-center me-1">
+            <form method="post" action="{% url 'admin_draft_toggle' 'work' w.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm {% if w.is_draft %}btn-warning{% else %}btn-outline-secondary{% endif %}">
+                    {% if w.is_draft %}Entwurf aufheben{% else %}Als Entwurf{% endif %}
+                </button>
+            </form>
+            <form method="post" action="{% url 'admin_work_delete' w.pk %}" onsubmit="return confirm('Dienst löschen?')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger">Löschen</button>
+            </form>
+            <a class="text-reset" href="{% url 'admin_work_edit' w.pk %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size:39px;">
+                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
+                </svg>
+            </a>
         </div>
     </div>
+    {% empty %}
+    <div class="text-center text-muted py-5">
+        <p>Noch keine Dienste vorhanden.</p>
+        <p>Klicke auf "Divera synchronisieren" um Dienste aus Divera 24/7 zu importieren.</p>
+    </div>
+    {% endfor %}
+</div>
 {% endblock %}

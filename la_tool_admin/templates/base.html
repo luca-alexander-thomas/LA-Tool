@@ -93,16 +93,17 @@
 </head>
 
 <body>
-    <div class="container-fluid d-flex justify-content-center align-items-center" style="background: linear-gradient(95deg, var(--bs-primary) 35%, var(--bs-primary-bg-subtle));"><a class="navbar-brand text-center d-flex align-items-center m-3" href="#"><img class="w-25 h-25" src="https://sp-ao.shortpixel.ai/client/to_auto,q_glossy,ret_img,w_159/https://thw-jugend-ge.de/wp-content/uploads/2024/03/thw-jugend-ge-logo_2560-159x91.png" loading="lazy" width="135" height="77"><span class="fs-3 fw-bold text-center p-2" style="color: var(--bs-light);">THW-Jugend LA-Prüfungen Admin</span></a></div>
+    <div class="container-fluid d-flex justify-content-center align-items-center" style="background: linear-gradient(95deg, var(--bs-primary) 35%, var(--bs-primary-bg-subtle));"><a class="navbar-brand text-center d-flex align-items-center m-3" href="{% url 'admin_index' %}"><img class="w-25 h-25" src="https://sp-ao.shortpixel.ai/client/to_auto,q_glossy,ret_img,w_159/https://thw-jugend-ge.de/wp-content/uploads/2024/03/thw-jugend-ge-logo_2560-159x91.png" loading="lazy" width="135" height="77"><span class="fs-3 fw-bold text-center p-2" style="color: var(--bs-light);">THW-Jugend LA-Prüfungen Admin</span></a></div>
     <nav class="navbar navbar-expand-md bg-body py-3" style="background: var(--bs-background);position: relative;">
         <div class="container"><button data-bs-toggle="collapse" class="navbar-toggler" data-bs-target="#navcol-3"><span class="visually-hidden">Toggle navigation</span><span class="navbar-toggler-icon"></span></button>
-            <div class="collapse navbar-collapse mb-5 pb-0" id="navcol-3">
+            <div class="collapse navbar-collapse pb-0" id="navcol-3">
                 <ul class="navbar-nav mx-auto">
-                    <li class="nav-item"><a class="nav-link active" href="index.html">Start</a></li>
-                    <li class="nav-item"><a class="nav-link" href="excercise.html">Übungen</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Dienste</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Prüfungen</a></li>
-                </ul><a class="btn btn-primary" role="button" href="login.html">Anmelden</a>
+                    <li class="nav-item"><a class="nav-link active" href="{% url 'admin_index' %}">Start</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'excercise' %}">Übungen</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'admin_work_list' %}">Dienste</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'admin_exam_list' %}">Prüfungen</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'admin_settings' %}">Einstellungen</a></li>
+                </ul>{% if not user.is_authenticated %}<a class="btn btn-primary" role="button" href="{% url 'login' %}">Anmelden</a>{% endif %}
                 <div class="theme-switcher dropdown show"><a class="dropdown-toggle ms-3" aria-expanded="true" data-bs-toggle="dropdown" href="#"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" class="bi bi-sun-fill mb-1">
                             <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"></path>
                         </svg></a>
@@ -153,7 +154,6 @@
             </div>
         </div>
     </footer>
-    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
     <script src="{% static 'bootstrap/js/bootstrap.min.js' %}"></script>
 </body>
 

@@ -143,7 +143,4 @@ function addExercise(btn) {
     `);
 }
 
-tinymce.init({
-        selector: '#mytextarea'
-      });
 

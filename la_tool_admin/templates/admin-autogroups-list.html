@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block site_content %}
+<div class="container py-4">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <a href="{% url 'admin_settings' %}" class="text-decoration-none text-muted small">&larr; Einstellungen</a>
+            <h2 class="mb-0 mt-1">Automatische Gruppen</h2>
+            <p class="text-muted small mb-0 mt-1">
+                Gruppenregeln werden bei jedem Login ausgewertet – Mitgliedschaften werden automatisch hinzugefügt oder entfernt.
+            </p>
+        </div>
+        <a href="{% url 'admin_autogroup_create' %}" class="btn btn-primary">+ Neue Gruppe</a>
+    </div>
+
+    {% if rules %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Gruppenname</th>
+                    <th>Divera-Qualifikationen</th>
+                    <th>Entra-Gruppen-IDs</th>
+                    <th>Mitglieder</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rule in rules %}
+                <tr>
+                    <td class="fw-semibold">{{ rule.group.name }}</td>
+                    <td>
+                        {% if rule.divera_qual_ids %}
+                        <span class="badge bg-info text-dark">{{ rule.divera_qual_ids|length }} Qualifikation{{ rule.divera_qual_ids|length|pluralize:"en" }}</span>
+                        {% else %}
+                        <span class="text-muted small">–</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if rule.entra_group_ids %}
+                        <span class="badge bg-secondary">{{ rule.entra_group_ids|length }} Entra-Gruppe{{ rule.entra_group_ids|length|pluralize:"n" }}</span>
+                        {% else %}
+                        <span class="text-muted small">–</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-muted small">{{ rule.group.user_set.count }} Nutzer</td>
+                    <td>
+                        <a href="{% url 'admin_autogroup_edit' rule.group.pk %}" class="btn btn-sm btn-outline-secondary">Bearbeiten</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="border rounded-1 border-3 border-primary p-4 text-center text-muted">
+        <p class="mb-2">Noch keine automatischen Gruppen angelegt.</p>
+        <a href="{% url 'admin_autogroup_create' %}" class="btn btn-primary">Erste Gruppe anlegen</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

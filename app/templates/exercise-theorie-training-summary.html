@@ -1,129 +1,72 @@
 {% extends "base.html" %}
+{# Training result: score + per-question breakdown #}
 
 {% block site_content %}
-    <div class="container py-4 py-xl-5">
-        <div class="row mb-5">
-            <div class="col-md-8 col-xl-6 text-center mx-auto">
-                <h2>Übungen - Theorie üben Auswertung</h2>
-                <p>So hast du dich geschlagen!</p>
-            </div>
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8 col-xl-6 text-center mx-auto">
+            <h2>Auswertung</h2>
+            <p class="text-muted">{{ result.name }}</p>
         </div>
     </div>
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6 col-xl-4 p-2">
-                <div class="border rounded-1 border-3 border-primary p-2">
-                    <div class="alert alert-success text-center text-danger bg-danger-subtle border-1 border-danger" role="alert"><span class="text-center"><strong>Nicht Bestanden!&nbsp; 😞</strong></span></div>
-                    <p class="fs-4 fw-bold text-center text-danger">10 von 50 Punkten</p>
-                    <div><canvas data-bss-chart="{&quot;type&quot;:&quot;bar&quot;,&quot;data&quot;:{&quot;labels&quot;:[&quot;LA 1&quot;,&quot;LA 2&quot;,&quot;LA 3&quot;,&quot;LA 4&quot;,&quot;LA 5&quot;,&quot;LA 6&quot;],&quot;datasets&quot;:[{&quot;label&quot;:&quot;Result&quot;,&quot;backgroundColor&quot;:&quot;#f49e00&quot;,&quot;borderColor&quot;:&quot;#f49e00&quot;,&quot;data&quot;:[&quot;5&quot;,&quot;3&quot;,&quot;4&quot;,&quot;7&quot;,&quot;1&quot;,&quot;0&quot;]}]},&quot;options&quot;:{&quot;legend&quot;:{&quot;display&quot;:false,&quot;labels&quot;:{&quot;fontStyle&quot;:&quot;normal&quot;}},&quot;title&quot;:{&quot;fontStyle&quot;:&quot;bold&quot;},&quot;aspectRatio&quot;:2,&quot;maintainAspectRatio&quot;:true,&quot;scales&quot;:{&quot;xAxes&quot;:[{&quot;gridLines&quot;:{&quot;drawBorder&quot;:false,&quot;drawTicks&quot;:false,&quot;drawOnChartArea&quot;:false},&quot;ticks&quot;:{&quot;fontStyle&quot;:&quot;normal&quot;,&quot;beginAtZero&quot;:true,&quot;padding&quot;:3,&quot;display&quot;:true}}],&quot;yAxes&quot;:[{&quot;gridLines&quot;:{&quot;drawBorder&quot;:false,&quot;drawTicks&quot;:false,&quot;drawOnChartArea&quot;:false},&quot;ticks&quot;:{&quot;fontStyle&quot;:&quot;normal&quot;,&quot;beginAtZero&quot;:true,&quot;padding&quot;:3,&quot;display&quot;:false}}]}}}"></canvas></div>
+
+    <div class="row g-3">
+        <div class="col-md-4 col-xl-3">
+            <div class="border rounded-2 border-3 border-primary p-3 text-center">
+                {% if pct >= pass_threshold %}
+                    <div class="alert alert-success mb-2"><strong>Bestanden!</strong></div>
+                    <p class="fs-3 fw-bold text-success">{{ score }} von {{ total }}</p>
+                {% else %}
+                    <div class="alert alert-danger mb-2"><strong>Nicht bestanden</strong></div>
+                    <p class="fs-3 fw-bold text-danger">{{ score }} von {{ total }}</p>
+                {% endif %}
+                <p class="text-muted">{{ pct }}% richtig</p>
+                <p class="text-muted small">Bestehensgrenze: {{ pass_threshold }}%</p>
+                <div class="progress mt-2" style="height:12px;">
+                    <div class="progress-bar {% if pct >= pass_threshold %}bg-success{% else %}bg-danger{% endif %}" style="width:{{ pct }}%;"></div>
                 </div>
-            </div>
-            <div class="col-md-6 col-xl-8">
-                <div class="row border rounded-1 border-3 border-primary m-2 p-2">
-                    <div class="col">
-                        <div class="row">
-                            <div class="col fw-bold d-flex align-items-center"><span>Frage: Warum ist die Banane krumm?</span><svg class="bi bi-check text-success" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 49px;">
-                                    <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"></path>
-                                </svg></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><span>Richtig</span></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><span>Deine Antwort</span></div>
-                        </div>
-                        <div class="row">
-                            <div class="col"><span>A: Weil sie so gewachsen ist</span></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" checked="" disabled=""></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" disabled=""></div>
-                        </div>
-                        <div class="row">
-                            <div class="col"><span>B: Weil sie so gewachsen ist</span></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" checked="" disabled=""></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" disabled=""></div>
-                        </div>
-                        <div class="row">
-                            <div class="col"><span>C: Weil sie so gewachsen ist</span></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" checked="" disabled=""></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" disabled=""></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row border rounded-1 border-3 border-primary m-2 p-2">
-                    <div class="col">
-                        <div class="row">
-                            <div class="col fw-bold d-flex align-items-center"><span>Frage: Warum ist die Banane krumm?</span><svg class="bi bi-x text-danger" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 49px;">
-                                    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"></path>
-                                </svg></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><span>Richtig</span></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><span>Deine Antwort</span></div>
-                        </div>
-                        <div class="row">
-                            <div class="col"><span>A: Weil sie so gewachsen ist</span></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" checked="" disabled=""></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" disabled=""></div>
-                        </div>
-                        <div class="row">
-                            <div class="col"><span>B: Weil sie so gewachsen ist</span></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" checked="" disabled=""></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" disabled=""></div>
-                        </div>
-                        <div class="row">
-                            <div class="col"><span>C: Weil sie so gewachsen ist</span></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" checked="" disabled=""></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" disabled=""></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row border rounded-1 border-3 border-primary m-2 p-2">
-                    <div class="col">
-                        <div class="row">
-                            <div class="col fw-bold d-flex align-items-center"><span>Frage: Warum ist die Banane krumm?</span><svg class="bi bi-check text-success" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 49px;">
-                                    <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"></path>
-                                </svg></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><span>Richtig</span></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><span>Deine Antwort</span></div>
-                        </div>
-                        <div class="row">
-                            <div class="col"><span>A: Weil sie so gewachsen ist</span></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" checked="" disabled=""></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" disabled=""></div>
-                        </div>
-                        <div class="row">
-                            <div class="col"><span>B: Weil sie so gewachsen ist</span></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" checked="" disabled=""></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" disabled=""></div>
-                        </div>
-                        <div class="row">
-                            <div class="col"><span>C: Weil sie so gewachsen ist</span></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" checked="" disabled=""></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" disabled=""></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row border rounded-1 border-3 border-primary m-2 p-2">
-                    <div class="col">
-                        <div class="row">
-                            <div class="col fw-bold d-flex align-items-center"><span>Frage: Warum ist die Banane krumm?</span><svg class="bi bi-x text-danger" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 49px;">
-                                    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"></path>
-                                </svg></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><span>Richtig</span></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><span>Deine Antwort</span></div>
-                        </div>
-                        <div class="row">
-                            <div class="col"><span>A: Weil sie so gewachsen ist</span></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" checked="" disabled=""></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" disabled=""></div>
-                        </div>
-                        <div class="row">
-                            <div class="col"><span>B: Weil sie so gewachsen ist</span></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" checked="" disabled=""></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" disabled=""></div>
-                        </div>
-                        <div class="row">
-                            <div class="col"><span>C: Weil sie so gewachsen ist</span></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" checked="" disabled=""></div>
-                            <div class="col-3 col-sm-2 col-md-3 col-lg-2 col-xl-2 text-center d-flex justify-content-center align-items-center"><input type="checkbox" disabled=""></div>
-                        </div>
-                    </div>
+                <div class="mt-3">
+                    <a href="{% url 'training_config' %}" class="btn btn-primary">Nochmal üben</a>
                 </div>
             </div>
         </div>
+
+        <div class="col-md-8 col-xl-9">
+            {% for item in questions_data %}
+            <div class="border rounded-2 border-2 {% if item.is_correct %}border-success{% else %}border-danger{% endif %} mb-2 p-2">
+                <div class="d-flex align-items-center mb-1">
+                    <span class="fw-bold flex-grow-1">{{ item.question.question }}{% if item.is_multi_answer %}<span class="badge bg-secondary ms-2 fw-normal small">Mehrfachauswahl</span>{% endif %}</span>
+                    {% if item.is_correct %}
+                        <svg class="bi bi-check text-success ms-2" xmlns="http://www.w3.org/2000/svg" width="1.8em" height="1.8em" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"/>
+                        </svg>
+                    {% else %}
+                        <svg class="bi bi-x text-danger ms-2" xmlns="http://www.w3.org/2000/svg" width="1.8em" height="1.8em" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
+                        </svg>
+                    {% endif %}
+                </div>
+                <div class="row row-cols-3 small">
+                    <div class="col fw-semibold text-muted">Antwort</div>
+                    <div class="col fw-semibold text-success text-center">Richtig</div>
+                    <div class="col fw-semibold text-center">Deine Antwort</div>
+                </div>
+                {% for letter, text in item.labeled_choices %}
+                {% if text %}
+                <div class="row row-cols-3 small">
+                    <div class="col">{{ letter|upper }}. {{ text }}</div>
+                    <div class="col text-center">
+                        {% if text in item.correct_texts %}<input type="checkbox" checked disabled>{% else %}<input type="checkbox" disabled>{% endif %}
+                    </div>
+                    <div class="col text-center">
+                        {% if letter in item.user_letters %}<input type="checkbox" checked disabled>{% else %}<input type="checkbox" disabled>{% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
     </div>
+</div>
 {% endblock %}

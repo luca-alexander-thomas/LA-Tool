@@ -34,15 +34,15 @@
 }
 
 .pane-content::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--bs-tertiary-bg);
 }
 
 .pane-content::-webkit-scrollbar-thumb {
-  background: #0c63e4;
+  background: var(--bs-primary);
   border-radius: 4px;
 }
 
 .pane-content::-webkit-scrollbar-thumb:hover {
-  background: #0a58ca;
+  background: var(--bs-primary-text-emphasis);
 }
 

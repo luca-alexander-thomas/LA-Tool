@@ -1,48 +1,140 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block site_content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8 col-xl-6 text-center mx-auto">
+            <h2>Leistungsabzeichen Tool</h2>
+            <p class="text-muted">Das LA-Tool der THW-Jugend Gelsenkirchen</p>
+        </div>
+    </div>
 
-    <div class="container py-4 py-xl-5">
-        <div class="row mb-5">
-            <div class="col-md-8 col-xl-6 text-center mx-auto">
-                <h2>Leistungsabzeichen Tool</h2>
-                <p>Das Tool der THW-Jugend Gelsenkirchen zum lernen und erheben von Zielen des Leistungsabzeichen der THW-Jugend&nbsp;</p>
+    {% if user.is_authenticated %}
+    <!-- Fortschritts-Dashboard -->
+    <div class="row mb-4 gy-3">
+
+        <!-- Letzte Trainings -->
+        <div class="col-md-4">
+            <div class="border rounded-1 border-3 border-primary p-3 h-100">
+                <h5 class="mb-3">Letzte Trainings</h5>
+                {% for r in training_results %}
+                {% with meta=r.meta_reference %}
+                <a href="{% url 'training_result' r.pk %}" class="text-decoration-none text-reset">
+                    <div class="border rounded-1 border-2 border-primary d-flex align-items-center p-2 mb-2">
+                        <div class="col ms-1">
+                            <div class="small fw-semibold">{{ r.name }}</div>
+                            <div class="text-muted small">{{ r.meta_time|date:"d.m.Y" }}</div>
+                        </div>
+                        <div class="col-auto me-2">
+                            {% if meta %}
+                            {% if meta.score >= meta.total|add:"-1" %}
+                            <span class="small fw-semibold text-success">{{ meta.score }}/{{ meta.total }}</span>
+                            {% else %}
+                            <span class="small fw-semibold text-danger">{{ meta.score }}/{{ meta.total }}</span>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+                {% endwith %}
+                {% empty %}
+                <p class="text-muted small text-center py-2">Noch keine Trainings</p>
+                {% endfor %}
+                <div class="d-flex justify-content-center mt-2">
+                    <a class="btn btn-sm btn-outline-primary" href="{% url 'training_config' %}">Zu Theorie</a>
+                </div>
             </div>
         </div>
-        <div class="row gy-4 row-cols-1 row-cols-md-2 row-cols-xl-3">
-            <div class="col">
-                <div class="card">
-                    <div class="card-body p-4">
-                        <div class="bs-icon-md bs-icon-rounded bs-icon-primary d-flex justify-content-center align-items-center mb-3 d-inline-block bs-icon"><svg class="bi bi-book" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783"></path>
-                            </svg></div>
-                        <h4 class="card-title">Übungen</h4>
-                        <p class="card-text">Unter Übungen findest du die Theorie-, Praxis- und Gruppenaufgaben des Leistungsabzeichen zum Üben und nachschauen.</p><a class="btn btn-primary" role="button" href="exercise.html">Zu den Übungen</a>
+
+        <!-- Prüfungen -->
+        <div class="col-md-4">
+            <div class="border rounded-1 border-3 border-primary p-3 h-100">
+                <h5 class="mb-3">Prüfungen</h5>
+                {% if open_exams_count > 0 %}
+                <div class="alert alert-info text-center py-2">
+                    <strong>{{ open_exams_count }}</strong> offene Prüfung{{ open_exams_count|pluralize:"en" }} zugewiesen
+                </div>
+                {% endif %}
+                {% for r in unreleased_results %}
+                {% with meta=r.meta_reference %}
+                <div class="border rounded-1 border-2 border-primary d-flex align-items-center p-2 mb-2">
+                    <div class="col ms-1">
+                        <div class="small fw-semibold">{{ r.exam.name }}</div>
+                        <div class="text-muted small">{{ r.meta_time|date:"d.m.Y" }}</div>
+                    </div>
+                    <div class="col-auto me-2">
+                        {% if meta.passed %}<span class="badge bg-success small">Bestanden</span>
+                        {% else %}<span class="badge bg-danger small">Nicht bestanden</span>{% endif %}
                     </div>
                 </div>
-            </div>
-            <div class="col">
-                <div class="card">
-                    <div class="card-body p-4">
-                        <div class="bs-icon-md bs-icon-rounded bs-icon-primary d-flex justify-content-center align-items-center mb-3 d-inline-block bs-icon"><svg class="bi bi-archive" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M0 2a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1v7.5a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 1 12.5V5a1 1 0 0 1-1-1zm2 3v7.5A1.5 1.5 0 0 0 3.5 14h9a1.5 1.5 0 0 0 1.5-1.5V5zm13-3H1v2h14zM5 7.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5"></path>
-                            </svg></div>
-                        <h4 class="card-title">Dienste</h4>
-                        <p class="card-text">Unter Dienste werden die vergangenen Dienste angezeigt und dazu passende Inhalte des Leistungsabzeichen</p><a class="btn btn-primary" role="button" href="work.html">Zu den Diensten</a>
-                    </div>
+                {% endwith %}
+                {% empty %}
+                {% if open_exams_count == 0 %}
+                <p class="text-muted small text-center py-2">Keine offenen Prüfungen</p>
+                {% endif %}
+                {% endfor %}
+                <div class="d-flex justify-content-center mt-2">
+                    <a class="btn btn-sm btn-outline-primary" href="{% url 'exam_list' %}">Zu den Prüfungen</a>
                 </div>
             </div>
-            <div class="col">
-                <div class="card">
-                    <div class="card-body p-4">
-                        <div class="bs-icon-md bs-icon-rounded bs-icon-primary d-flex justify-content-center align-items-center mb-3 d-inline-block bs-icon"><svg class="bi bi-flag" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M14.778.085A.5.5 0 0 1 15 .5V8a.5.5 0 0 1-.314.464L14.5 8l.186.464-.003.001-.006.003-.023.009a12 12 0 0 1-.397.15c-.264.095-.631.223-1.047.35-.816.252-1.879.523-2.71.523-.847 0-1.548-.28-2.158-.525l-.028-.01C7.68 8.71 7.14 8.5 6.5 8.5c-.7 0-1.638.23-2.437.477A20 20 0 0 0 3 9.342V15.5a.5.5 0 0 1-1 0V.5a.5.5 0 0 1 1 0v.282c.226-.079.496-.17.79-.26C4.606.272 5.67 0 6.5 0c.84 0 1.524.277 2.121.519l.043.018C9.286.788 9.828 1 10.5 1c.7 0 1.638-.23 2.437-.477a20 20 0 0 0 1.349-.476l.019-.007.004-.002h.001M14 1.221c-.22.078-.48.167-.766.255-.81.252-1.872.523-2.734.523-.886 0-1.592-.286-2.203-.534l-.008-.003C7.662 1.21 7.139 1 6.5 1c-.669 0-1.606.229-2.415.478A21 21 0 0 0 3 1.845v6.433c.22-.078.48-.167.766-.255C4.576 7.77 5.638 7.5 6.5 7.5c.847 0 1.548.28 2.158.525l.028.01C9.32 8.29 9.86 8.5 10.5 8.5c.668 0 1.606-.229 2.415-.478A21 21 0 0 0 14 7.655V1.222z"></path>
-                            </svg></div>
-                        <h4 class="card-title">Prüfungen</h4>
-                        <p class="card-text">Unter Prüfungen kannst du Vorprüfungen oder freigegebene Prüfungen absolvieren.</p><a class="btn btn-primary" role="button" href="exams.html">Zu den Prüfungen</a>
+        </div>
+
+        <!-- Nächster Dienst -->
+        <div class="col-md-4">
+            <div class="border rounded-1 border-3 border-primary p-3 h-100">
+                <h5 class="mb-3">Nächster Dienst</h5>
+                {% if next_work %}
+                <a href="{% url 'work_detail' next_work.pk %}" class="text-decoration-none text-reset">
+                    <div class="border rounded-1 border-2 border-primary p-3 text-center">
+                        <div class="fw-bold fs-5">{{ next_work.title }}</div>
+                        <div class="text-muted">{{ next_work.date|date:"d.m.Y" }}</div>
+                        {% if next_work.location %}<div class="text-muted small">{{ next_work.location }}</div>{% endif %}
+                        {% if next_work.level %}
+                        <span class="badge {{ next_work.level.badge_bg_class }} {{ next_work.level.badge_text_class }} mt-2">{{ next_work.level.name }}</span>
+                        {% endif %}
                     </div>
+                </a>
+                {% else %}
+                <p class="text-muted small text-center py-2">Keine kommenden Dienste geplant</p>
+                {% endif %}
+                <div class="d-flex justify-content-center mt-2">
+                    <a class="btn btn-sm btn-outline-primary" href="{% url 'work' %}">Alle Dienste</a>
                 </div>
             </div>
         </div>
     </div>
+
+    {% else %}
+    <!-- Landing für nicht-eingeloggte -->
+    <div class="row gy-4 row-cols-1 row-cols-md-3">
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body p-4">
+                    <h4 class="card-title">Übungen</h4>
+                    <p class="card-text">Theorie-, Praxis- und Gruppenaufgaben zum Üben und nachschlagen.</p>
+                    <a class="btn btn-primary" href="{% url 'login' %}">Anmelden</a>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body p-4">
+                    <h4 class="card-title">Dienste</h4>
+                    <p class="card-text">Vergangene und kommende Dienste mit behandelten Themen.</p>
+                    <a class="btn btn-primary" href="{% url 'login' %}">Anmelden</a>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body p-4">
+                    <h4 class="card-title">Prüfungen</h4>
+                    <p class="card-text">Übungsprüfungen und freigegebene Ergebnisse einsehen.</p>
+                    <a class="btn btn-primary" href="{% url 'login' %}">Anmelden</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

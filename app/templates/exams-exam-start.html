@@ -1,21 +1,67 @@
 {% extends "base.html" %}
 
 {% block site_content %}
-    <div class="container py-4 py-xl-5">
-        <div class="row mb-5">
-            <div class="col-md-8 col-xl-6 text-center mx-auto">
-                <h2>Theorieprüfung - Prüfung LA 28.03.206</h2>
-                <p>Während der Prüfung sind keine Hilfsmittel zugelassen!</p>
+<div class="container py-2 mb-2">
+    <a href="{% url 'exam_list' %}" class="text-decoration-none text-muted">&larr; Prüfungsübersicht</a>
+</div>
+
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8 col-xl-6 text-center mx-auto">
+            <h2>{{ exam.name }}</h2>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-xl-6">
+            <!-- Prüfungsinfo -->
+            <div class="border rounded-1 border-3 border-primary p-3 mb-4">
+                <div class="row text-center">
+                    <div class="col">
+                        <div class="fw-bold fs-4">{{ question_count }}</div>
+                        <div class="text-muted small">Fragen</div>
+                    </div>
+                    <div class="col border-start">
+                        <div class="fw-bold fs-4">{{ exam.time_in_min }} Min</div>
+                        <div class="text-muted small">Zeit</div>
+                    </div>
+                    <div class="col border-start">
+                        <span class="badge fs-6 {% if exam.level %}{{ exam.level.badge_bg_class }} {{ exam.level.badge_text_class }}{% else %}bg-secondary text-white{% endif %}">
+                            {% if exam.level %}{{ exam.level.name }}{% else %}–{% endif %}
+                        </span>
+                        <div class="text-muted small mt-1">Stufe</div>
+                    </div>
+                    <div class="col border-start">
+                        <div class="fw-bold fs-4 text-primary">{{ pass_count }}/{{ question_count }}</div>
+                        <div class="text-muted small">zum Bestehen ({{ pass_pct }}%)</div>
+                    </div>
+                </div>
             </div>
+
+            {% if exam.info_text %}
+            <div class="border rounded-1 border-2 border-secondary p-3 mb-4 text-muted">
+                {{ exam.info_text|linebreaksbr }}
+            </div>
+            {% endif %}
+
+            {% if existing %}
+            <div class="alert alert-info text-center">
+                Du hast diese Prüfung bereits abgegeben.
+                <a href="{% url 'exam_result' exam.pk %}" class="alert-link ms-1">Ergebnis ansehen</a>
+            </div>
+            {% elif exam.closed %}
+            <div class="alert alert-warning text-center">
+                Diese Prüfung ist gesperrt und kann derzeit nicht gestartet werden.
+            </div>
+            {% else %}
+            <div class="d-flex justify-content-center mt-2">
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary fs-4 fw-bold px-5 py-3">START</button>
+                </form>
+            </div>
+            {% endif %}
         </div>
     </div>
-    <div class="container d-flex flex-column justify-content-center">
-        <div class="row border rounded-1 border-3 border-primary d-flex w-100 justify-content-center mt-0 pt-3 mb-2 pb-3">
-            <div class="col d-flex justify-content-center align-items-center"><img src="assets/img/01c_Abzeichen-Silber.png" width="100" height="100"></div>
-            <div class="col fs-4 fw-bold d-flex justify-content-center align-items-center"><span>25 Fragen</span></div>
-            <div class="col fs-4 fw-bold d-flex justify-content-center align-items-center"><span>30:00 Minuten</span></div>
-        </div>
-        <div class="d-flex justify-content-center align-items-center mt-4"><a class="btn btn-primary fs-4 fw-bold ps-4 pe-4 pt-3 pb-3" role="button" href="exams-exam.html">START</a></div>
-        <div class="d-flex justify-content-center align-items-center mt-4"><span>Hier können noch Hinweise stehen...</span></div>
-    </div>
+</div>
 {% endblock %}

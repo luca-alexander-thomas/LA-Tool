@@ -1,39 +1,64 @@
 {% extends "base.html" %}
 
 {% block site_content %}
-    <div class="container py-4 py-xl-5">
-        <div class="row mb-5">
-            <div class="col-md-8 col-xl-6 text-center mx-auto">
-                <h2>Kataloge</h2>
-                <p>Inhalte bearbeiten</p>
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">Fragenkataloge</h2>
+            <p class="text-muted mb-0">Inhalte verwalten</p>
+        </div>
+        <a href="{% url 'admin_catalog_create' %}" class="btn btn-primary">+ Neuer Katalog</a>
+    </div>
+
+    {% if catalogs %}
+        {% for catalog in catalogs %}
+        <div class="border rounded-2 border-2 border-primary d-flex flex-row align-items-center p-3 mb-2">
+            <div class="col-auto me-3">
+                {% if catalog.icon %}
+                    <img src="{{ catalog.icon.url }}" width="60" height="60" alt="">
+                {% else %}
+                    <div class="bg-light rounded-2 d-flex align-items-center justify-content-center" style="width:60px;height:60px;">
+                        <span class="text-muted" style="font-size:10px;">kein Icon</span>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col">
+                <div class="fw-bold fs-5">
+                    {{ catalog.title }}
+                    {% if catalog.is_draft %}<span class="badge bg-warning text-dark ms-2">Entwurf</span>{% endif %}
+                </div>
+                <div class="text-muted small">
+                    {% if catalog.level %}{{ catalog.level.name }}{% else %}–{% endif %}
+                    &nbsp;·&nbsp;
+                    {% with c=counts|dictsort:"0" %}
+                        {% for pk, cnt in counts.items %}
+                            {% if pk == catalog.pk %}
+                                {{ cnt.theory }} Theorie · {{ cnt.practical }} Praxis · {{ cnt.group }} Gruppe
+                            {% endif %}
+                        {% endfor %}
+                    {% endwith %}
+                </div>
+            </div>
+            <div class="col-auto d-flex gap-1 flex-wrap justify-content-end align-items-center">
+                <form method="post" action="{% url 'admin_draft_toggle' 'catalog' catalog.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm {% if catalog.is_draft %}btn-warning{% else %}btn-outline-secondary{% endif %}">
+                        {% if catalog.is_draft %}Entwurf aufheben{% else %}Als Entwurf{% endif %}
+                    </button>
+                </form>
+                <a href="{% url 'admin_catalog_detail' catalog.pk %}" class="btn btn-outline-primary btn-sm">Bearbeiten</a>
+                <form method="post" action="{% url 'admin_catalog_delete' catalog.pk %}" class="d-inline" onsubmit="return confirm('Katalog {{ catalog.title }} wirklich löschen?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Löschen</button>
+                </form>
             </div>
         </div>
-    </div>
-    <div class="container">
-        <div class="row">
-            <div class="col-md-12 p-2">
-                <div class="border rounded-1 border-2 border-primary d-flex flex-row justify-content-center align-items-center mb-2">
-                    <div class="col col-xl-1"><img src="assets/img/01d_Abzeichen-Bronze.png" width="100" height="100"></div>
-                    <div class="col fs-3 d-flex justify-content-center"><span>LA-Bronze</span></div>
-                    <div class="col col-xl-1"><a href="admin-catalog-detail.html"><svg class="bi bi-chevron-right" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 50px;">
-                                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
-                            </svg></a></div>
-                </div>
-                <div class="border rounded-1 border-2 border-primary d-flex flex-row justify-content-center align-items-center mb-2">
-                    <div class="col col-xl-1"><img src="assets/img/01c_Abzeichen-Silber.png" width="100" height="100"></div>
-                    <div class="col fs-3 d-flex justify-content-center"><span>LA-Silber</span></div>
-                    <div class="col col-xl-1"><a href="admin-catalog-detail.html"><svg class="bi bi-chevron-right" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 50px;">
-                                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
-                            </svg></a></div>
-                </div>
-                <div class="border rounded-1 border-2 border-primary d-flex flex-row justify-content-center align-items-center mb-2">
-                    <div class="col col-xl-1"><img src="assets/img/01b_Abzeichen-Gold.png" width="100" height="100"></div>
-                    <div class="col fs-3 d-flex justify-content-center"><span>LA-Gold</span></div>
-                    <div class="col col-xl-1"><a href="admin-catalog-detail.html"><svg class="bi bi-chevron-right" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 50px;">
-                                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
-                            </svg></a></div>
-                </div>
-            </div>
+        {% endfor %}
+    {% else %}
+        <div class="text-center py-5 text-muted">
+            <p>Noch keine Kataloge vorhanden.</p>
+            <a href="{% url 'admin_catalog_create' %}" class="btn btn-primary">Ersten Katalog erstellen</a>
         </div>
-    </div>
+    {% endif %}
+</div>
 {% endblock %}

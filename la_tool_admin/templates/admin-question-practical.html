@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block site_content %}
+<div class="container py-4" style="max-width:640px;">
+    <div class="mb-3">
+        <a href="{% url 'admin_catalog_detail' catalog.pk %}?tab=practical" class="text-decoration-none text-muted">&larr; {{ catalog.title }}</a>
+    </div>
+    <h4 class="mb-4">{{ title }}</h4>
+    <div class="border rounded-2 border-primary p-4">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">{{ form.number.label }}</label>
+                {{ form.number }}
+                {% if form.number.errors %}<div class="text-danger small mt-1">{{ form.number.errors }}</div>{% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">{{ form.question.label }}</label>
+                {{ form.question }}
+                {% if form.question.errors %}<div class="text-danger small mt-1">{{ form.question.errors }}</div>{% endif %}
+            </div>
+
+            <div class="mb-3">
+                {% if question and question.file %}
+                <div class="mb-2 p-2 rounded border d-flex align-items-center gap-2 small">
+                    <span class="text-muted">Aktuell:</span>
+                    <a href="{{ question.file.url }}" target="_blank" class="text-primary text-truncate" style="max-width:260px;">{{ question.file.name }}</a>
+                    <span class="text-muted ms-auto text-nowrap">bleibt erhalten wenn leer gelassen</span>
+                </div>
+                <label class="form-label fw-semibold">Neue Datei hochladen <span class="text-muted fw-normal small">(optional)</span></label>
+                {% else %}
+                <label class="form-label fw-semibold">{{ form.file.label }}</label>
+                {% endif %}
+                {{ form.file }}
+                {% if form.file.errors %}<div class="text-danger small mt-1">{{ form.file.errors }}</div>{% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">{{ form.help_reference.label }}</label>
+                {{ form.help_reference }}
+                {% if form.help_reference.errors %}<div class="text-danger small mt-1">{{ form.help_reference.errors }}</div>{% endif %}
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a href="{% url 'admin_catalog_detail' catalog.pk %}?tab=practical" class="btn btn-outline-secondary">Abbrechen</a>
+                <button type="submit" class="btn btn-primary">Speichern</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,44 +1,84 @@
 {% extends "base.html" %}
 
 {% block site_content %}
-    <div class="container py-4 py-xl-5">
-        <div class="row mb-5">
-            <div class="col-md-8 col-xl-6 text-center mx-auto">
-                <h2>Übungen - Theorie üben</h2>
-                <p>Du bist nun im Übungsmodus. Viel Erfolg!</p>
+<div class="container py-4">
+    <form method="post" action="{% url 'training_run' %}" id="training-form">
+        {% csrf_token %}
+        <input type="hidden" name="direction" id="direction-input" value="forward">
+
+        <div class="row mb-4">
+            <div class="col-md-2 col-xl-1 d-flex justify-content-center align-items-start pt-1">
+                <span class="text-muted small">{% if question.number %}{{ question.number }}{% endif %}</span>
+            </div>
+            <div class="col-md-8 col-xl-10 fs-4 fw-bold text-center">
+                {{ question.question }}
+            </div>
+            <div class="col-md-2 col-xl-1 d-flex justify-content-center align-items-start">
+                {% if question.help_reference %}
+                <svg class="bi bi-question-circle text-warning" xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" fill="currentColor" viewBox="0 0 16 16"
+                     data-bs-toggle="popover" data-bs-trigger="hover focus" title="Hinweis" data-bs-content="{{ question.help_reference }}" style="cursor:pointer;">
+                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                    <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286m1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94"/>
+                </svg>
+                {% endif %}
             </div>
         </div>
-    </div>
-    <div class="container">
-        <div class="row mb-5">
-            <div class="col-md-2 col-lg-1 col-xl-2 d-flex justify-content-center align-items-center"><span>G 1-8</span></div>
-            <div class="col-md-9 col-lg-10 col-xl-8 fs-3 fw-bold text-center d-flex justify-content-center align-items-center"><span>Wer von den genannten Funktionsträgern_innen ist ständiges Mitglied im Ortsausschuss?</span></div>
-            <div class="col-md-1 col-lg-1 col-xl-2 d-flex justify-content-center align-items-center"><svg class="bi bi-question-circle fs-3 text-warning popover-dismiss" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" data-bs-toggle="popover" title="Hinweis" data-bs-content="Der Ortsausschuss ist das periodische treffen des OV-STAB um Organisatorische und taktische Themen des OV zu besprechen." style="cursor: pointer;">
-                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"></path>
-                    <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286m1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94"></path>
-                </svg></div>
-        </div>
-        <div class="row">
+
+        <div class="row mb-4">
             <div class="col-md-2 col-xl-2"></div>
-            <div class="col-md-8 col-xl-8 fw-bold d-flex align-items-center p-3">
-                <div class="d-flex flex-column justify-content-start me-2"><input class="mt-2 mb-1" type="checkbox"><input class="mt-2 mb-1" type="checkbox"><input class="mt-2 mb-2" type="checkbox"></div>
-                <div class="d-flex flex-column justify-content-start"><span>Der_die Ortsbeauftragte</span><span>Der_die Helfersprecher_in</span><span>Der_die Sicherheitsbeauftragte</span></div>
+            <div class="col-md-8 col-xl-8">
+                <p class="text-muted small text-center mb-2">Mehrere Antworten möglich</p>
+                {% for letter, text in labeled_choices %}
+                <div class="border rounded-2 border-2 border-primary d-flex align-items-center p-2 mb-2">
+                    <div class="form-check d-flex align-items-center w-100 mb-0">
+                        <input class="form-check-input me-3" type="checkbox" name="answer"
+                               id="choice-{{ letter }}" value="{{ letter }}"
+                               {% if letter in existing_answers %}checked{% endif %}>
+                        <label class="form-check-label w-100" for="choice-{{ letter }}">
+                            <span class="fw-bold me-2">{{ letter|upper }}.</span>{{ text }}
+                        </label>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
             <div class="col-md-2 col-xl-2"></div>
         </div>
-        <div class="row mt-3">
-            <div class="col-md-8 col-xl-8 col-xxl-12 d-flex justify-content-center align-items-center"><span class="d-flex w-25 justify-content-center align-items-center me-2">25 / 50</span>
-                <div class="w-100">
+
+        <div class="row mb-3">
+            <div class="col d-flex justify-content-center align-items-center gap-3">
+                <span class="text-muted">{{ question_number }} / {{ question_total }}</span>
+                <div class="flex-grow-1" style="max-width:400px;">
                     <div class="progress">
-                        <div class="progress-bar bg-success progress-bar-animated" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width: 50%;">50%</div>
+                        <div class="progress-bar bg-success" role="progressbar" style="width:{{ progress_pct }}%;" aria-valuenow="{{ progress_pct }}" aria-valuemin="0" aria-valuemax="100">{{ progress_pct }}%</div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="row mt-3">
-            <div class="col-5 col-sm-6 col-md-2 col-xl-2 d-flex justify-content-center align-items-center"><button class="btn btn-primary" type="button">Zurück</button></div>
-            <div class="col-1 col-md-8 col-xl-8 d-flex d-sm-none d-md-flex justify-content-center align-items-center d-xs-none"></div>
-            <div class="col-6 col-sm-6 col-md-2 col-xl-2 d-flex justify-content-center align-items-center"><button class="btn btn-primary" type="button">Weiter</button></div>
+
+        <div class="row">
+            <div class="col d-flex justify-content-center gap-3">
+                {% if can_go_back %}
+                <button type="button" class="btn btn-outline-secondary btn-lg" onclick="goBack()">
+                    &larr; Zurück
+                </button>
+                {% endif %}
+                <button type="submit" class="btn btn-primary btn-lg">
+                    {% if question_number == question_total %}Abschließen{% else %}Weiter{% endif %}
+                </button>
+            </div>
         </div>
-    </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    popoverTriggerList.forEach(function (el) { new bootstrap.Popover(el); });
+});
+
+function goBack() {
+    document.getElementById('direction-input').value = 'back';
+    document.getElementById('training-form').submit();
+}
+</script>
 {% endblock %}

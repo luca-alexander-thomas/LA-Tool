@@ -1,0 +1,9 @@
+Django==6.0.2
+msal==1.34.0
+openpyxl==3.1.5
+pillow==12.2.0
+python-dotenv==1.2.2
+requests==2.32.5
+
+# Fuer MySQL in Produktion (zusaetzlich installieren):
+# mysqlclient>=2.2.0

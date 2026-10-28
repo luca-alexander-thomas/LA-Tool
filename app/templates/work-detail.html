@@ -1,75 +1,138 @@
 {% extends "base.html" %}
 
 {% block site_content %}
-    <div class="container py-4 py-xl-5">
-        <div class="row mb-5">
-            <div class="col d-flex flex-column justify-content-center align-items-center"><img src="assets/img/01c_Abzeichen-Silber.png" width="79" height="79"></div>
-            <div class="col-md-8 col-xl-6 text-center d-flex flex-column justify-content-center align-items-center mx-auto">
-                <h2>Dienstthema</h2>
-                <p>Informationen zu diesem Dienst</p>
-            </div>
-            <div class="col d-flex flex-column justify-content-center align-items-center"><span class="fs-4 fw-semibold">06.02.2026</span></div>
+<div class="container py-2 mb-2">
+    <a href="{% url 'work' %}" class="text-decoration-none text-muted">&larr; Dienste</a>
+</div>
+
+<div class="container py-3">
+    <div class="row mb-3 text-center">
+        <div class="col">
+            {% if work.level %}
+            <span class="badge fs-6 {{ work.level.badge_bg_class }} {{ work.level.badge_text_class }}">
+                {{ work.level.name }}
+            </span>
+            {% endif %}
         </div>
+        <div class="col-md-8">
+            <h2 class="mb-1">{{ work.title }}</h2>
+            <p class="text-muted mb-0">
+                {{ work.date|date:"l, d. F Y" }}
+                {% if work.date %}
+                · {{ work.date|date:"H:i" }}{% if work.date_end %} – {{ work.date_end|date:"H:i" }}{% endif %} Uhr
+                {% endif %}
+                {% if work.location %} · {{ work.location }}{% endif %}
+            </p>
+        </div>
+        <div class="col"></div>
     </div>
-    <div class="container">
-        <div class="row">
-            <div class="col-md-4 d-flex justify-content-center align-items-center p-2">
-                <div class="border rounded-1 border-3 border-primary d-flex w-100 flex-column justify-content-center align-items-center p-2">
-                    <h4>Theorie Fragen</h4>
-                    <div class="border rounded-1 border-2 border-secondary d-flex w-100 flex-column justify-content-evenly align-items-center p-1 mt-2 mb-2">
-                        <div class="d-flex w-100 flex-row">
-                            <div class="col col-xl-5 d-flex justify-content-center align-items-center"><span class="fw-semibold">S-3-3</span></div>
-                            <div class="col d-flex justify-content-center align-items-center"><span>LA 3</span></div>
-                            <div class="col col-xl-2">
-                                <div class="d-flex justify-content-end transition-0-5" id="switch-1" onclick="expandRow(&#39;div1&#39;,&#39;switch-1&#39;,&#39;rotate-90&#39;)"><svg class="bi bi-chevron-right text-primary d-flex justify-content-end" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 41px;">
-                                        <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
-                                    </svg></div>
-                            </div>
+
+    <div class="row">
+        <!-- Theoriefragen -->
+        <div class="col-md-4 p-2">
+            <div class="border rounded-1 border-3 border-primary p-2 h-100">
+                <h5 class="text-center mb-3">Theorie Fragen</h5>
+                {% for q in work.theory_questions.all %}
+                <div class="border rounded-1 border-2 border-secondary p-2 mb-2">
+                    <div class="d-flex align-items-center justify-content-between" style="cursor:pointer;" onclick="toggleQ('tq-{{ q.pk }}', this)">
+                        <div>
+                            <span class="text-muted small me-2">{{ q.catalog.short_title }}</span>
+                            <span class="small">{{ q.question|truncatechars:60 }}</span>
                         </div>
-                        <div class="d-none w-100 flex-column align-items-start" id="div1"><span class="mb-2">Welche Leinen/Seile dürfen zum Sichern von Personen verwendet werden?</span><span class="fw-bold text-success">A: Sicherheitsseile</span><span class="text-danger">B: Arbeitsleinen</span><span class="text-danger">C: Jede Naturfaserleine</span></div>
+                        <svg class="bi bi-chevron-right flex-shrink-0 ms-2" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size:20px;transition:transform .2s;">
+                            <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
+                        </svg>
                     </div>
-                    <div class="border rounded-1 border-2 border-secondary d-flex w-100 flex-column justify-content-evenly align-items-center p-1 mt-2 mb-2">
-                        <div class="d-flex w-100 flex-row">
-                            <div class="col col-xl-5 d-flex justify-content-center align-items-center"><span class="fw-semibold">S-3-3</span></div>
-                            <div class="col d-flex justify-content-center align-items-center"><span>LA 3</span></div>
-                            <div class="col col-xl-2">
-                                <div class="d-flex justify-content-end transition-0-5" id="switch-2" onclick="expandRow(&#39;div2&#39;,&#39;switch-2&#39;,&#39;rotate-90&#39;)"><svg class="bi bi-chevron-right text-primary d-flex justify-content-end" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 41px;">
-                                        <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
-                                    </svg></div>
-                            </div>
-                        </div>
-                        <div class="d-none w-100 flex-column align-items-start" id="div2"><span class="mb-2">Welche Leinen/Seile dürfen zum Sichern von Personen verwendet werden?</span><span class="fw-bold text-success">A: Sicherheitsseile</span><span class="text-danger">B: Arbeitsleinen</span><span class="text-danger">C: Jede Naturfaserleine</span></div>
-                    </div>
-                    <div class="border rounded-1 border-2 border-secondary d-flex w-100 flex-column justify-content-evenly align-items-center p-1 mt-2 mb-2">
-                        <div class="d-flex w-100 flex-row">
-                            <div class="col col-xl-5 d-flex justify-content-center align-items-center"><span class="fw-semibold">S-3-3</span></div>
-                            <div class="col d-flex justify-content-center align-items-center"><span>LA 3</span></div>
-                            <div class="col col-xl-2">
-                                <div class="d-flex justify-content-end transition-0-5" id="switch-3" onclick="expandRow(&#39;div3&#39;,&#39;switch-3&#39;,&#39;rotate-90&#39;)"><svg class="bi bi-chevron-right text-primary d-flex justify-content-end" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 41px;">
-                                        <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
-                                    </svg></div>
-                            </div>
-                        </div>
-                        <div class="d-none w-100 flex-column align-items-start" id="div3"><span class="mb-2">Welche Leinen/Seile dürfen zum Sichern von Personen verwendet werden?</span><span class="fw-bold text-success">A: Sicherheitsseile</span><span class="text-danger">B: Arbeitsleinen</span><span class="text-danger">C: Jede Naturfaserleine</span></div>
-                    </div><a class="btn btn-primary" role="button" href="exercise-theorie-training-start.html">Üben</a>
-                </div>
-            </div>
-            <div class="col-md-4 d-flex justify-content-center align-items-center p-2">
-                <div class="border rounded-1 border-3 border-primary p-2">
-                    <p>Heute haben wir uns die Dienststellungskennzeichen angeschaut. Diese zeigen uns in welcher Funktion ein THW Helfer ist.</p>
-                </div>
-            </div>
-            <div class="col-md-4 d-flex justify-content-center align-items-center p-2">
-                <div class="border rounded-1 border-3 border-primary d-flex w-100 flex-column justify-content-center align-items-center p-2">
-                    <h4>Praxis Aufgaben</h4>
-                    <div class="border rounded-1 border-2 border-secondary d-flex align-items-center p-1">
-                        <div class="col col-xl-11"><span>Zuordnung von Dienststellungskennzeichen zu Funktionen</span></div>
-                        <div class="col col-xl-1 d-flex justify-content-center"><a href="exercise-pratical-detail.html"><svg class="bi bi-chevron-right text-reset" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 41px;">
-                                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
-                                </svg></a></div>
+                    <div id="tq-{{ q.pk }}" class="d-none mt-2 small">
+                        <div class="fw-semibold mb-1">{{ q.question }}</div>
+                        {% for choice in q.answer_choice %}
+                        {% if choice %}
+                        <div class="{% if choice == q.answer_text %}text-success fw-bold{% else %}text-danger{% endif %}">{{ choice }}</div>
+                        {% endif %}
+                        {% endfor %}
                     </div>
                 </div>
+                {% empty %}
+                <p class="text-muted text-center small">Keine Theoriefragen zugewiesen.</p>
+                {% endfor %}
+                {% if work.theory_questions.exists %}
+                <div class="d-flex justify-content-center mt-2">
+                    <a class="btn btn-sm btn-outline-primary" href="{% url 'work_training_start' work.pk %}">Üben</a>
+                </div>
+                {% endif %}
             </div>
         </div>
+
+        <!-- Beschreibung / Agenda -->
+        <div class="col-md-4 p-2">
+            <div class="border rounded-1 border-3 border-primary p-3 h-100">
+                <h5 class="text-center mb-3">Agenda</h5>
+                {% if work.description %}
+                <p>{{ work.description|linebreaksbr }}</p>
+                {% else %}
+                <p class="text-muted text-center small">Keine Beschreibung vorhanden.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Praxis + Gruppen -->
+        <div class="col-md-4 p-2">
+            {% if work.practical_exercises.exists %}
+            <div class="border rounded-1 border-3 border-primary p-2 mb-3">
+                <h5 class="text-center mb-2">Praxis Aufgaben</h5>
+                {% for p in work.practical_exercises.all %}
+                <div class="d-flex align-items-center border rounded-1 border-2 border-secondary p-1 mb-1">
+                    <div class="col small">{% if p.number %}<span class="text-muted me-1">{{ p.number }}</span>{% endif %}{{ p.question|truncatechars:50 }}</div>
+                    <div class="col-auto">
+                        <a href="{% url 'practical_detail' p.pk %}" class="text-reset">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size:28px;">
+                                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if work.group_exercises.exists %}
+            <div class="border rounded-1 border-3 border-primary p-2">
+                <h5 class="text-center mb-2">Gruppenaufgaben</h5>
+                {% for g in work.group_exercises.all %}
+                <div class="d-flex align-items-center border rounded-1 border-2 border-secondary p-1 mb-1">
+                    <div class="col small">{{ g.question|truncatechars:50 }}</div>
+                    <div class="col-auto">
+                        <a href="{% url 'group_detail' g.pk %}" class="text-reset">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size:28px;">
+                                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if not work.practical_exercises.exists and not work.group_exercises.exists %}
+            <div class="border rounded-1 border-3 border-primary p-3 h-100 d-flex align-items-center justify-content-center">
+                <p class="text-muted text-center small mb-0">Keine Praxis-/Gruppenaufgaben zugewiesen.</p>
+            </div>
+            {% endif %}
+        </div>
     </div>
+</div>
+
+<script>
+function toggleQ(id, trigger) {
+    const el = document.getElementById(id);
+    const icon = trigger.querySelector('svg');
+    if (el.classList.contains('d-none')) {
+        el.classList.remove('d-none');
+        icon.style.transform = 'rotate(90deg)';
+    } else {
+        el.classList.add('d-none');
+        icon.style.transform = '';
+    }
+}
+</script>
 {% endblock %}

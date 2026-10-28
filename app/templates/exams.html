@@ -1,57 +1,79 @@
 {% extends "base.html" %}
 
 {% block site_content %}
-    <div class="container py-4 py-xl-5">
-        <div class="row mb-5">
-            <div class="col-md-8 col-xl-6 text-center mx-auto">
-                <h2>Prüfungen</h2>
-                <p>Hier findest du deine Prüfungsergebnisse und neue Prüfungen</p>
-            </div>
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8 col-xl-6 text-center mx-auto">
+            <h2>Prüfungen</h2>
+            <p class="text-muted">Hier findest du deine Prüfungen und Ergebnisse</p>
         </div>
     </div>
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6 col-xl-4 border rounded-1 border-3 border-primary pt-2 pb-2">
-                <h4 class="text-center">Letzte Ergebnisse</h4><a class="text-decoration-none text-reset" href="admin-exam-summary-user.html">
-                    <div class="border rounded-1 border-3 border-primary d-flex flex-row justify-content-evenly align-items-center mt-2 mb-2"><img src="assets/img/01b_Abzeichen-Gold.png" width="50" height="50">
-                        <div class="d-flex h-100 flex-column justify-content-center align-items-center ms-2 me-2"><span class="fw-bold">Zulassungstest</span><span>01.02.2026</span></div>
-                        <div class="d-flex h-100 flex-column justify-content-center align-items-center ms-2 me-2"><span class="fw-semibold text-secondary">Nicht freigegeben</span><span></span></div>
-                    </div>
-                </a><a class="text-decoration-none text-reset" href="admin-exam-summary-user.html">
-                    <div class="border rounded-1 border-3 border-primary d-flex flex-row justify-content-evenly align-items-center mt-2 mb-2"><img src="assets/img/01c_Abzeichen-Silber.png" width="50" height="50">
-                        <div class="d-flex h-100 flex-column justify-content-center align-items-center ms-2 me-2"><span class="fw-bold">LA-Abnahme</span><span>05.10.2025</span></div>
-                        <div class="d-flex h-100 flex-column justify-content-center align-items-center ms-2 me-2"><span class="fw-semibold text-danger">Nicht Bestanden</span><span>3 / 25</span></div>
-                    </div>
-                </a><a class="text-decoration-none text-reset" href="admin-exam-summary-user.html">
-                    <div class="border rounded-1 border-3 border-primary d-flex flex-row justify-content-evenly align-items-center mt-2 mb-2"><img src="assets/img/01d_Abzeichen-Bronze.png" width="50" height="50">
-                        <div class="d-flex h-100 flex-column justify-content-center align-items-center ms-2 me-2"><span class="fw-bold">Simulationsprüfung</span><span>29.09.2025</span></div>
-                        <div class="d-flex h-100 flex-column justify-content-center align-items-center ms-2 me-2"><span class="fw-semibold text-success">Bestanden</span><span>12 / 15</span></div>
+    <div class="row">
+        <!-- Letzte Ergebnisse -->
+        <div class="col-md-6 col-xl-4">
+            <div class="border rounded-1 border-3 border-primary p-3 mb-3">
+                <h5 class="text-center mb-3">Letzte Ergebnisse</h5>
+                {% for r in past_results %}
+                {% with meta=r.meta_reference %}
+                <a class="text-decoration-none text-reset" href="{% url 'exam_result' r.exam.pk %}">
+                    <div class="border rounded-1 border-2 border-primary d-flex flex-row align-items-center p-2 mt-2 mb-2">
+                        <div class="col ms-2">
+                            <div class="fw-bold small">{{ r.exam.name }}</div>
+                            <div class="text-muted small">{{ r.meta_time|date:"d.m.Y" }}</div>
+                        </div>
+                        <div class="col-auto me-2">
+                            {% if r.state == 'published' %}
+                                {% if meta.passed %}
+                                <span class="fw-semibold text-success small">Bestanden · {{ meta.score }}/{{ meta.total }}</span>
+                                {% else %}
+                                <span class="fw-semibold text-danger small">Nicht bestanden · {{ meta.score }}/{{ meta.total }}</span>
+                                {% endif %}
+                            {% else %}
+                            <span class="fw-semibold text-secondary small">Nicht freigegeben</span>
+                            {% endif %}
+                        </div>
                     </div>
                 </a>
+                {% endwith %}
+                {% empty %}
+                <p class="text-muted text-center small py-2">Noch keine Ergebnisse</p>
+                {% endfor %}
             </div>
-            <div class="col-md-6 col-xl-8 pt-2 pb-2">
-                <h4 class="text-center">Offene Prüfungen</h4>
-                <div class="border rounded-1 border-3 border-primary d-flex flex-row justify-content-evenly align-items-center mt-2 mb-2">
-                    <div class="row w-100 align-items-center">
-                        <div class="col col-xl-1"><img src="assets/img/01c_Abzeichen-Silber.png" width="50" height="50"></div>
-                        <div class="col fw-bold d-flex justify-content-start align-items-center"><span>Zwischenabfrage</span></div>
-                        <div class="col col-xl-1 d-flex justify-content-center align-items-center"><span>25</span></div>
-                        <div class="col col-xl-1"><a class="d-flex justify-content-center" href="exams-exam-start.html"><svg class="bi bi-chevron-right text-dark" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 40px;">
-                                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
-                                </svg></a></div>
+        </div>
+
+        <!-- Offene Prüfungen -->
+        <div class="col-md-6 col-xl-8">
+            <div class="border rounded-1 border-3 border-primary p-3 mb-3">
+                <h5 class="text-center mb-3">Offene Prüfungen</h5>
+                {% for exam in open_exams %}
+                {% with result=user_results|default:"" %}
+                <div class="border rounded-1 border-2 border-primary d-flex flex-row align-items-center p-2 mt-2 mb-2">
+                    <div class="col ms-2">
+                        <div class="fw-bold">{{ exam.name }}</div>
+                        <div class="text-muted small">
+                            {{ exam.questions.count }} Fragen · {{ exam.time_in_min }} Min
+                            <span class="badge {% if exam.level %}{{ exam.level.badge_bg_class }} {{ exam.level.badge_text_class }}{% else %}bg-secondary text-white{% endif %} ms-1">{% if exam.level %}{{ exam.level.name }}{% else %}–{% endif %}</span>
+                            {% if exam.closed %}<span class="badge bg-danger ms-1">gesperrt</span>{% endif %}
+                        </div>
+                    </div>
+                    <div class="col-auto me-2">
+                        {% if exam.pk in user_results %}
+                        <span class="text-muted small">bereits abgegeben</span>
+                        {% elif exam.closed %}
+                        <span class="text-muted small">gesperrt</span>
+                        {% else %}
+                        <a class="btn btn-sm btn-outline-primary" href="{% url 'exam_start' exam.pk %}">
+                            Starten
+                        </a>
+                        {% endif %}
                     </div>
                 </div>
-                <div class="border rounded-1 border-3 border-primary d-flex flex-row justify-content-evenly align-items-center mt-2 mb-2">
-                    <div class="row w-100 align-items-center">
-                        <div class="col col-xl-1"><img src="assets/img/01d_Abzeichen-Bronze.png" width="50" height="50"></div>
-                        <div class="col fw-bold d-flex justify-content-start align-items-center"><span>Prüfung LA 28.03.2026</span></div>
-                        <div class="col col-xl-1 d-flex justify-content-center align-items-center"><span>15</span></div>
-                        <div class="col col-xl-1"><a class="d-flex justify-content-center" href="exams-exam-start.html"><svg class="bi bi-chevron-right text-dark" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 40px;">
-                                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
-                                </svg></a></div>
-                    </div>
-                </div>
+                {% endwith %}
+                {% empty %}
+                <p class="text-muted text-center py-3">Keine Prüfungen zugewiesen.</p>
+                {% endfor %}
             </div>
         </div>
     </div>
+</div>
 {% endblock %}

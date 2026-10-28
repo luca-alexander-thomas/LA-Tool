@@ -1,0 +1,159 @@
+{% if question.file %}
+<div class="border rounded-1 border-3 border-primary p-2">
+    <div class="d-flex align-items-center gap-1 mb-2">
+        <button id="pdf-prev" class="btn btn-sm btn-outline-secondary" style="line-height:1;padding:.2rem .5rem;" disabled title="Vorherige Seite">&#8249;</button>
+        <span id="pdf-page-info" class="small text-muted" style="min-width:4.5rem;text-align:center;">— / —</span>
+        <button id="pdf-next" class="btn btn-sm btn-outline-secondary" style="line-height:1;padding:.2rem .5rem;" disabled title="Nächste Seite">&#8250;</button>
+        <span class="flex-grow-1"></span>
+        <button id="pdf-zoom-out" class="btn btn-sm btn-outline-secondary" style="line-height:1;padding:.2rem .45rem;" title="Verkleinern">&#8722;</button>
+        <button id="pdf-zoom-in"  class="btn btn-sm btn-outline-secondary" style="line-height:1;padding:.2rem .45rem;" title="Vergrößern">&#43;</button>
+        <button id="pdf-fs-open" class="btn btn-sm btn-outline-secondary ms-1" style="line-height:1;padding:.2rem .45rem;" title="Vollbild">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M1.5 1h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 1M10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4c0 .276.224.5.5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"/>
+            </svg>
+        </button>
+        <a href="{{ question.file.url }}" download class="btn btn-sm btn-outline-primary ms-1" style="line-height:1;padding:.2rem .5rem;" title="Herunterladen">&#8595;</a>
+    </div>
+    <div id="pdf-scroll" style="overflow:auto;max-height:62vh;background:#f0f0f0;">
+        <canvas id="pdf-canvas" style="display:block;margin:0 auto;"></canvas>
+    </div>
+    <p id="pdf-error" class="text-danger small mt-1 mb-0" style="display:none;">PDF konnte nicht geladen werden.</p>
+</div>
+
+<!-- Fullscreen overlay -->
+<div id="pdf-fs-overlay" style="display:none;position:fixed;inset:0;z-index:1050;flex-direction:column;background:rgba(0,0,0,.88);">
+    <div style="display:flex;align-items:center;gap:.4rem;padding:.5rem .75rem;background:#1a1a1a;flex-shrink:0;">
+        <button id="pdf-fs-prev" class="btn btn-sm btn-outline-light" style="line-height:1;padding:.2rem .5rem;" disabled title="Vorherige Seite">&#8249;</button>
+        <span id="pdf-fs-page-info" class="small text-white-50" style="min-width:4.5rem;text-align:center;">— / —</span>
+        <button id="pdf-fs-next" class="btn btn-sm btn-outline-light" style="line-height:1;padding:.2rem .5rem;" disabled title="Nächste Seite">&#8250;</button>
+        <span style="flex:1;"></span>
+        <button id="pdf-fs-zoom-out" class="btn btn-sm btn-outline-light" style="line-height:1;padding:.2rem .45rem;" title="Verkleinern">&#8722;</button>
+        <button id="pdf-fs-zoom-in"  class="btn btn-sm btn-outline-light" style="line-height:1;padding:.2rem .45rem;" title="Vergrößern">&#43;</button>
+        <a href="{{ question.file.url }}" download class="btn btn-sm btn-outline-light ms-1" style="line-height:1;padding:.2rem .5rem;" title="Herunterladen">&#8595;</a>
+        <button id="pdf-fs-close" class="btn btn-sm btn-outline-light ms-2" style="line-height:1;padding:.2rem .5rem;" title="Schließen">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+            </svg>
+        </button>
+    </div>
+    <div id="pdf-fs-scroll" style="flex:1;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:1.25rem;background:#444;">
+        <canvas id="pdf-canvas-fs" style="display:block;box-shadow:0 6px 32px rgba(0,0,0,.6);"></canvas>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
+<script>
+(function () {
+    const FILE_URL = "{{ question.file.url }}";
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const canvas     = document.getElementById('pdf-canvas');
+    const ctx        = canvas.getContext('2d');
+    const canvasFs   = document.getElementById('pdf-canvas-fs');
+    const ctxFs      = canvasFs.getContext('2d');
+    const scroll     = document.getElementById('pdf-scroll');
+    const scrollFs   = document.getElementById('pdf-fs-scroll');
+    const pageInfo   = document.getElementById('pdf-page-info');
+    const pageInfoFs = document.getElementById('pdf-fs-page-info');
+    const btnPrev    = document.getElementById('pdf-prev');
+    const btnNext    = document.getElementById('pdf-next');
+    const btnZoomIn  = document.getElementById('pdf-zoom-in');
+    const btnZoomOut = document.getElementById('pdf-zoom-out');
+    const btnFsOpen  = document.getElementById('pdf-fs-open');
+    const overlay    = document.getElementById('pdf-fs-overlay');
+    const btnFsPrev  = document.getElementById('pdf-fs-prev');
+    const btnFsNext  = document.getElementById('pdf-fs-next');
+    const btnFsZoomIn  = document.getElementById('pdf-fs-zoom-in');
+    const btnFsZoomOut = document.getElementById('pdf-fs-zoom-out');
+    const btnFsClose   = document.getElementById('pdf-fs-close');
+    const errMsg     = document.getElementById('pdf-error');
+
+    let pdf = null, page = 1, scale = null, scaleFs = null;
+    let taskSmall = null, taskFs = null;
+
+    function fitScale(pdfPage, container) {
+        const vp = pdfPage.getViewport({ scale: 1 });
+        const w  = Math.max(container.clientWidth - 8, 200);
+        return w / vp.width;
+    }
+
+    async function renderSmall(num) {
+        page = num;
+        if (taskSmall) { taskSmall.cancel(); taskSmall = null; }
+        const p  = await pdf.getPage(num);
+        if (scale === null) scale = fitScale(p, scroll);
+        const vp = p.getViewport({ scale });
+        canvas.width  = vp.width;
+        canvas.height = vp.height;
+        taskSmall = p.render({ canvasContext: ctx, viewport: vp });
+        try { await taskSmall.promise; } catch (e) {
+            if (e?.name !== 'RenderingCancelledException') console.warn(e);
+        }
+        updateNav();
+    }
+
+    async function renderFs(num) {
+        page = num;
+        if (taskFs) { taskFs.cancel(); taskFs = null; }
+        const p = await pdf.getPage(num);
+        if (scaleFs === null) scaleFs = fitScale(p, scrollFs);
+        const vp = p.getViewport({ scale: scaleFs });
+        canvasFs.width  = vp.width;
+        canvasFs.height = vp.height;
+        taskFs = p.render({ canvasContext: ctxFs, viewport: vp });
+        try { await taskFs.promise; } catch (e) {
+            if (e?.name !== 'RenderingCancelledException') console.warn(e);
+        }
+        updateNav();
+    }
+
+    function updateNav() {
+        const n = pdf ? pdf.numPages : 0;
+        pageInfo.textContent   = `${page} / ${n || '—'}`;
+        pageInfoFs.textContent = `${page} / ${n || '—'}`;
+        btnPrev.disabled   = page <= 1;
+        btnNext.disabled   = !pdf || page >= pdf.numPages;
+        btnFsPrev.disabled = page <= 1;
+        btnFsNext.disabled = !pdf || page >= pdf.numPages;
+    }
+
+    function openFs() {
+        overlay.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        scaleFs = null;
+        renderFs(page);
+    }
+
+    function closeFs() {
+        overlay.style.display = 'none';
+        document.body.style.overflow = '';
+        if (taskFs) { taskFs.cancel(); taskFs = null; }
+    }
+
+    pdfjsLib.getDocument(FILE_URL).promise.then(doc => {
+        pdf = doc;
+        renderSmall(1);
+    }).catch(() => { errMsg.style.display = ''; });
+
+    btnPrev.addEventListener('click',    () => { if (page > 1) renderSmall(page - 1); });
+    btnNext.addEventListener('click',    () => { if (pdf && page < pdf.numPages) renderSmall(page + 1); });
+    btnZoomIn.addEventListener('click',  () => { scale = (scale ?? 1) * 1.25; renderSmall(page); });
+    btnZoomOut.addEventListener('click', () => { scale = Math.max((scale ?? 1) / 1.25, 0.25); renderSmall(page); });
+
+    btnFsOpen.addEventListener('click',  openFs);
+    btnFsClose.addEventListener('click', closeFs);
+    btnFsPrev.addEventListener('click',  () => { if (page > 1) renderFs(page - 1); });
+    btnFsNext.addEventListener('click',  () => { if (pdf && page < pdf.numPages) renderFs(page + 1); });
+    btnFsZoomIn.addEventListener('click',  () => { scaleFs = (scaleFs ?? 1) * 1.25; renderFs(page); });
+    btnFsZoomOut.addEventListener('click', () => { scaleFs = Math.max((scaleFs ?? 1) / 1.25, 0.25); renderFs(page); });
+
+    overlay.addEventListener('click', e => { if (e.target === overlay || e.target === scrollFs) closeFs(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && overlay.style.display !== 'none') closeFs(); });
+})();
+</script>
+{% else %}
+<div class="border rounded-1 border-3 border-primary p-2">
+    <p class="text-muted text-center py-4 mb-0">Kein PDF hochgeladen.</p>
+</div>
+{% endif %}

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block site_content %}
+<div class="container py-4" style="max-width:820px;">
+    <div class="mb-3">
+        <a href="{% url 'admin_catalog' %}" class="text-decoration-none text-muted">&larr; Fragenkataloge</a>
+    </div>
+    <h4 class="mb-4">Theoriefragen importieren</h4>
+
+    {% if results %}
+    <div class="alert {% if results.skipped or results.errors %}alert-warning{% else %}alert-success{% endif %} mb-4">
+        <strong>Import abgeschlossen</strong> in <em>{{ results.catalog }}</em>:<br>
+        <span class="text-success">{{ results.created }} neu erstellt</span> &nbsp;·&nbsp;
+        <span class="text-primary">{{ results.updated }} aktualisiert</span> &nbsp;·&nbsp;
+        <span class="text-warning">{{ results.skipped }} übersprungen</span>
+        {% if results.errors %}
+        <ul class="mt-2 mb-0 small">
+            {% for e in results.errors %}<li>{{ e }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="row gy-4">
+        <!-- Upload-Formular -->
+        <div class="col-md-6">
+            <div class="border rounded-2 border-primary p-4">
+                <h6 class="mb-3">Datei hochladen</h6>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ form.catalog.label }}</label>
+                        {{ form.catalog }}
+                        {% if form.catalog.errors %}<div class="text-danger small mt-1">{{ form.catalog.errors }}</div>{% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ form.file.label }}</label>
+                        {{ form.file }}
+                        {% if form.file.errors %}<div class="text-danger small mt-1">{{ form.file.errors }}</div>{% endif %}
+                    </div>
+                    <div class="mb-4 form-check">
+                        {{ form.update_existing }}
+                        <label class="form-check-label" for="{{ form.update_existing.id_for_label }}">
+                            {{ form.update_existing.label }}
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Importieren</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Beispiel-Download & Formatdoku -->
+        <div class="col-md-6">
+            <div class="border rounded-2 border-secondary p-4 small">
+                <h6 class="mb-3">Beispieldateien herunterladen</h6>
+                <div class="d-flex gap-2 mb-4">
+                    <a href="{% url 'admin_import_example' 'xlsx' %}" class="btn btn-outline-success btn-sm">
+                        ↓ XLSX
+                    </a>
+                    <a href="{% url 'admin_import_example' 'csv' %}" class="btn btn-outline-secondary btn-sm">
+                        ↓ CSV
+                    </a>
+                    <a href="{% url 'admin_import_example' 'json' %}" class="btn btn-outline-secondary btn-sm">
+                        ↓ JSON
+                    </a>
+                </div>
+
+                <p class="fw-semibold mb-1">Spaltenformat (XLSX &amp; CSV)</p>
+                <p class="text-muted mb-2">
+                    Antworten in Spalten <code>A</code>, <code>B</code>, <code>C</code> …<br>
+                    Korrekte Antworten mit <code>Lösung A</code>, <code>Lösung B</code> … markieren
+                    (XLSX: Checkbox&thinsp;=&thinsp;Häkchen; CSV: <code>Ja</code> oder <code>Nein</code>).
+                </p>
+                <table class="table table-bordered table-sm small mb-3">
+                    <thead class="table-light">
+                        <tr><th>Nr</th><th>Frage</th><th>A</th><th>B</th><th>C</th><th>Lösung A</th><th>Lösung B</th><th>Lösung C</th><th>Hinweis</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>S-1-01</td><td>Was ist …?</td><td>Opt A</td><td>Opt B</td><td>Opt C</td><td class="text-success fw-bold">Ja</td><td>Nein</td><td>Nein</td><td>Tipp</td></tr>
+                        <tr><td>S-1-02</td><td>Multi?</td><td>Ja</td><td>Nein</td><td>Auch</td><td class="text-success fw-bold">Ja</td><td>Nein</td><td class="text-success fw-bold">Ja</td><td></td></tr>
+                    </tbody>
+                </table>
+
+                <p class="fw-semibold mb-1 mt-2">JSON-Format</p>
+                <p class="text-muted mb-1"><code>correct</code> als Texte oder 0-basierte Indizes.</p>
+                <pre class="bg-light rounded p-2 small overflow-x-auto mb-0">[
+  {
+    "number": "S-1-01",
+    "question": "Was ist …?",
+    "choices": ["Opt A","Opt B","Opt C"],
+    "correct": ["Opt A"],
+    "help": "Tipp"
+  },
+  {
+    "number": "S-1-02",
+    "question": "Multi?",
+    "choices": ["Ja","Nein","Auch"],
+    "correct": [0, 2]
+  }
+]</pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

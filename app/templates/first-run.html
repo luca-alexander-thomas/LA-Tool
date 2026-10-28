@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block site_content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-xl-6">
+            <div class="border rounded-1 border-3 border-primary p-4">
+                <h3 class="text-center mb-1">Willkommen, {{ user.first_name }}!</h3>
+                <p class="text-center text-muted mb-4">Bevor du loslegen kannst, verknüpfe deinen DIVERA 24/7 Account.</p>
+
+                <div class="border rounded-1 border-2 border-secondary p-3 mb-4">
+                    <h5>Warum DIVERA verbinden?</h5>
+                    <ul class="mb-0">
+                        <li>Dein Account wird automatisch mit deinem THW-Jugend-Profil verknüpft</li>
+                        <li>Dienste und Termine werden direkt aus DIVERA synchronisiert</li>
+                        <li>Deine Prüfungsergebnisse können deinem DIVERA-Profil zugeordnet werden</li>
+                    </ul>
+                </div>
+
+                <div class="d-flex flex-column gap-3">
+                    <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#diveraModal">
+                        Mit DIVERA verbinden
+                    </button>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="skip">
+                        <button type="submit" class="btn btn-outline-secondary w-100">
+                            Jetzt überspringen (eingeschränkte Funktionalität)
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Divera-Verbindungs-Modal -->
+<div class="modal fade" id="diveraModal" tabindex="-1" aria-labelledby="diveraModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title" id="diveraModalLabel">DIVERA 24/7 verbinden</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+            </div>
+            <div class="modal-body pt-2">
+
+                {% if error %}
+                <div class="alert alert-danger py-2 small mb-3">{{ error }}</div>
+                {% endif %}
+
+                <!-- Tabs -->
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link {% if not active_tab or active_tab == 'login' %}active{% endif %}"
+                                id="tab-login-btn" data-bs-toggle="tab" data-bs-target="#tab-login"
+                                type="button" role="tab">
+                            Mit DIVERA anmelden
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link {% if active_tab == 'apikey' %}active{% endif %}"
+                                id="tab-apikey-btn" data-bs-toggle="tab" data-bs-target="#tab-apikey"
+                                type="button" role="tab">
+                            API-Key eingeben
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- Tab 1: Login mit Zugangsdaten -->
+                    <div class="tab-pane fade {% if not active_tab or active_tab == 'login' %}show active{% endif %}"
+                         id="tab-login" role="tabpanel">
+                        <form method="post" novalidate>
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="divera_login">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold" for="divera_username">E-Mail / Benutzername</label>
+                                <input type="text" class="form-control" id="divera_username" name="divera_username"
+                                       value="{{ divera_username|default:'' }}"
+                                       autocomplete="username" placeholder="deine@email.de">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold" for="divera_password">Passwort</label>
+                                <input type="password" class="form-control" id="divera_password" name="divera_password"
+                                       autocomplete="current-password" placeholder="DIVERA-Passwort">
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Mit DIVERA anmelden</button>
+                        </form>
+                    </div>
+
+                    <!-- Tab 2: API-Key direkt eingeben -->
+                    <div class="tab-pane fade {% if active_tab == 'apikey' %}show active{% endif %}"
+                         id="tab-apikey" role="tabpanel">
+                        <form method="post" novalidate>
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="api_key">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold" for="api_key">Divera Access-Key</label>
+                                <input type="text" class="form-control font-monospace" id="api_key" name="api_key"
+                                       value="{{ api_key_value|default:'' }}"
+                                       placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                                       autocomplete="off" spellcheck="false">
+                                <div class="form-text">
+                                    Zu finden in DIVERA unter <strong>Mein Profil &rarr; Zugangsdaten &rarr; Access-Key</strong>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">API-Key verbinden</button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if error %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var modal = new bootstrap.Modal(document.getElementById('diveraModal'));
+    modal.show();
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block site_content %}
+<div class="container py-4" style="max-width:740px;">
+    <div class="mb-3">
+        <a href="{% url 'admin_catalog_detail' catalog.pk %}?tab=theory" class="text-decoration-none text-muted">&larr; {{ catalog.title }}</a>
+    </div>
+    <h4 class="mb-4">{{ title }}</h4>
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger">
+        {% for e in form.non_field_errors %}{{ e }}{% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="border rounded-2 border-primary p-4">
+        <form method="post" id="theory-form">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">{{ form.number.label }}</label>
+                {{ form.number }}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">{{ form.question.label }}</label>
+                {{ form.question }}
+                {% if form.question.errors %}<div class="text-danger small mt-1">{{ form.question.errors }}</div>{% endif %}
+            </div>
+
+            <!-- Dynamische Antwortoptionen -->
+            <div class="mb-1 d-flex justify-content-between align-items-center">
+                <label class="form-label fw-semibold mb-0">Antwortoptionen</label>
+                <small class="text-muted">Haken = korrekte Antwort(en) markieren</small>
+            </div>
+            <div id="choices-container" class="d-flex flex-column gap-2 mb-2"></div>
+            <button type="button" class="btn btn-sm btn-outline-primary mb-3" id="add-choice-btn">
+                + Antwort hinzufügen
+            </button>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">{{ form.help_reference.label }}</label>
+                {{ form.help_reference }}
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a href="{% url 'admin_catalog_detail' catalog.pk %}?tab=theory" class="btn btn-outline-secondary">Abbrechen</a>
+                <button type="submit" class="btn btn-primary">Speichern</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function () {
+    const container = document.getElementById('choices-container');
+    const addBtn    = document.getElementById('add-choice-btn');
+    const LETTERS   = 'ABCDEFGHIJ';
+
+    const initChoices = {{ init_choices|safe }};
+    const initCorrect = {{ init_correct|safe }};
+
+    function esc(str) {
+        return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function createRow(index, value, isCorrect) {
+        const letter = LETTERS[index] ?? String(index + 1);
+        const row = document.createElement('div');
+        row.className = 'input-group choice-row';
+        row.innerHTML =
+            `<span class="input-group-text fw-bold choice-label" style="min-width:2.6rem;">${letter}</span>` +
+            `<input type="text" class="form-control" name="choice" placeholder="Antwort ${letter}" value="${esc(value)}">` +
+            `<span class="input-group-text gap-1">` +
+            `  <input class="form-check-input mt-0 correct-check" type="checkbox" name="correct" value="${index}" ${isCorrect ? 'checked' : ''} title="Korrekte Antwort">` +
+            `  <span class="small text-muted">Korrekt</span>` +
+            `</span>` +
+            `<button type="button" class="btn btn-outline-danger remove-btn px-2" title="Entfernen">&times;</button>`;
+        row.querySelector('.remove-btn').addEventListener('click', () => {
+            if (container.children.length > 2) { row.remove(); reindex(); }
+            else { alert('Mindestens 2 Antwortoptionen erforderlich.'); }
+        });
+        return row;
+    }
+
+    function reindex() {
+        Array.from(container.children).forEach((row, i) => {
+            const letter = LETTERS[i] ?? String(i + 1);
+            row.querySelector('.choice-label').textContent = letter;
+            row.querySelector('input[name="choice"]').placeholder = `Antwort ${letter}`;
+            row.querySelector('.correct-check').value = i;
+        });
+    }
+
+    // Initialise with existing/empty rows
+    const start = (Array.isArray(initChoices) && initChoices.length >= 2) ? initChoices : ['', '', ''];
+    start.forEach((val, i) => {
+        container.appendChild(createRow(i, val, initCorrect.map(String).includes(String(i))));
+    });
+
+    addBtn.addEventListener('click', () => {
+        const idx = container.children.length;
+        if (idx < 10) container.appendChild(createRow(idx, '', false));
+    });
+
+    document.getElementById('theory-form').addEventListener('submit', e => {
+        const checked = container.querySelectorAll('.correct-check:checked');
+        const filled  = Array.from(container.querySelectorAll('input[name="choice"]')).filter(i => i.value.trim());
+        if (filled.length < 2) { e.preventDefault(); alert('Mindestens 2 Antwortoptionen müssen ausgefüllt sein.'); return; }
+        if (checked.length === 0) { e.preventDefault(); alert('Bitte mindestens eine korrekte Antwort markieren.'); }
+    });
+})();
+</script>
+{% endblock %}

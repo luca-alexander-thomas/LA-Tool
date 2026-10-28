@@ -2,9 +2,11 @@
 */__pycache__/
 */migrations/
 la_tool/env.py
+.env
 *.pyc
 la_tool/media/
 divera.json
-*.pyc
 old/
+staticfiles/
 
+media/

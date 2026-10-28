@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block site_content %}
+<div class="container py-4" style="max-width:760px;">
+    <div class="mb-3">
+        <a href="{% url 'admin_autogroup_list' %}" class="text-decoration-none text-muted">&larr; Automatische Gruppen</a>
+    </div>
+    <h2 class="mb-4">{{ title }}</h2>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <!-- Gruppenname -->
+        <div class="border rounded-1 border-3 border-primary p-4 mb-3">
+            <h6 class="mb-3">Gruppenname</h6>
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <label class="form-label fw-semibold">{{ form.group_name.label }}</label>
+                    {{ form.group_name }}
+                    <div class="form-text">Entspricht dem Django-Gruppennamen. Wird für Zugriffsrechte und Inhaltszuweisungen verwendet.</div>
+                    {% for e in form.group_name.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Divera Qualifikationen -->
+        <div class="border rounded-1 border-3 border-primary p-4 mb-3">
+            <h6 class="mb-1">Divera-Qualifikationen</h6>
+            <p class="text-muted small mb-3">
+                Nutzer werden automatisch Mitglied, wenn sie <strong>mindestens eine</strong> der gewählten Qualifikationen in Divera haben.
+            </p>
+            {% if all_divera_quals %}
+            <div class="row g-2">
+                {% for qual in all_divera_quals %}
+                <div class="col-md-6">
+                    <div class="form-check border rounded p-2">
+                        <input class="form-check-input" type="checkbox" name="divera_qual_ids"
+                               value="{{ qual.qual_id }}" id="qual_{{ qual.qual_id }}"
+                               {% if qual.qual_id in selected_divera_qual_ids %}checked{% endif %}>
+                        <label class="form-check-label w-100" for="qual_{{ qual.qual_id }}">
+                            <span class="fw-semibold">{{ qual.name }}</span>
+                            {% if qual.short_name %}<span class="text-muted small ms-1">({{ qual.short_name }})</span>{% endif %}
+                            <span class="text-muted small d-block">ID: {{ qual.qual_id }}</span>
+                        </label>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-muted small py-2">
+                Noch keine Qualifikationen bekannt. Sie werden automatisch geladen, wenn sich ein Divera-Nutzer anmeldet.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Entra Gruppen -->
+        <div class="border rounded-1 border-3 border-primary p-4 mb-3">
+            <h6 class="mb-1">Microsoft Entra / Azure AD Gruppen</h6>
+            <p class="text-muted small mb-3">
+                Nutzer werden automatisch Mitglied, wenn sie <strong>mindestens einer</strong> der eingetragenen Entra-Gruppen angehören.
+                Die Gruppen-IDs (GUIDs) findest du im Azure-Portal unter &laquo;Microsoft Entra ID → Gruppen&raquo;.
+            </p>
+            <div>
+                <label class="form-label fw-semibold">{{ form.entra_group_ids_text.label }}</label>
+                {{ form.entra_group_ids_text }}
+                {% for e in form.entra_group_ids_text.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
+            </div>
+            {% if selected_entra_group_ids %}
+            <div class="mt-3">
+                <div class="text-muted small fw-semibold mb-1">Aktuell eingetragen:</div>
+                {% for eid in selected_entra_group_ids %}
+                <code class="d-block small text-muted">{{ eid }}</code>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {% for e in form.non_field_errors %}<p class="mb-0">{{ e }}</p>{% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="d-flex gap-2 align-items-center">
+            <button type="submit" class="btn btn-primary">Speichern</button>
+            <a href="{% url 'admin_autogroup_list' %}" class="btn btn-outline-secondary">Abbrechen</a>
+            {% if group %}
+            <div class="ms-auto">
+                <button type="button" class="btn btn-outline-danger btn-sm"
+                        data-bs-toggle="collapse" data-bs-target="#deleteConfirm">Löschen</button>
+            </div>
+            {% endif %}
+        </div>
+    </form>
+
+    {% if group %}
+    <div class="collapse mt-3" id="deleteConfirm">
+        <div class="alert alert-danger">
+            <p class="mb-2 fw-semibold">Gruppe löschen?</p>
+            <p class="mb-3 small">
+                Die Auto-Regel wird entfernt. Nutzer werden bei der nächsten Anmeldung ausgetragen.
+            </p>
+            <form method="post" action="{% url 'admin_autogroup_delete' group.pk %}">
+                {% csrf_token %}
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="delete_group" value="1" id="deleteGroupCheck">
+                    <label class="form-check-label small" for="deleteGroupCheck">
+                        Django-Gruppe ebenfalls löschen (entfernt Gruppenrechte von allen Nutzern)
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-danger btn-sm">Ja, löschen</button>
+                <button type="button" class="btn btn-secondary btn-sm ms-2"
+                        data-bs-toggle="collapse" data-bs-target="#deleteConfirm">Abbrechen</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

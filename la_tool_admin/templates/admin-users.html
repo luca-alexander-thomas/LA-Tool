@@ -1,140 +1,160 @@
 {% extends "base.html" %}
 
 {% block site_content %}
-    <div class="container py-4 py-xl-5">
-        <div class="row mb-5">
-            <div class="col-md-8 col-xl-6 text-center mx-auto">
-                <h2>Admin Benutzer</h2>
-                <p>Übersicht über alle Benutzer und deren Rechte</p>
-            </div>
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Nutzerverwaltung</h2>
+            <p class="text-muted">Alle Nutzer und deren Berechtigungen</p>
         </div>
     </div>
-    <div class="container">
-        <div class="row">
-            <div class="col-md-6 col-xl-4">
-                <div class="border rounded-1 border-3 border-primary h-75 p-2 pane-content">
-                    <div class="border rounded-1 border-3 border-primary d-flex flex-row justify-content-center align-items-center p-2 mt-1 mb-1">
-                        <div class="col">
-                            <div>
-                                <div class="col"><span class="fw-bold">Rainer Zufall</span></div>
-                                <div class="col"><span>rainer.zufall@example.com</span></div>
-                            </div>
-                        </div>
-                        <div class="col col-xl-2 d-flex justify-content-center align-items-center"><a href="#"><svg class="bi bi-chevron-right" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 40px;">
-                                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
-                                </svg></a></div>
-                    </div>
-                    <div class="border rounded-1 border-3 border-primary d-flex flex-row justify-content-center align-items-center p-2 mt-1 mb-1">
-                        <div class="col">
-                            <div>
-                                <div class="col"><span class="fw-bold">Rainer Zufall</span></div>
-                                <div class="col"><span>rainer.zufall@example.com</span></div>
-                            </div>
-                        </div>
-                        <div class="col col-xl-2 d-flex justify-content-center align-items-center"><a href="#"><svg class="bi bi-chevron-right" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 40px;">
-                                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
-                                </svg></a></div>
-                    </div>
-                    <div class="border rounded-1 border-3 border-dark-subtle d-flex flex-row justify-content-center align-items-center p-2 mt-1 mb-1">
-                        <div class="col">
-                            <div>
-                                <div class="col"><span class="fw-bold">Rainer Zufall</span></div>
-                                <div class="col"><span>rainer.zufall@example.com</span></div>
-                            </div>
-                        </div>
-                        <div class="col col-xl-2 d-flex justify-content-center align-items-center"><a href="#"><svg class="bi bi-chevron-right" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 40px;">
-                                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
-                                </svg></a></div>
-                    </div>
-                    <div class="border rounded-1 border-3 border-primary d-flex flex-row justify-content-center align-items-center p-2 mt-1 mb-1">
-                        <div class="col">
-                            <div>
-                                <div class="col"><span class="fw-bold">Rainer Zufall</span></div>
-                                <div class="col"><span>rainer.zufall@example.com</span></div>
-                            </div>
-                        </div>
-                        <div class="col col-xl-2 d-flex justify-content-center align-items-center"><a href="#"><svg class="bi bi-chevron-right" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 40px;">
-                                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"></path>
-                                </svg></a></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 col-xl-8">
-                <div class="border rounded-1 border-3 border-primary d-flex flex-column justify-content-center p-2">
-                    <form>
-                        <div class="row">
-                            <div class="col">
-                                <div class="d-flex flex-row justify-content-center mt-2">
-                                    <div class="col col-xl-4 fs-5 fw-semibold d-flex align-items-center"><span>Name</span></div>
-                                    <div class="col d-flex align-items-center"><input class="form-control" type="text" name="user-edit-name" value="Rainer Zufall" placeholder="Name"></div>
-                                </div>
-                                <div class="d-flex flex-row justify-content-center mt-2">
-                                    <div class="col col-xl-4 fs-5 fw-semibold d-flex align-items-center"><span>Nutzername</span></div>
-                                    <div class="col d-flex align-items-center"><input class="form-control" type="text" name="user-edit-username" value="rainer.zufall@example.com" placeholder="Nutzername"></div>
-                                </div>
-                                <div class="d-flex flex-row justify-content-center mt-2">
-                                    <div class="col col-xl-4 fs-5 fw-semibold d-flex align-items-center"><span>E-Mail</span></div>
-                                    <div class="col d-flex align-items-center"><input class="form-control" type="text" value="rainer.zufall@example.com" placeholder="E-Mail" name="user-edit-email"></div>
-                                </div>
-                                <div class="d-flex justify-content-evenly align-items-center mt-2"><button class="btn btn-primary" type="button" data-bs-target="#modal-reset-pw" data-bs-toggle="modal">Passwort Reset</button><button class="btn btn-primary" type="button">Passwort Reset Mail</button></div>
-                            </div>
-                            <div class="col">
-                                <div class="d-flex flex-row justify-content-center mt-2">
-                                    <div class="col col-xl-4 fs-5 fw-semibold d-flex align-items-center"><span class="fs-6">Verknüpfte Dienste</span></div>
-                                    <div class="col d-flex flex-column justify-content-center align-items-center">
-                                        <div class="row w-100">
-                                            <div class="col d-flex align-items-center"><span>DIVERA</span></div>
-                                            <div class="col col-xl-3"><svg class="bi bi-check text-success" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 38px;">
-                                                    <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"></path>
-                                                </svg></div>
-                                        </div>
-                                        <div class="row w-100">
-                                            <div class="col d-flex align-items-center"><span>Microsoft</span></div>
-                                            <div class="col col-xl-3"><svg class="bi bi-x text-danger" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size: 38px;">
-                                                    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"></path>
-                                                </svg></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="d-flex flex-row justify-content-center mt-2">
-                                    <div class="col col-xl-2 fs-5 fw-semibold d-flex align-items-center"><img src="assets/img/01d_Abzeichen-Bronze.png" width="60" height="60"></div>
-                                    <div class="col col-xl-2 fs-5 fw-semibold d-flex align-items-center"><img src="assets/img/01c_Abzeichen-Silber.png" width="60" height="60"></div>
-                                    <div class="col col-xl-2 fs-5 fw-semibold d-flex align-items-center"><img src="assets/img/01b_Abzeichen-Gold.png" width="60" height="60"></div>
-                                    <div class="col col-xl-2 fs-5 fw-semibold d-flex align-items-center"><img src="assets/img/Thw_dienststellungskennzeichen_helfer.svg" width="58" height="21"></div>
-                                </div>
-                                <div class="form-check mt-2"><input class="form-check-input" type="checkbox" id="formCheck-1"><label class="form-check-label" for="formCheck-1">Benutzer Deaktiviert</label></div>
-                                <div class="mt-2"><span class="fw-semibold">Berechtigungen:</span>
-                                    <div class="row">
-                                        <div class="col col-xl-2 d-flex justify-content-center align-items-center"><input type="checkbox" checked=""></div>
-                                        <div class="col d-flex justify-content-start align-items-center"><span>Nutzer</span></div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col col-xl-2 d-flex justify-content-center align-items-center"><input type="checkbox"></div>
-                                        <div class="col d-flex justify-content-start align-items-center"><span>Administrator</span></div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col col-xl-2 d-flex justify-content-center align-items-center"><input type="checkbox"></div>
-                                        <div class="col d-flex justify-content-start align-items-center"><span>Super User</span></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+
+    {% if temp_pw_info %}
+    <div class="alert alert-warning alert-dismissible fade show border-2 border-warning mb-4" role="alert">
+        <strong>Temporäres Passwort gesetzt</strong> für <strong>{{ temp_pw_info.name }}</strong>:<br>
+        <code class="fs-5 user-select-all">{{ temp_pw_info.password }}</code>
+        <br><small class="text-muted">Bitte dem Nutzer mitteilen — wird nach dem Schließen nicht mehr angezeigt.</small>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-    <div class="modal fade" role="dialog" tabindex="-1" id="modal-reset-pw">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h4 class="modal-title">Passwort Zurücksetzten</h4><button class="btn-close" type="button" aria-label="Close" data-bs-dismiss="modal"></button>
-                </div>
-                <form>
-                    <div class="modal-body"><span>Für Rainer Zufall</span><input class="form-control mt-1 mb-1" type="password" name="reset-passwort-1" placeholder="Passwort"><input class="form-control mt-1 mb-1" type="password" name="reset-passwort-1" placeholder="Passwort wiederholen"></div>
-                    <div class="modal-footer"><button class="btn btn-light" type="reset" data-bs-dismiss="modal">Abbrechen</button><button class="btn btn-primary" type="submit">Passwort zurücksetzten</button></div>
-                </form>
-            </div>
-        </div>
+    {% endif %}
+
+    <div class="border rounded-2 border-primary overflow-hidden">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>E-Mail</th>
+                    <th>Typ / Rollen</th>
+                    <th class="text-end">Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td class="align-middle">
+                        <span class="fw-semibold">
+                            {% if u.last_name or u.first_name %}
+                                {{ u.last_name }}{% if u.last_name and u.first_name %}, {% endif %}{{ u.first_name }}
+                            {% else %}
+                                {{ u.username }}
+                            {% endif %}
+                        </span>
+                        {% if not u.is_active %}<span class="badge bg-secondary ms-1">Deaktiviert</span>{% endif %}
+                        {% if u == user %}<span class="badge bg-info ms-1">Ich</span>{% endif %}
+                    </td>
+                    <td class="align-middle text-muted small">{{ u.email|default:u.username }}</td>
+                    <td class="align-middle">
+                        {% if u.is_superuser %}
+                            <span class="badge bg-danger me-1">Superuser</span>
+                        {% else %}
+                            {% if u.login_source == 'divera' %}
+                                <span class="badge bg-info text-dark me-1">Divera</span>
+                            {% elif u.login_source == 'entra' %}
+                                <span class="badge bg-primary me-1">Entra</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark border me-1">Lokal</span>
+                            {% endif %}
+                            {% if u.is_staff or u.is_la_admin %}
+                                <span class="badge bg-warning text-dark me-1">Admin</span>
+                            {% endif %}
+                            {% for g in u.groups.all %}
+                                {% if g.name != 'LA-Tool-Admins' %}
+                                    <span class="badge bg-secondary me-1">{{ g.name }}</span>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </td>
+                    <td class="align-middle text-end">
+                        {% if u.is_superuser or u == user %}
+                            <span class="text-muted small">–</span>
+                        {% elif u.login_source == 'local' or u.login_source == None %}
+                            <!-- Lokaler Nutzer: volle Verwaltung -->
+                            <div class="d-flex gap-2 justify-content-end flex-wrap">
+                                <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#perms-{{ u.pk }}">Berechtigungen</button>
+                                {% if u.is_la_admin %}
+                                    <form method="post" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="user_id" value="{{ u.pk }}">
+                                        <input type="hidden" name="action" value="remove_admin">
+                                        <button type="submit" class="btn btn-sm btn-outline-warning">Admin entziehen</button>
+                                    </form>
+                                {% else %}
+                                    <form method="post" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="user_id" value="{{ u.pk }}">
+                                        <input type="hidden" name="action" value="make_admin">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Admin machen</button>
+                                    </form>
+                                {% endif %}
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="user_id" value="{{ u.pk }}">
+                                    <input type="hidden" name="action" value="reset_password">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary"
+                                        onclick="return confirm('Passwort für {{ u.get_full_name|default:u.username|escapejs }} zurücksetzen?')">
+                                        Passwort reset
+                                    </button>
+                                </form>
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="user_id" value="{{ u.pk }}">
+                                    <input type="hidden" name="action" value="delete_user">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                        onclick="return confirm('Nutzer {{ u.get_full_name|default:u.username|escapejs }} wirklich löschen?')">
+                                        Löschen
+                                    </button>
+                                </form>
+                            </div>
+                        {% else %}
+                            <!-- Divera / Entra Nutzer: Berechtigungen + löschen -->
+                            <div class="d-flex gap-2 justify-content-end flex-wrap">
+                                <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#perms-{{ u.pk }}">Berechtigungen</button>
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="user_id" value="{{ u.pk }}">
+                                    <input type="hidden" name="action" value="delete_user">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                        onclick="return confirm('Nutzer {{ u.get_full_name|default:u.username|escapejs }} wirklich löschen? Alle Daten gehen verloren.')">
+                                        Löschen
+                                    </button>
+                                </form>
+                            </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% if not u.is_superuser and u != user %}
+                <tr class="collapse" id="perms-{{ u.pk }}">
+                    <td colspan="4" class="bg-body-secondary p-3">
+                        <p class="small fw-semibold mb-2 text-muted text-uppercase" style="letter-spacing:.05em;">Berechtigungen</p>
+                        <div class="d-flex flex-wrap gap-1">
+                            {% for codename, label in app_permissions %}
+                            {% if codename in u.la_perms_group %}
+                            {# Permission comes from a group — show as info badge, not clickable #}
+                            <span class="btn btn-sm btn-info disabled" title="Berechtigung über Gruppe">{{ label }}</span>
+                            {% else %}
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="user_id" value="{{ u.pk }}">
+                                <input type="hidden" name="action" value="toggle_perm">
+                                <input type="hidden" name="perm_codename" value="{{ codename }}">
+                                <button type="submit" class="btn btn-sm {% if codename in u.la_perms_direct %}btn-success{% else %}btn-outline-secondary{% endif %}">
+                                    {{ label }}
+                                </button>
+                            </form>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                        <p class="small text-muted mt-2 mb-0"><span class="badge bg-success">Grün</span> = direkt zugewiesen &nbsp; <span class="badge bg-info">Blau</span> = über Gruppe (nicht änderbar hier)</p>
+                    </td>
+                </tr>
+                {% endif %}
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-4">Keine Nutzer vorhanden.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
- {% endblock %}
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block site_content %}
+<div class="container py-2 mb-2">
+    <a href="{% url 'admin_work_list' %}" class="text-decoration-none text-muted">&larr; Dienste</a>
+</div>
+
+<div class="container py-3">
+    <h3 class="text-center mb-4">Dienst manuell erstellen</h3>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="row g-3 justify-content-center">
+
+            <!-- Grunddaten -->
+            <div class="col-md-5">
+                <div class="border rounded-1 border-3 border-primary p-3 h-100">
+                    <h5 class="mb-3">Details</h5>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ form.title.label }}</label>
+                        {{ form.title }}
+                        {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors }}</div>{% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ form.date.label }}</label>
+                        {{ form.date }}
+                        {% if form.date.errors %}<div class="text-danger small mt-1">{{ form.date.errors }}</div>{% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ form.date_end.label }}</label>
+                        {{ form.date_end }}
+                        {% if form.date_end.errors %}<div class="text-danger small mt-1">{{ form.date_end.errors }}</div>{% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ form.location.label }}</label>
+                        {{ form.location }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ form.level.label }}</label>
+                        {{ form.level }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ form.description.label }}</label>
+                        {{ form.description }}
+                    </div>
+                    <div class="form-check mt-2">
+                        {{ form.is_draft }}
+                        <label class="form-check-label small" for="{{ form.is_draft.id_for_label }}">{{ form.is_draft.label }}</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gruppen -->
+            <div class="col-md-3">
+                <div class="border rounded-1 border-3 border-primary p-3 h-100">
+                    <h5 class="mb-1">Gruppen</h5>
+                    <p class="text-muted small mb-3">Leer lassen = für alle sichtbar</p>
+                    {% if form.groups %}
+                    <div>
+                        {% for choice in form.groups %}
+                        <div class="form-check mb-1">
+                            {{ choice.tag }}
+                            <label class="form-check-label small" for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted small">Keine Gruppen vorhanden.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-4 gap-2">
+            <a href="{% url 'admin_work_list' %}" class="btn btn-outline-secondary">Abbrechen</a>
+            <button type="submit" class="btn btn-primary">Dienst erstellen</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
