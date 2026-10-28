@@ -230,3 +230,35 @@ class PushTests(TestCase):
         self.assertContains(response, 'Push-Benachrichtigung an 1 Gerät gesendet')
         endpoints = [c.kwargs['subscription_info']['endpoint'] for c in webpush.call_args_list]
         self.assertEqual(endpoints, ['https://push.example/member'])
+
+    @patch('la_tool_admin.push.webpush')
+    def test_admin_push_test_reaches_only_own_devices(self, webpush):
+        self.subscribe(self.sender, 'https://push.example/admin')
+        self.subscribe(self.user, 'https://push.example/member')
+        self.login(self.sender)
+        response = self.client.post(reverse('admin_push_test'), follow=True)
+        self.assertContains(response, 'Push-Benachrichtigung an 1 Gerät gesendet')
+        endpoints = [c.kwargs['subscription_info']['endpoint'] for c in webpush.call_args_list]
+        self.assertEqual(endpoints, ['https://push.example/admin'])
+
+    @patch('la_tool_admin.push.webpush')
+    def test_admin_push_test_without_own_subscription(self, webpush):
+        self.login(self.sender)
+        response = self.client.post(reverse('admin_push_test'), follow=True)
+        self.assertContains(response, 'auf keinem Gerät Push aktiviert')
+        webpush.assert_not_called()
+
+    @patch('la_tool_admin.push.webpush')
+    def test_admin_push_test_reports_failure(self, webpush):
+        self.subscribe(self.sender, 'https://push.example/admin')
+        webpush.side_effect = WebPushException('fehler', response=SimpleNamespace(status_code=500))
+        self.login(self.sender)
+        response = self.client.post(reverse('admin_push_test'), follow=True)
+        self.assertContains(response, 'Test fehlgeschlagen')
+        self.assertTrue(PushSubscription.objects.filter(user=self.sender).exists())
+
+    def test_admin_push_test_requires_permission(self):
+        viewer = User.objects.create_user('viewer', password='pw')
+        grant(viewer, 'access_admin')
+        self.login(viewer)
+        self.assertEqual(self.client.post(reverse('admin_push_test')).status_code, 403)

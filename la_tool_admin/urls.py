@@ -45,6 +45,7 @@ urlpatterns = [
 
     # Benachrichtigungen
     path('benachrichtigungen/', views.admin_push_message, name='admin_push_message'),
+    path('benachrichtigungen/test/', views.admin_push_test, name='admin_push_test'),
 
     # Einstellungen
     path('settings/', views.admin_settings, name='admin_settings'),

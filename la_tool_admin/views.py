@@ -1548,7 +1548,26 @@ def admin_push_message(request):
         'push_enabled': push_configured(),
         'subscribed_users': subscribed.values('user').distinct().count(),
         'subscribed_devices': subscribed.count(),
+        'own_devices': subscribed.filter(user=request.user).count(),
     })
+
+
+@admin_permission_required('app.send_notifications')
+def admin_push_test(request):
+    """Schickt eine Test-Benachrichtigung an alle Geräte des angemeldeten Admins."""
+    if request.method == 'POST':
+        if not push_configured():
+            messages.error(request, 'Push ist auf diesem Server nicht eingerichtet (VAPID-Schlüssel fehlen).')
+        elif not PushSubscription.objects.filter(user=request.user).exists():
+            messages.warning(request, 'Du hast auf keinem Gerät Push aktiviert. Schalte es zuerst im Profil ein.')
+        else:
+            sent = send_push([request.user], 'Test-Benachrichtigung',
+                             'Push-Benachrichtigungen vom LA-Tool funktionieren.', reverse('admin_push_message'))
+            if sent:
+                _report_push(request, sent)
+            else:
+                messages.error(request, 'Test fehlgeschlagen: kein Gerät hat die Benachrichtigung angenommen. Details im Server-Log.')
+    return redirect('admin_push_message')
 
 
 # ── EINSTELLUNGEN ─────────────────────────────────────────────────────────────

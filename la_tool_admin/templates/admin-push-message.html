@@ -30,6 +30,20 @@
         </div>
     </div>
 
+    <form method="post" action="{% url 'admin_push_test' %}" class="card card-body mb-4 flex flex-wrap items-center justify-between gap-3">
+        {% csrf_token %}
+        <div class="min-w-0">
+            <p class="font-semibold text-ink">Test an mich</p>
+            <p class="text-sm text-ink-2">
+                {% if own_devices %}Sendet eine Test-Benachrichtigung an deine {{ own_devices }} Gerät{{ own_devices|pluralize:"e" }}.
+                {% else %}Du hast noch auf keinem Gerät Push aktiviert – im <a class="link" href="{% url 'profile' %}">Profil</a> einschalten.{% endif %}
+            </p>
+        </div>
+        <button type="submit" class="btn btn-secondary" {% if not push_enabled or not own_devices %}disabled{% endif %}>
+            {% include "icons/paper-airplane.html" with cls="size-4" %} Test senden
+        </button>
+    </form>
+
     <form method="post" class="card">
         {% csrf_token %}
         <div class="card-body space-y-4">
