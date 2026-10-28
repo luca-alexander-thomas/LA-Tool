@@ -19,7 +19,8 @@
     </script>
 
     {# PWA #}
-    <link rel="manifest" href="{% url 'manifest' %}">
+    {# use-credentials: Cookies mitsenden, sonst scheitert das Manifest hinter Login/Proxy (z.B. VS Code Dev Tunnels) #}
+    <link rel="manifest" href="{% url 'manifest' %}" crossorigin="use-credentials">
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#111a2b" media="(prefers-color-scheme: dark)">
     <meta name="mobile-web-app-capable" content="yes">
