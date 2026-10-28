@@ -49,7 +49,8 @@ def current_la_filter(request):
 
 
 def la_filter(request):
-    all_levels = list(Levels.objects.order_by('order'))
+    # Nur freigegebene Stufen sind wähl- und sichtbar; eine Entwurfs-Stufe in der Session wird ersetzt
+    all_levels = list(Levels.objects.filter(is_draft=False).order_by('order'))
     valid_slugs = {l.slug for l in all_levels}
 
     # Fehlerseiten können ohne Session/Auth-Middleware gerendert werden

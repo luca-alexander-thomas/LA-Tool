@@ -104,7 +104,7 @@ def post_login_setup(request, user):
         profile = user.profile
     except Exception:
         from app.models import Levels
-        first_level = Levels.objects.order_by('order').first()
+        first_level = Levels.objects.filter(is_draft=False).order_by('order').first()
         request.session['la_filter'] = first_level.slug if first_level else ''
         return
 
@@ -120,9 +120,9 @@ def post_login_setup(request, user):
         if current_level:
             next_level = current_level.next_level or current_level
         else:
-            next_level = Levels.objects.order_by('order').first()
+            next_level = Levels.objects.filter(is_draft=False).order_by('order').first()
     else:
-        next_level = Levels.objects.order_by('order').first()
+        next_level = Levels.objects.filter(is_draft=False).order_by('order').first()
     request.session['la_filter'] = next_level.slug if next_level else ''
 
     # Sync auto-group memberships based on current Divera qualifications

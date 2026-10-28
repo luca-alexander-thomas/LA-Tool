@@ -119,3 +119,31 @@ class AppAccessTests(TestCase):
         self.login()
         response = self.client.get(reverse('login') + '?next=https://evil.example/')
         self.assertRedirects(response, reverse('home'), fetch_redirect_response=False)
+
+
+class DraftLevelTests(TestCase):
+    """Stufen im Entwurf dürfen für Nutzer weder sichtbar noch wählbar sein."""
+
+    def setUp(self):
+        self.live = Levels.objects.create(name='Teststufe', slug='teststufe', order=900)
+        self.draft = Levels.objects.create(name='Entwurfsstufe', slug='entwurfsstufe', order=901, is_draft=True)
+
+    def test_draft_level_not_in_level_switcher(self):
+        html = self.client.get(reverse('home')).content.decode()
+        self.assertIn('Teststufe', html)
+        self.assertNotIn('Entwurfsstufe', html)
+
+    def test_draft_level_cannot_be_selected(self):
+        self.client.get(reverse('set_la_filter', args=[self.draft.slug]))
+        self.assertNotEqual(self.client.session.get('la_filter'), self.draft.slug)
+
+    def test_draft_level_in_session_is_replaced(self):
+        session = self.client.session
+        session['la_filter'] = self.draft.slug
+        session.save()
+        self.client.get(reverse('home'))
+        self.assertNotEqual(self.client.session.get('la_filter'), self.draft.slug)
+
+    def test_next_level_skips_drafts(self):
+        after = Levels.objects.create(name='Danach', slug='danach', order=902)
+        self.assertEqual(self.live.next_level, after)

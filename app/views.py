@@ -789,7 +789,7 @@ def group_detail(request, q_id):
 # ── LA-FILTER ─────────────────────────────────────────────────────────────────
 
 def set_la_filter(request, level):
-    if Levels.objects.filter(slug=level).exists():
+    if Levels.objects.filter(slug=level, is_draft=False).exists():
         request.session['la_filter'] = level
     referer = request.META.get('HTTP_REFERER', '/')
     return redirect(referer)

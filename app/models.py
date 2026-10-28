@@ -28,7 +28,8 @@ class Levels(models.Model):
 
     @property
     def next_level(self):
-        return Levels.objects.filter(order__gt=self.order).order_by('order').first()
+        # Nächste freigegebene Stufe (Entwürfe überspringen)
+        return Levels.objects.filter(order__gt=self.order, is_draft=False).order_by('order').first()
 
     def __str__(self):
         return self.name
