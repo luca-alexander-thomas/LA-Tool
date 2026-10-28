@@ -1,168 +1,178 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 
-{% block site_content %}
-<div class="container py-4">
-    <div class="mb-3">
-        <a href="{% url 'admin_catalog' %}" class="text-decoration-none text-muted">&larr; Alle Kataloge</a>
-    </div>
+{% block page_title %}{{ catalog.title }}{% endblock %}
 
-    <!-- Katalog-Info bearbeiten -->
-    <div class="border rounded-2 border-2 border-primary p-3 mb-4">
-        <h5 class="mb-3">Katalog-Informationen</h5>
-        <form method="post" action="{% url 'admin_catalog_update' catalog.pk %}" enctype="multipart/form-data">
-            {% csrf_token %}
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">Name</label>
-                    <input type="text" name="title" class="form-control" value="{{ catalog.title }}">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Kurztitel</label>
-                    <input type="text" name="short_title" class="form-control" value="{{ catalog.short_title }}">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">LA-Stufe</label>
-                    {{ form.level }}
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Mehrfachantworten</label>
-                    <select name="multi_answer_scoring" class="form-select">
-                        <option value="all_or_nothing" {% if catalog.multi_answer_scoring == 'all_or_nothing' %}selected{% endif %}>Alles oder nichts</option>
-                        <option value="partial" {% if catalog.multi_answer_scoring == 'partial' %}selected{% endif %}>Teilpunkte</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Icon</label>
-                    <input type="file" name="icon" class="form-control">
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <div class="form-check mb-2">
-                        {{ form.is_draft }}
-                        <label class="form-check-label" for="{{ form.is_draft.id_for_label }}">{{ form.is_draft.label }}</label>
-                    </div>
-                </div>
-            </div>
-            <div class="d-flex justify-content-end mt-3">
-                <button type="submit" class="btn btn-primary">Speichern</button>
-            </div>
-        </form>
-    </div>
+{% block admin_content %}
+<a href="{% url 'admin_catalog' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Alle Kataloge</a>
 
-    <!-- Tabs: Theorie / Praxis / Gruppenaufgaben -->
-    <ul class="nav nav-tabs mb-3" role="tablist">
-        <li class="nav-item">
-            <a class="nav-link {% if active_tab == 'theory' %}active{% endif %}" href="?tab=theory">
-                Theorie <span class="badge bg-secondary">{{ theory_questions|length }}</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link {% if active_tab == 'practical' %}active{% endif %}" href="?tab=practical">
-                Praxis <span class="badge bg-secondary">{{ practical_questions|length }}</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link {% if active_tab == 'group' %}active{% endif %}" href="?tab=group">
-                Gruppenaufgaben <span class="badge bg-secondary">{{ group_questions|length }}</span>
-            </a>
-        </li>
-    </ul>
-
-    <!-- TAB: Theoriefragen -->
-    {% if active_tab == 'theory' %}
-    <div class="mb-3 d-flex justify-content-end gap-2">
-        <a href="{% url 'admin_import_questions' %}?catalog={{ catalog.pk }}" class="btn btn-outline-secondary btn-sm">Importieren</a>
-        <a href="{% url 'admin_theory_create' catalog.pk %}" class="btn btn-primary btn-sm">+ Neue Frage</a>
-    </div>
-    {% if theory_questions %}
-        {% for q in theory_questions %}
-        <div class="border rounded-1 border-1 border-secondary p-3 mb-2">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <span class="text-muted small me-2">{{ q.number }}</span>
-                    <strong>{{ q.question|truncatechars:120 }}</strong>
-                    {% if q.answer_choice %}
-                    <div class="mt-1">
-                        {% for choice in q.answer_choice %}
-                            <span class="badge {% if choice == q.answer_text %}bg-success{% else %}bg-light text-dark border{% endif %} me-1">{{ choice|truncatechars:40 }}</span>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                </div>
-                <div class="d-flex gap-2 flex-shrink-0 ms-3">
-                    <a href="{% url 'admin_theory_edit' catalog.pk q.pk %}" class="btn btn-outline-primary btn-sm">Bearbeiten</a>
-                    <form method="post" action="{% url 'admin_theory_delete' catalog.pk q.pk %}" class="d-inline" onsubmit="return confirm('Frage löschen?');">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-danger btn-sm">Löschen</button>
-                    </form>
-                </div>
-            </div>
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Fragenkatalog</p>
+        <div class="mt-1 flex flex-wrap items-center gap-2">
+            <h1 class="page-title">{{ catalog.title }}</h1>
+            {% if catalog.is_draft %}<span class="badge badge-warning">Entwurf</span>{% endif %}
         </div>
-        {% endfor %}
-    {% else %}
-        <p class="text-muted text-center py-3">Noch keine Theoriefragen vorhanden.</p>
-    {% endif %}
-    {% endif %}
-
-    <!-- TAB: Praktische Aufgaben -->
-    {% if active_tab == 'practical' %}
-    <div class="mb-3 text-end">
-        <a href="{% url 'admin_practical_create' catalog.pk %}" class="btn btn-primary btn-sm">+ Neue Aufgabe</a>
     </div>
-    {% if practical_questions %}
-        {% for q in practical_questions %}
-        <div class="border rounded-1 border-1 border-secondary p-3 mb-2">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <span class="text-muted small me-2">{{ q.number }}</span>
-                    <strong>{{ q.question|truncatechars:120 }}</strong>
-                    {% if q.file %}
-                        <div class="mt-1"><a href="{{ q.file.url }}" target="_blank" class="small text-primary">PDF ansehen</a></div>
-                    {% endif %}
-                </div>
-                <div class="d-flex gap-2 flex-shrink-0 ms-3">
-                    <a href="{% url 'admin_practical_edit' catalog.pk q.pk %}" class="btn btn-outline-primary btn-sm">Bearbeiten</a>
-                    <form method="post" action="{% url 'admin_practical_delete' catalog.pk q.pk %}" class="d-inline" onsubmit="return confirm('Aufgabe löschen?');">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-danger btn-sm">Löschen</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    {% else %}
-        <p class="text-muted text-center py-3">Noch keine praktischen Aufgaben vorhanden.</p>
-    {% endif %}
-    {% endif %}
-
-    <!-- TAB: Gruppenaufgaben -->
-    {% if active_tab == 'group' %}
-    <div class="mb-3 text-end">
-        <a href="{% url 'admin_group_create' catalog.pk %}" class="btn btn-primary btn-sm">+ Neue Gruppenaufgabe</a>
-    </div>
-    {% if group_questions %}
-        {% for q in group_questions %}
-        <div class="border rounded-1 border-1 border-secondary p-3 mb-2">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <span class="text-muted small me-2">{{ q.number }}</span>
-                    <strong>{{ q.question|truncatechars:120 }}</strong>
-                    {% if q.file %}
-                        <div class="mt-1"><a href="{{ q.file.url }}" target="_blank" class="small text-primary">PDF ansehen</a></div>
-                    {% endif %}
-                </div>
-                <div class="d-flex gap-2 flex-shrink-0 ms-3">
-                    <a href="{% url 'admin_group_edit' catalog.pk q.pk %}" class="btn btn-outline-primary btn-sm">Bearbeiten</a>
-                    <form method="post" action="{% url 'admin_group_delete' catalog.pk q.pk %}" class="d-inline" onsubmit="return confirm('Aufgabe löschen?');">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-danger btn-sm">Löschen</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    {% else %}
-        <p class="text-muted text-center py-3">Noch keine Gruppenaufgaben vorhanden.</p>
-    {% endif %}
-    {% endif %}
 </div>
+
+{# Katalog-Info bearbeiten #}
+<section class="card mb-8">
+    <div class="card-header">
+        <h2 class="section-title">Katalog-Informationen</h2>
+    </div>
+    <form method="post" action="{% url 'admin_catalog_update' catalog.pk %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="card-body grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
+            <div class="lg:col-span-4">
+                <label class="form-label" for="cat-title">Name</label>
+                <input type="text" id="cat-title" name="title" class="form-control" value="{{ catalog.title }}">
+            </div>
+            <div class="lg:col-span-2">
+                <label class="form-label" for="cat-short-title">Kurztitel</label>
+                <input type="text" id="cat-short-title" name="short_title" class="form-control" value="{{ catalog.short_title }}">
+            </div>
+            <div class="lg:col-span-2">
+                <label class="form-label" for="{{ form.level.id_for_label }}">LA-Stufe</label>
+                {{ form.level }}
+            </div>
+            <div class="lg:col-span-4">
+                <label class="form-label" for="cat-scoring">Mehrfachantworten</label>
+                <select name="multi_answer_scoring" id="cat-scoring" class="form-select">
+                    <option value="all_or_nothing" {% if catalog.multi_answer_scoring == 'all_or_nothing' %}selected{% endif %}>Alles oder nichts</option>
+                    <option value="partial" {% if catalog.multi_answer_scoring == 'partial' %}selected{% endif %}>Teilpunkte</option>
+                </select>
+            </div>
+            <div class="lg:col-span-6">
+                <label class="form-label" for="cat-icon">Icon</label>
+                <input type="file" id="cat-icon" name="icon" class="form-control">
+            </div>
+            <div class="flex items-end lg:col-span-6">
+                <div class="form-check pb-2.5">
+                    {{ form.is_draft }}
+                    <label class="form-check-label" for="{{ form.is_draft.id_for_label }}">{{ form.is_draft.label }}</label>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary">{% include "icons/check.html" %} Speichern</button>
+        </div>
+    </form>
+</section>
+
+{# Tabs: Theorie / Praxis / Gruppenaufgaben (serverseitig über ?tab=) #}
+<nav class="tabs mb-4 overflow-x-auto" role="tablist" aria-label="Fragentypen">
+    <a class="tab inline-flex items-center justify-center gap-2 whitespace-nowrap {% if active_tab == 'theory' %}tab-active{% endif %}" href="?tab=theory" role="tab" aria-selected="{% if active_tab == 'theory' %}true{% else %}false{% endif %}">
+        Theorie <span class="badge badge-neutral">{{ theory_questions|length }}</span>
+    </a>
+    <a class="tab inline-flex items-center justify-center gap-2 whitespace-nowrap {% if active_tab == 'practical' %}tab-active{% endif %}" href="?tab=practical" role="tab" aria-selected="{% if active_tab == 'practical' %}true{% else %}false{% endif %}">
+        Praxis <span class="badge badge-neutral">{{ practical_questions|length }}</span>
+    </a>
+    <a class="tab inline-flex items-center justify-center gap-2 whitespace-nowrap {% if active_tab == 'group' %}tab-active{% endif %}" href="?tab=group" role="tab" aria-selected="{% if active_tab == 'group' %}true{% else %}false{% endif %}">
+        Gruppenaufgaben <span class="badge badge-neutral">{{ group_questions|length }}</span>
+    </a>
+</nav>
+
+{# TAB: Theoriefragen #}
+{% if active_tab == 'theory' %}
+<div class="mb-4 flex flex-wrap justify-end gap-2">
+    <a href="{% url 'admin_import_questions' %}?catalog={{ catalog.pk }}" class="btn btn-sm btn-secondary">{% include "icons/arrow-up-tray.html" with cls="size-4" %} Importieren</a>
+    <a href="{% url 'admin_theory_create' catalog.pk %}" class="btn btn-sm btn-primary">{% include "icons/plus.html" with cls="size-4" %} Neue Frage</a>
+</div>
+{% if theory_questions %}
+    <div class="space-y-2">
+    {% for q in theory_questions %}
+    <div class="card flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
+        <div class="min-w-0">
+            <p>
+                <span class="mr-2 text-xs text-ink-3 tabular-nums">{{ q.number }}</span>
+                <strong class="font-semibold">{{ q.question|truncatechars:120 }}</strong>
+            </p>
+            {% if q.answer_choice %}
+            <div class="mt-2 flex flex-wrap gap-1">
+                {% for choice in q.answer_choice %}
+                    <span class="badge {% if choice == q.answer_text %}badge-success{% else %}badge-neutral{% endif %}">{{ choice|truncatechars:40 }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        <div class="flex shrink-0 gap-2">
+            <a href="{% url 'admin_theory_edit' catalog.pk q.pk %}" class="btn btn-sm btn-soft">{% include "icons/pencil-square.html" with cls="size-4" %} Bearbeiten</a>
+            <form method="post" action="{% url 'admin_theory_delete' catalog.pk q.pk %}" onsubmit="return confirm('Frage löschen?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-danger-soft">{% include "icons/trash.html" with cls="size-4" %} Löschen</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+    </div>
+{% else %}
+    <p class="empty-state">Noch keine Theoriefragen vorhanden.</p>
+{% endif %}
+{% endif %}
+
+{# TAB: Praktische Aufgaben #}
+{% if active_tab == 'practical' %}
+<div class="mb-4 flex justify-end">
+    <a href="{% url 'admin_practical_create' catalog.pk %}" class="btn btn-sm btn-primary">{% include "icons/plus.html" with cls="size-4" %} Neue Aufgabe</a>
+</div>
+{% if practical_questions %}
+    <div class="space-y-2">
+    {% for q in practical_questions %}
+    <div class="card flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
+        <div class="min-w-0">
+            <p>
+                <span class="mr-2 text-xs text-ink-3 tabular-nums">{{ q.number }}</span>
+                <strong class="font-semibold">{{ q.question|truncatechars:120 }}</strong>
+            </p>
+            {% if q.file %}
+                <a href="{{ q.file.url }}" target="_blank" class="link mt-1 inline-flex items-center gap-1 text-sm">{% include "icons/document-text.html" with cls="size-4" %} PDF ansehen</a>
+            {% endif %}
+        </div>
+        <div class="flex shrink-0 gap-2">
+            <a href="{% url 'admin_practical_edit' catalog.pk q.pk %}" class="btn btn-sm btn-soft">{% include "icons/pencil-square.html" with cls="size-4" %} Bearbeiten</a>
+            <form method="post" action="{% url 'admin_practical_delete' catalog.pk q.pk %}" onsubmit="return confirm('Aufgabe löschen?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-danger-soft">{% include "icons/trash.html" with cls="size-4" %} Löschen</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+    </div>
+{% else %}
+    <p class="empty-state">Noch keine praktischen Aufgaben vorhanden.</p>
+{% endif %}
+{% endif %}
+
+{# TAB: Gruppenaufgaben #}
+{% if active_tab == 'group' %}
+<div class="mb-4 flex justify-end">
+    <a href="{% url 'admin_group_create' catalog.pk %}" class="btn btn-sm btn-primary">{% include "icons/plus.html" with cls="size-4" %} Neue Gruppenaufgabe</a>
+</div>
+{% if group_questions %}
+    <div class="space-y-2">
+    {% for q in group_questions %}
+    <div class="card flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
+        <div class="min-w-0">
+            <p>
+                <span class="mr-2 text-xs text-ink-3 tabular-nums">{{ q.number }}</span>
+                <strong class="font-semibold">{{ q.question|truncatechars:120 }}</strong>
+            </p>
+            {% if q.file %}
+                <a href="{{ q.file.url }}" target="_blank" class="link mt-1 inline-flex items-center gap-1 text-sm">{% include "icons/document-text.html" with cls="size-4" %} PDF ansehen</a>
+            {% endif %}
+        </div>
+        <div class="flex shrink-0 gap-2">
+            <a href="{% url 'admin_group_edit' catalog.pk q.pk %}" class="btn btn-sm btn-soft">{% include "icons/pencil-square.html" with cls="size-4" %} Bearbeiten</a>
+            <form method="post" action="{% url 'admin_group_delete' catalog.pk q.pk %}" onsubmit="return confirm('Aufgabe löschen?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-danger-soft">{% include "icons/trash.html" with cls="size-4" %} Löschen</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+    </div>
+{% else %}
+    <p class="empty-state">Noch keine Gruppenaufgaben vorhanden.</p>
+{% endif %}
+{% endif %}
 {% endblock %}

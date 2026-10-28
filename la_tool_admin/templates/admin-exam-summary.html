@@ -1,42 +1,42 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 
-{% block site_content %}
-<div class="container py-2 mb-2">
-    <a href="{% url 'admin_exam_list' %}" class="text-decoration-none text-muted">&larr; Prüfungsübersicht</a>
+{% block page_title %}{{ exam.name }} · Ergebnisse{% endblock %}
+
+{% block admin_content %}
+<a href="{% url 'admin_exam_list' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Prüfungsübersicht</a>
+
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Prüfung</p>
+        <h1 class="page-title mt-1">{{ exam.name }}</h1>
+        <p class="page-subtitle">Ergebnisübersicht · {{ results_data|length }} Abgaben</p>
+    </div>
 </div>
-<h3 class="text-center mb-1">{{ exam.name }}</h3>
-<p class="text-center text-muted mb-4">Ergebnisübersicht · {{ results_data|length }} Abgaben</p>
 
-<div class="container">
+<div class="space-y-2">
     {% for item in results_data %}
-    <div class="row border rounded-1 border-3 border-primary m-1 p-2 align-items-center">
-        <div class="col">
-            <div class="fw-semibold">{{ item.result.user.last_name }}, {{ item.result.user.first_name }}</div>
-            <div class="small text-muted">{{ item.result.meta_time|date:"d.m.Y H:i" }}</div>
+    <a href="{% url 'admin_exam_result_user' exam.pk item.result.pk %}" class="list-row flex-wrap">
+        <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-semibold">{{ item.result.user.last_name }}, {{ item.result.user.first_name }}</p>
+            <p class="text-xs text-ink-3">{{ item.result.meta_time|date:"d.m.Y H:i" }}</p>
         </div>
-        <div class="col-auto d-flex flex-row align-items-center gap-3">
-            <span class="fw-semibold text-primary">{{ item.score }} / {{ item.total }}</span>
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="text-sm font-semibold text-accent-ink tabular-nums">{{ item.score }} / {{ item.total }}</span>
             {% if item.is_passed %}
-            <span class="fw-bold text-success">Bestanden</span>
+            <span class="badge badge-success">Bestanden</span>
             {% else %}
-            <span class="fw-bold text-danger">Nicht bestanden</span>
+            <span class="badge badge-danger">Nicht bestanden</span>
             {% endif %}
             {% if item.result.state == 'published' %}
-            <span class="badge bg-success">freigegeben</span>
+            <span class="badge badge-info">freigegeben</span>
             {% else %}
-            <span class="badge bg-secondary">nicht freigegeben</span>
+            <span class="badge badge-neutral">nicht freigegeben</span>
             {% endif %}
         </div>
-        <div class="col-auto">
-            <a class="text-reset" href="{% url 'admin_exam_result_user' exam.pk item.result.pk %}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size:40px;">
-                    <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
-                </svg>
-            </a>
-        </div>
-    </div>
+        {% include "icons/chevron-right.html" with cls="size-5 text-ink-3" %}
+    </a>
     {% empty %}
-    <p class="text-center text-muted py-5">Noch keine Abgaben für diese Prüfung.</p>
+    <p class="empty-state">Noch keine Abgaben für diese Prüfung.</p>
     {% endfor %}
 </div>
 {% endblock %}

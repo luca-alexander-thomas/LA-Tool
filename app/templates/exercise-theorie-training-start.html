@@ -1,56 +1,70 @@
 {% extends "base.html" %}
 
+{% block page_title %}Theorie üben{% endblock %}
+
 {% block site_content %}
-<div class="container py-4 py-xl-5">
-    <div class="row mb-4">
-        <div class="col-md-8 col-xl-6 text-center mx-auto">
-            <h2>Theorie üben</h2>
-            <p>Wähle Kataloge und Anzahl der Fragen für dein Training</p>
+<div class="page">
+    <div class="page-header">
+        <div>
+            <p class="eyebrow">Theorie-Training</p>
+            <h1 class="page-title mt-1">Theorie üben</h1>
+            <p class="page-subtitle">Wähle Kataloge und Anzahl der Fragen für dein Training</p>
         </div>
     </div>
-</div>
-<div class="container">
+
     {% if error %}
-    <div class="alert alert-danger mb-3">{{ error }}</div>
+    <div class="alert alert-danger mb-4">
+        {% include "icons/exclamation-triangle.html" with cls="size-5 shrink-0" %}
+        <span>{{ error }}</span>
+    </div>
     {% endif %}
+
     <form method="post" action="{% url 'training_config' %}">
         {% csrf_token %}
-        <div class="row g-3">
-            <div class="col-md-8">
-                <div class="border rounded-2 border-2 border-primary p-3">
-                    <h5 class="text-secondary mb-3">LA-Kataloge</h5>
+        <div class="grid gap-4 md:grid-cols-3">
+            <section class="card md:col-span-2">
+                <div class="card-header">
+                    <h2 class="section-title">LA-Kataloge</h2>
+                </div>
+                <div class="space-y-2 p-4">
                     {% for catalog in catalogs %}
-                    <div class="border rounded-2 border-2 border-primary d-flex flex-row align-items-center p-2 mt-1 mb-1">
-                        <div class="col-auto form-switch me-2">
-                            <input class="form-check-input switch-color-green" type="checkbox"
-                                   name="catalogs" value="{{ catalog.pk }}"
-                                   id="catalog-{{ catalog.pk }}" checked>
-                        </div>
-                        <label class="col mb-0" for="catalog-{{ catalog.pk }}">
-                            <span class="fw-semibold">{{ catalog.title }}</span>
-                            <span class="badge ms-1 {% if catalog.level %}{{ catalog.level.badge_bg_class }} {{ catalog.level.badge_text_class }}{% else %}bg-secondary text-white{% endif %}">{% if catalog.level %}{{ catalog.level.name }}{% else %}–{% endif %}</span>
-                        </label>
-                    </div>
+                    <label class="list-row min-h-14 cursor-pointer" for="catalog-{{ catalog.pk }}">
+                        <input class="form-switch" role="switch" type="checkbox"
+                               name="catalogs" value="{{ catalog.pk }}"
+                               id="catalog-{{ catalog.pk }}" checked>
+                        <span class="min-w-0 flex-1 text-sm font-semibold">{{ catalog.title }}</span>
+                        {% if catalog.level %}
+                        <span class="badge {{ catalog.level.badge_bg_class|default:'badge-primary' }} {{ catalog.level.badge_text_class }}">{{ catalog.level.name }}</span>
+                        {% else %}
+                        <span class="badge badge-neutral">–</span>
+                        {% endif %}
+                    </label>
                     {% empty %}
-                    <p class="text-muted">Noch keine Kataloge vorhanden. Bitte zuerst Kataloge anlegen.</p>
+                    <p class="empty-state">Noch keine Kataloge vorhanden. Bitte zuerst Kataloge anlegen.</p>
                     {% endfor %}
                 </div>
-            </div>
-            <div class="col-md-4">
-                <div class="border rounded-2 border-2 border-primary d-flex flex-column align-items-center p-3 h-100 justify-content-center">
-                    <h5 class="text-secondary mb-4">Anzahl Fragen</h5>
-                    <div class="d-flex w-100 flex-row align-items-center gap-2 mb-4">
-                        <span class="text-bg-primary border rounded-2 border-primary d-flex px-3 py-1 justify-content-center align-items-center fw-bold" id="count-display" style="min-width:3rem;">{{ default_count|default:10 }}</span>
-                        <input class="form-range flex-grow-1" type="range" name="count" id="count-slider"
+            </section>
+
+            <section class="card flex flex-col">
+                <div class="card-header">
+                    <h2 class="section-title">Anzahl Fragen</h2>
+                </div>
+                <div class="flex flex-1 flex-col justify-center gap-4 p-4 sm:p-6">
+                    <div class="flex items-center gap-3">
+                        <span class="flex h-11 min-w-14 items-center justify-center rounded-xl bg-accent px-3 text-lg font-bold text-white tabular-nums" id="count-display">{{ default_count|default:10 }}</span>
+                        <input class="form-control h-11 flex-1" type="range" name="count" id="count-slider"
                                min="1" max="50" step="1" value="{{ default_count|default:10 }}"
+                               aria-label="Anzahl Fragen"
                                oninput="document.getElementById('count-display').textContent=this.value">
                     </div>
                     {% if current_level %}
-                    <div class="text-muted small mb-2">Standard für {{ current_level.name }}: {{ current_level.default_training_count }} Fragen</div>
+                    <p class="form-text mt-0">Standard für {{ current_level.name }}: {{ current_level.default_training_count }} Fragen</p>
                     {% endif %}
-                    <button type="submit" class="btn btn-primary btn-lg mt-3" {% if not catalogs %}disabled{% endif %}>Start</button>
+                    <button type="submit" class="btn btn-primary btn-lg w-full" {% if not catalogs %}disabled{% endif %}>
+                        {% include "icons/play.html" with cls="size-5" %} Start
+                    </button>
                 </div>
-            </div>
+            </section>
         </div>
     </form>
 </div>

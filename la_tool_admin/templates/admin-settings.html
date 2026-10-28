@@ -1,51 +1,66 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 
-{% block site_content %}
-<div class="container py-4" style="max-width:600px;">
-    <h2 class="mb-4">Einstellungen</h2>
+{% block page_title %}Einstellungen · Admin{% endblock %}
+
+{% block admin_content %}
+<div class="max-w-2xl">
+    <div class="page-header">
+        <div>
+            <p class="eyebrow">Konfiguration</p>
+            <h1 class="page-title mt-1">Einstellungen</h1>
+        </div>
+    </div>
 
     {% if error %}
-    <div class="alert alert-danger">{{ error }}</div>
+    <div class="alert alert-danger mb-4">{% include "icons/exclamation-triangle.html" with cls="size-5 shrink-0" %}<span>{{ error }}</span></div>
     {% endif %}
 
-    <div class="border rounded-1 border-3 border-primary p-4">
-        <h5 class="mb-3">Training</h5>
-        <form method="post">
-            {% csrf_token %}
-            <div class="mb-3">
-                <label class="form-label fw-semibold" for="training_pass_threshold">
+    <div class="space-y-4">
+        <section class="card">
+            <div class="card-header"><h2 class="section-title">Training</h2></div>
+            <form method="post" class="card-body">
+                {% csrf_token %}
+                <label class="form-label" for="training_pass_threshold">
                     Globale Bestehensgrenze (%)
                 </label>
-                <p class="text-muted small mb-2">
+                <p class="mb-2 text-xs text-ink-2">
                     Fallback-Wert, wenn für eine LA-Stufe keine eigene Bestehensgrenze konfiguriert ist.
                 </p>
-                <div class="input-group" style="max-width:200px;">
-                    <input type="number" class="form-control" id="training_pass_threshold"
-                           name="training_pass_threshold"
-                           value="{{ settings.training_pass_threshold }}"
-                           min="0" max="100" required>
-                    <span class="input-group-text">%</span>
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="input-group w-40">
+                        <input type="number" class="form-control" id="training_pass_threshold"
+                               name="training_pass_threshold"
+                               value="{{ settings.training_pass_threshold }}"
+                               min="0" max="100" required>
+                        <span class="input-group-text">%</span>
+                    </div>
+                    <button type="submit" class="btn btn-primary">{% include "icons/check.html" with cls="size-4" %} Speichern</button>
                 </div>
+            </form>
+        </section>
+
+        <section class="card card-body flex flex-col gap-4 sm:flex-row sm:items-center">
+            <span class="icon-tile">{% include "icons/trophy.html" with cls="size-6" %}</span>
+            <div class="min-w-0 flex-1">
+                <h2 class="section-title">LA-Stufen</h2>
+                <p class="mt-1 text-sm text-ink-2">
+                    Verwalte die konfigurierbaren LA-Stufen mit Namen, Logo, Reihenfolge und Standardwerten für Trainings und Prüfungen.
+                </p>
             </div>
-            <button type="submit" class="btn btn-primary">Speichern</button>
-        </form>
-    </div>
+            <a href="{% url 'admin_level_list' %}" class="btn btn-soft">Stufen verwalten {% include "icons/arrow-right.html" with cls="size-4" %}</a>
+        </section>
 
-    <div class="border rounded-1 border-3 border-primary p-4 mt-4">
-        <h5 class="mb-2">LA-Stufen</h5>
-        <p class="text-muted small mb-3">
-            Verwalte die konfigurierbaren LA-Stufen mit Namen, Logo, Reihenfolge und Standardwerten für Trainings und Prüfungen.
-        </p>
-        <a href="{% url 'admin_level_list' %}" class="btn btn-outline-primary">Stufen verwalten</a>
-    </div>
-
-    <div class="border rounded-1 border-3 border-primary p-4 mt-4">
-        <h5 class="mb-2">Automatische Gruppen</h5>
-        <p class="text-muted small mb-3">
-            Verwalte Gruppen, deren Mitgliedschaft automatisch anhand von Divera-Qualifikationen und Entra-Gruppen vergeben wird.
-            Gruppen können für Zugriffsrechte und die Zuweisung von Prüfungen genutzt werden.
-        </p>
-        <a href="{% url 'admin_autogroup_list' %}" class="btn btn-outline-primary">Gruppen verwalten</a>
+        <section class="card card-body flex flex-col gap-4 sm:flex-row sm:items-center">
+            <span class="icon-tile">{% include "icons/bolt.html" with cls="size-6" %}</span>
+            <div class="min-w-0 flex-1">
+                <h2 class="section-title">Automatische Gruppen</h2>
+                <p class="mt-1 text-sm text-ink-2">
+                    Verwalte Gruppen, deren Mitgliedschaft automatisch anhand von Divera-Qualifikationen und Entra-Gruppen vergeben wird.
+                    Gruppen können für Zugriffsrechte und die Zuweisung von Prüfungen genutzt werden.
+                </p>
+            </div>
+            <a href="{% url 'admin_autogroup_list' %}" class="btn btn-soft">Gruppen verwalten {% include "icons/arrow-right.html" with cls="size-4" %}</a>
+        </section>
     </div>
 </div>
 {% endblock %}

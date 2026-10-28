@@ -1,79 +1,84 @@
 {% extends "base.html" %}
 
+{% block page_title %}Prüfungen{% endblock %}
+
 {% block site_content %}
-<div class="container py-4">
-    <div class="row mb-4">
-        <div class="col-md-8 col-xl-6 text-center mx-auto">
-            <h2>Prüfungen</h2>
-            <p class="text-muted">Hier findest du deine Prüfungen und Ergebnisse</p>
+<div class="page">
+    <div class="page-header">
+        <div>
+            <p class="eyebrow">Leistungsabzeichen</p>
+            <h1 class="page-title mt-1">Prüfungen</h1>
+            <p class="page-subtitle">Hier findest du deine Prüfungen und Ergebnisse</p>
         </div>
     </div>
-    <div class="row">
-        <!-- Letzte Ergebnisse -->
-        <div class="col-md-6 col-xl-4">
-            <div class="border rounded-1 border-3 border-primary p-3 mb-3">
-                <h5 class="text-center mb-3">Letzte Ergebnisse</h5>
-                {% for r in past_results %}
-                {% with meta=r.meta_reference %}
-                <a class="text-decoration-none text-reset" href="{% url 'exam_result' r.exam.pk %}">
-                    <div class="border rounded-1 border-2 border-primary d-flex flex-row align-items-center p-2 mt-2 mb-2">
-                        <div class="col ms-2">
-                            <div class="fw-bold small">{{ r.exam.name }}</div>
-                            <div class="text-muted small">{{ r.meta_time|date:"d.m.Y" }}</div>
-                        </div>
-                        <div class="col-auto me-2">
-                            {% if r.state == 'published' %}
-                                {% if meta.passed %}
-                                <span class="fw-semibold text-success small">Bestanden · {{ meta.score }}/{{ meta.total }}</span>
-                                {% else %}
-                                <span class="fw-semibold text-danger small">Nicht bestanden · {{ meta.score }}/{{ meta.total }}</span>
-                                {% endif %}
-                            {% else %}
-                            <span class="fw-semibold text-secondary small">Nicht freigegeben</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                </a>
-                {% endwith %}
-                {% empty %}
-                <p class="text-muted text-center small py-2">Noch keine Ergebnisse</p>
-                {% endfor %}
-            </div>
-        </div>
 
-        <!-- Offene Prüfungen -->
-        <div class="col-md-6 col-xl-8">
-            <div class="border rounded-1 border-3 border-primary p-3 mb-3">
-                <h5 class="text-center mb-3">Offene Prüfungen</h5>
+    <div class="grid items-start gap-4 lg:grid-cols-3">
+        <!-- Offene Prüfungen (mobil zuerst, auf großen Bildschirmen rechts) -->
+        <section class="card lg:col-span-2">
+            <div class="card-header">
+                <h2 class="section-title">Offene Prüfungen</h2>
+            </div>
+            <div class="space-y-2 p-4">
                 {% for exam in open_exams %}
                 {% with result=user_results|default:"" %}
-                <div class="border rounded-1 border-2 border-primary d-flex flex-row align-items-center p-2 mt-2 mb-2">
-                    <div class="col ms-2">
-                        <div class="fw-bold">{{ exam.name }}</div>
-                        <div class="text-muted small">
-                            {{ exam.questions.count }} Fragen · {{ exam.time_in_min }} Min
-                            <span class="badge {% if exam.level %}{{ exam.level.badge_bg_class }} {{ exam.level.badge_text_class }}{% else %}bg-secondary text-white{% endif %} ms-1">{% if exam.level %}{{ exam.level.name }}{% else %}–{% endif %}</span>
-                            {% if exam.closed %}<span class="badge bg-danger ms-1">gesperrt</span>{% endif %}
+                <div class="list-row flex-wrap hover:bg-surface">
+                    <div class="min-w-0 flex-1">
+                        <p class="font-semibold">{{ exam.name }}</p>
+                        <div class="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-ink-3">
+                            <span>{{ exam.questions.count }} Fragen · {{ exam.time_in_min }} Min</span>
+                            <span class="badge {% if exam.level %}{{ exam.level.badge_bg_class|default:'badge-primary' }} {{ exam.level.badge_text_class }}{% else %}badge-neutral{% endif %}">{% if exam.level %}{{ exam.level.name }}{% else %}–{% endif %}</span>
+                            {% if exam.closed %}<span class="badge badge-danger">gesperrt</span>{% endif %}
                         </div>
                     </div>
-                    <div class="col-auto me-2">
+                    <div class="shrink-0">
                         {% if exam.pk in user_results %}
-                        <span class="text-muted small">bereits abgegeben</span>
+                        <span class="inline-flex items-center gap-1 text-sm text-ink-3">{% include "icons/check-circle.html" with cls="size-4" %} bereits abgegeben</span>
                         {% elif exam.closed %}
-                        <span class="text-muted small">gesperrt</span>
+                        <span class="inline-flex items-center gap-1 text-sm text-ink-3">{% include "icons/lock-closed.html" with cls="size-4" %} gesperrt</span>
                         {% else %}
-                        <a class="btn btn-sm btn-outline-primary" href="{% url 'exam_start' exam.pk %}">
-                            Starten
+                        <a class="btn btn-primary" href="{% url 'exam_start' exam.pk %}">
+                            {% include "icons/play.html" with cls="size-4" %} Starten
                         </a>
                         {% endif %}
                     </div>
                 </div>
                 {% endwith %}
                 {% empty %}
-                <p class="text-muted text-center py-3">Keine Prüfungen zugewiesen.</p>
+                <p class="empty-state">Keine Prüfungen zugewiesen.</p>
                 {% endfor %}
             </div>
-        </div>
+        </section>
+
+        <!-- Letzte Ergebnisse -->
+        <section class="card lg:order-first">
+            <div class="card-header">
+                <h2 class="section-title">Letzte Ergebnisse</h2>
+            </div>
+            <div class="space-y-2 p-4">
+                {% for r in past_results %}
+                {% with meta=r.meta_reference %}
+                <a class="list-row" href="{% url 'exam_result' r.exam.pk %}">
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-semibold">{{ r.exam.name }}</p>
+                        <p class="text-xs text-ink-3">{{ r.meta_time|date:"d.m.Y" }}</p>
+                    </div>
+                    {% if r.state == 'published' %}
+                        {% if meta.passed %}
+                        <span class="badge badge-success tabular-nums">Bestanden · {{ meta.score }}/{{ meta.total }}</span>
+                        {% else %}
+                        <span class="badge badge-danger tabular-nums">Nicht bestanden · {{ meta.score }}/{{ meta.total }}</span>
+                        {% endif %}
+                    {% else %}
+                    <span class="badge badge-neutral">Nicht freigegeben</span>
+                    {% endif %}
+                    {% include "icons/chevron-right.html" with cls="size-4 shrink-0 text-ink-3" %}
+                </a>
+                {% endwith %}
+                {% empty %}
+                <p class="empty-state">Noch keine Ergebnisse</p>
+                {% endfor %}
+            </div>
+        </section>
     </div>
 </div>
 {% endblock %}

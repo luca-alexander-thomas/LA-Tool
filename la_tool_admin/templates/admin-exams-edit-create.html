@@ -1,195 +1,194 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 
-{% block site_content %}
-<div class="container py-2 mb-2">
-    <a href="{% url 'admin_exam_list' %}" class="text-decoration-none text-muted">&larr; Prüfungsübersicht</a>
+{% block page_title %}{{ title }} · Admin{% endblock %}
+
+{% block admin_content %}
+<a href="{% url 'admin_exam_list' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Prüfungsübersicht</a>
+
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Prüfungen</p>
+        <h1 class="page-title mt-1">{{ title }}</h1>
+    </div>
 </div>
-<h3 class="text-center mb-4">{{ title }}</h3>
 
 <form method="post" action="">
     {% csrf_token %}
-    <div class="container">
-        <div class="row mt-2 mb-2">
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
 
-            <!-- Details + Texte -->
-            <div class="col-md-6 col-xl-4">
-                <div class="border rounded-1 border-3 border-primary m-2 p-3">
-                    <h5>Details</h5>
-                    <div class="mb-2">
-                        <label class="form-label small fw-semibold">{{ form.name.label }}</label>
-                        {{ form.name }}
-                        {% if form.name.errors %}<div class="text-danger small">{{ form.name.errors }}</div>{% endif %}
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label small fw-semibold">{{ form.level.label }}</label>
-                        {{ form.level }}
-                        <div id="level-defaults-hint" class="form-text text-primary d-none"></div>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label small fw-semibold">{{ form.time_in_min.label }}</label>
-                        {{ form.time_in_min }}
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label small fw-semibold">{{ form.pass_threshold.label }}</label>
-                        <div class="input-group">
-                            {{ form.pass_threshold }}
-                            <span class="input-group-text">Punkte</span>
-                        </div>
-                        {% if form.pass_threshold.errors %}<div class="text-danger small">{{ form.pass_threshold.errors }}</div>{% endif %}
-                    </div>
-                    <div class="d-flex flex-row justify-content-around mt-3">
-                        <div class="form-check">
-                            {{ form.visible }}
-                            <label class="form-check-label small">{{ form.visible.label }}</label>
-                        </div>
-                        <div class="form-check">
-                            {{ form.closed }}
-                            <label class="form-check-label small">{{ form.closed.label }}</label>
-                        </div>
-                        <div class="form-check">
-                            {{ form.archived }}
-                            <label class="form-check-label small">{{ form.archived.label }}</label>
-                        </div>
-                    </div>
-                    {% if exam %}
-                    <div class="mt-3 pt-2 border-top d-flex justify-content-center">
-                        <button type="button" class="btn btn-sm btn-outline-danger"
-                                onclick="if(confirm('Prüfung wirklich löschen?')) document.getElementById('delete-exam-form').submit()">
-                            Löschen
-                        </button>
-                    </div>
-                    {% endif %}
+        {# Details #}
+        <section class="card">
+            <div class="card-header"><h2 class="section-title">Details</h2></div>
+            <div class="card-body space-y-4">
+                <div>
+                    <label class="form-label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}<div class="form-error">{{ form.name.errors }}</div>{% endif %}
                 </div>
-            </div>
-
-            <!-- Info + Abschlusstext -->
-            <div class="col-md-6 col-xl-4">
-                <div class="border rounded-1 border-3 border-primary m-2 p-3">
-                    <h5>Texte</h5>
-                    <div class="mb-2">
-                        <label class="form-label small fw-semibold">{{ form.info_text.label }}</label>
-                        {{ form.info_text }}
+                <div>
+                    <label class="form-label" for="{{ form.level.id_for_label }}">{{ form.level.label }}</label>
+                    {{ form.level }}
+                    <div id="level-defaults-hint" class="form-text text-accent-ink hidden"></div>
+                </div>
+                <div>
+                    <label class="form-label" for="{{ form.time_in_min.id_for_label }}">{{ form.time_in_min.label }}</label>
+                    {{ form.time_in_min }}
+                </div>
+                <div>
+                    <label class="form-label" for="{{ form.pass_threshold.id_for_label }}">{{ form.pass_threshold.label }}</label>
+                    <div class="input-group">
+                        {{ form.pass_threshold }}
+                        <span class="input-group-text">Punkte</span>
                     </div>
-                    <div class="mb-2">
-                        <label class="form-label small fw-semibold">{{ form.end_text.label }}</label>
-                        {{ form.end_text }}
+                    {% if form.pass_threshold.errors %}<div class="form-error">{{ form.pass_threshold.errors }}</div>{% endif %}
+                </div>
+                <div class="space-y-3 border-t border-line pt-4">
+                    <div class="form-check">
+                        {{ form.visible }}
+                        <label class="form-check-label" for="{{ form.visible.id_for_label }}">{{ form.visible.label }}</label>
+                    </div>
+                    <div class="form-check">
+                        {{ form.closed }}
+                        <label class="form-check-label" for="{{ form.closed.id_for_label }}">{{ form.closed.label }}</label>
+                    </div>
+                    <div class="form-check">
+                        {{ form.archived }}
+                        <label class="form-check-label" for="{{ form.archived.id_for_label }}">{{ form.archived.label }}</label>
                     </div>
                 </div>
             </div>
+            {% if exam %}
+            <div class="card-footer justify-start">
+                <button type="button" class="btn btn-sm btn-danger-soft"
+                        onclick="if(confirm('Prüfung wirklich löschen?')) document.getElementById('delete-exam-form').submit()">
+                    {% include "icons/trash.html" with cls="size-4" %} Löschen
+                </button>
+            </div>
+            {% endif %}
+        </section>
 
-            <!-- Zuweisung: Gruppen + Nutzer -->
-            <div class="col-md-6 col-xl-4">
-                <div class="border rounded-1 border-3 border-primary m-2 p-3">
-                    <h5>Zuweisungen</h5>
+        {# Info + Abschlusstext #}
+        <section class="card">
+            <div class="card-header"><h2 class="section-title">Texte</h2></div>
+            <div class="card-body space-y-4">
+                <div>
+                    <label class="form-label" for="{{ form.info_text.id_for_label }}">{{ form.info_text.label }}</label>
+                    {{ form.info_text }}
+                </div>
+                <div>
+                    <label class="form-label" for="{{ form.end_text.id_for_label }}">{{ form.end_text.label }}</label>
+                    {{ form.end_text }}
+                </div>
+            </div>
+        </section>
 
-                    <!-- Gruppen -->
-                    {% if all_groups %}
-                    <div class="mb-3">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                            <span class="small fw-semibold text-muted">Gruppen</span>
-                            <span class="badge bg-primary small" id="badge-groups">{{ selected_group_ids|length }} gewählt</span>
-                        </div>
-                        <div style="max-height:130px;overflow-y:auto;">
-                            {% for g in all_groups %}
-                            <div class="d-flex align-items-center p-1 mb-1 rounded {% if g.pk in selected_group_ids %}bg-primary bg-opacity-10{% endif %}">
-                                <input type="checkbox" name="group_ids" value="{{ g.pk }}" class="form-check-input me-2"
-                                       {% if g.pk in selected_group_ids %}checked{% endif %}>
-                                <span class="small">{{ g.name }}</span>
-                                {% if g.pk in selected_group_ids %}<span class="ms-auto badge bg-primary small">✓</span>{% endif %}
-                            </div>
-                            {% endfor %}
-                        </div>
+        {# Zuweisung: Gruppen + Nutzer #}
+        <section class="card md:col-span-2 xl:col-span-1">
+            <div class="card-header"><h2 class="section-title">Zuweisungen</h2></div>
+            <div class="card-body space-y-4">
+
+                {# Gruppen #}
+                {% if all_groups %}
+                <div>
+                    <div class="mb-2 flex items-center justify-between gap-2">
+                        <span class="text-sm font-medium text-ink-2">Gruppen</span>
+                        <span class="badge badge-primary" id="badge-groups">{{ selected_group_ids|length }} gewählt</span>
                     </div>
-                    <hr class="my-2">
-                    {% endif %}
-
-                    <!-- Einzelne Nutzer -->
-                    <div class="d-flex align-items-center justify-content-between mb-1">
-                        <span class="small fw-semibold text-muted">Einzelne Nutzer</span>
-                        <span class="badge bg-secondary small" id="badge-users">{{ selected_user_ids|length }} gewählt</span>
+                    <div class="max-h-36 space-y-1 overflow-y-auto">
+                        {% for g in all_groups %}
+                        <label class="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-surface-2 {% if g.pk in selected_group_ids %}bg-accent-soft{% endif %}">
+                            <input type="checkbox" name="group_ids" value="{{ g.pk }}" class="form-check-input mt-0"
+                                   {% if g.pk in selected_group_ids %}checked{% endif %}>
+                            <span class="text-sm">{{ g.name }}</span>
+                            {% if g.pk in selected_group_ids %}<span class="ml-auto text-accent-ink">{% include "icons/check.html" with cls="size-4" %}</span>{% endif %}
+                        </label>
+                        {% endfor %}
                     </div>
-                    <div style="max-height:170px;overflow-y:auto;">
+                </div>
+                <div class="h-px bg-line"></div>
+                {% endif %}
+
+                {# Einzelne Nutzer #}
+                <div>
+                    <div class="mb-2 flex items-center justify-between gap-2">
+                        <span class="text-sm font-medium text-ink-2">Einzelne Nutzer</span>
+                        <span class="badge badge-neutral" id="badge-users">{{ selected_user_ids|length }} gewählt</span>
+                    </div>
+                    <div class="max-h-48 space-y-1 overflow-y-auto">
                         {% for u in all_users %}
-                        <div class="border rounded-1 border-2 border-secondary d-flex flex-row align-items-center p-2 mb-1">
-                            <div class="col-auto me-2">
-                                <input type="checkbox" name="user_ids" value="{{ u.pk }}" class="form-check-input"
-                                       {% if u.pk in selected_user_ids %}checked{% endif %}>
-                            </div>
-                            <div class="col">
-                                <span>{{ u.last_name }}, {{ u.first_name }}</span>
-                                <span class="text-muted small ms-1">{{ u.email }}</span>
-                            </div>
-                        </div>
+                        <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-line px-2.5 py-2 hover:bg-surface-2">
+                            <input type="checkbox" name="user_ids" value="{{ u.pk }}" class="form-check-input mt-0"
+                                   {% if u.pk in selected_user_ids %}checked{% endif %}>
+                            <span class="min-w-0">
+                                <span class="text-sm">{{ u.last_name }}, {{ u.first_name }}</span>
+                                <span class="ml-1 text-xs break-all text-ink-3">{{ u.email }}</span>
+                            </span>
+                        </label>
                         {% empty %}
-                        <p class="text-muted small">Keine Nutzer vorhanden.</p>
+                        <p class="text-sm text-ink-3">Keine Nutzer vorhanden.</p>
                         {% endfor %}
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- Fragenselektion -->
-        <div class="row mt-2 mb-2">
-            <div class="col-12">
-                <div class="border rounded-1 border-3 border-primary m-2 p-3">
-                    <h5>Fragen aus Katalogen</h5>
-                    {% for entry in catalog_data %}
-                    <div class="mb-2" data-level-pk="{{ entry.catalog.level.pk|default:'' }}">
-                        <div class="d-flex align-items-center p-1 bg-light rounded cursor-pointer" style="cursor:pointer;"
-                             onclick="toggleCatalog('cat-{{ entry.catalog.pk }}', 'arrow-{{ entry.catalog.pk }}')">
-                            <svg id="arrow-{{ entry.catalog.pk }}" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16"
-                                 class="me-1 transition" style="font-size:18px;transition:transform .2s;">
-                                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
-                            </svg>
-                            <input type="checkbox" class="form-check-input me-2 parent-check"
-                                   id="parent-{{ entry.catalog.pk }}"
-                                   data-catalog="{{ entry.catalog.pk }}"
-                                   onclick="event.stopPropagation();toggleParent(this)">
-                            <label class="mb-0 fw-semibold" for="parent-{{ entry.catalog.pk }}">
-                                {{ entry.catalog.title }}
-                                <span class="badge {% if entry.catalog.level %}{{ entry.catalog.level.badge_bg_class }} {{ entry.catalog.level.badge_text_class }}{% else %}bg-secondary text-white{% endif %} ms-1 small">{% if entry.catalog.level %}{{ entry.catalog.level.name }}{% else %}–{% endif %}</span>
-                                <span class="text-muted small">({{ entry.questions|length }} Fragen)</span>
-                            </label>
-                        </div>
-                        <div id="cat-{{ entry.catalog.pk }}" class="d-none ps-4 pt-1">
-                            {% for q in entry.questions %}
-                            <div class="d-flex align-items-start mb-1">
-                                <input type="checkbox" name="question_ids" value="{{ q.pk }}" class="form-check-input me-2 mt-1 child-check"
-                                       data-catalog="{{ entry.catalog.pk }}"
-                                       {% if q.pk in selected_question_ids %}checked{% endif %}>
-                                <label class="form-label mb-0 small">
-                                    {% if q.number %}<span class="text-muted me-1">{{ q.number }}</span>{% endif %}{{ q.question|truncatechars:80 }}
-                                </label>
-                            </div>
-                            {% empty %}
-                            <p class="text-muted small py-1">Keine Theoriefragen in diesem Katalog.</p>
-                            {% endfor %}
-                        </div>
+        {# Fragenselektion #}
+        <section class="card md:col-span-2 xl:col-span-3">
+            <div class="card-header"><h2 class="section-title">Fragen aus Katalogen</h2></div>
+            <div class="card-body space-y-2">
+                {% for entry in catalog_data %}
+                <div data-level-pk="{{ entry.catalog.level.pk|default:'' }}">
+                    <div class="flex cursor-pointer items-center gap-2 rounded-xl bg-surface-2 px-3 py-2.5"
+                         onclick="toggleCatalog('cat-{{ entry.catalog.pk }}', 'arrow-{{ entry.catalog.pk }}')">
+                        <span id="arrow-{{ entry.catalog.pk }}" class="inline-flex text-ink-3 transition-transform duration-200">{% include "icons/chevron-right.html" with cls="size-4" %}</span>
+                        <input type="checkbox" class="form-check-input mt-0 parent-check"
+                               id="parent-{{ entry.catalog.pk }}"
+                               data-catalog="{{ entry.catalog.pk }}"
+                               onclick="event.stopPropagation();toggleParent(this)">
+                        <label class="flex flex-wrap items-center gap-2 text-sm font-semibold" for="parent-{{ entry.catalog.pk }}">
+                            {{ entry.catalog.title }}
+                            {% if entry.catalog.level %}
+                            <span class="badge {{ entry.catalog.level.badge_bg_class|default:'badge-primary' }} {{ entry.catalog.level.badge_text_class }}">{{ entry.catalog.level.name }}</span>
+                            {% else %}
+                            <span class="badge badge-neutral">–</span>
+                            {% endif %}
+                            <span class="text-xs font-normal text-ink-3">({{ entry.questions|length }} Fragen)</span>
+                        </label>
                     </div>
-                    {% empty %}
-                    <p class="text-muted">Keine Kataloge vorhanden.</p>
-                    {% endfor %}
+                    <div id="cat-{{ entry.catalog.pk }}" class="hidden space-y-1.5 pt-2 pr-2 pb-1 pl-4 sm:pl-10">
+                        {% for q in entry.questions %}
+                        <label class="flex cursor-pointer items-start gap-2 text-sm">
+                            <input type="checkbox" name="question_ids" value="{{ q.pk }}" class="form-check-input child-check"
+                                   data-catalog="{{ entry.catalog.pk }}"
+                                   {% if q.pk in selected_question_ids %}checked{% endif %}>
+                            <span>{% if q.number %}<span class="mr-1 text-ink-3">{{ q.number }}</span>{% endif %}{{ q.question|truncatechars:80 }}</span>
+                        </label>
+                        {% empty %}
+                        <p class="py-1 text-sm text-ink-3">Keine Theoriefragen in diesem Katalog.</p>
+                        {% endfor %}
+                    </div>
                 </div>
+                {% empty %}
+                <p class="empty-state">Keine Kataloge vorhanden.</p>
+                {% endfor %}
             </div>
-        </div>
+        </section>
+    </div>
 
-        <div class="row mt-2 mb-4">
-            <div class="col d-flex justify-content-end gap-3 align-items-center">
-                {% if not exam %}
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="notify_divera" id="notify_divera_create" value="1">
-                    <label class="form-check-label small" for="notify_divera_create">Divera-Benachrichtigung an zugewiesene Nutzer</label>
-                </div>
-                {% endif %}
-                <a href="{% url 'admin_exam_list' %}" class="btn btn-outline-secondary">Abbrechen</a>
-                <button class="btn btn-primary" type="submit">Speichern</button>
-            </div>
+    <div class="mt-6 flex flex-wrap items-center justify-end gap-3">
+        {% if not exam %}
+        <div class="form-check mr-auto">
+            <input class="form-check-input" type="checkbox" name="notify_divera" id="notify_divera_create" value="1">
+            <label class="form-check-label" for="notify_divera_create">Divera-Benachrichtigung an zugewiesene Nutzer</label>
         </div>
+        {% endif %}
+        <a href="{% url 'admin_exam_list' %}" class="btn btn-secondary">Abbrechen</a>
+        <button class="btn btn-primary" type="submit">{% include "icons/check.html" with cls="size-4" %} Speichern</button>
     </div>
 </form>
 
 {% if exam %}
-<form id="delete-exam-form" method="post" action="{% url 'admin_exam_delete' exam.pk %}" class="d-none">
+<form id="delete-exam-form" method="post" action="{% url 'admin_exam_delete' exam.pk %}" class="hidden">
     {% csrf_token %}
 </form>
 {% endif %}
@@ -200,12 +199,12 @@ const LEVEL_DEFAULTS = JSON.parse('{{ level_defaults_json|escapejs }}');
 function toggleCatalog(divId, arrowId) {
     const div = document.getElementById(divId);
     const arrow = document.getElementById(arrowId);
-    if (div.classList.contains('d-none')) {
-        div.classList.remove('d-none');
-        arrow.style.transform = 'rotate(90deg)';
+    if (div.classList.contains('hidden')) {
+        div.classList.remove('hidden');
+        arrow.classList.add('rotate-90');
     } else {
-        div.classList.add('d-none');
-        arrow.style.transform = '';
+        div.classList.add('hidden');
+        arrow.classList.remove('rotate-90');
     }
 }
 function toggleParent(checkbox) {
@@ -233,9 +232,9 @@ function updateLevelHint() {
     if (levelId && LEVEL_DEFAULTS[levelId]) {
         const d = LEVEL_DEFAULTS[levelId];
         hint.textContent = 'Standard für diese Stufe: ' + d.count + ' Fragen · ' + d.pass_pct + '% Bestehen';
-        hint.classList.remove('d-none');
+        hint.classList.remove('hidden');
     } else {
-        hint.classList.add('d-none');
+        hint.classList.add('hidden');
     }
 }
 
@@ -245,9 +244,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const cat = c.dataset.catalog;
         const div = document.getElementById('cat-' + cat);
         const arrow = document.getElementById('arrow-' + cat);
-        if (div && div.classList.contains('d-none')) {
-            div.classList.remove('d-none');
-            if (arrow) arrow.style.transform = 'rotate(90deg)';
+        if (div && div.classList.contains('hidden')) {
+            div.classList.remove('hidden');
+            if (arrow) arrow.classList.add('rotate-90');
         }
     });
     updatePassThreshold();

@@ -1,89 +1,107 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 
-{% block site_content %}
-<div class="container py-4" style="max-width:820px;">
-    <div class="mb-3">
-        <a href="{% url 'admin_catalog' %}" class="text-decoration-none text-muted">&larr; Fragenkataloge</a>
+{% block page_title %}Theoriefragen importieren{% endblock %}
+
+{% block admin_content %}
+<div class="max-w-4xl">
+    <a href="{% url 'admin_catalog' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Fragenkataloge</a>
+    <div class="page-header">
+        <div>
+            <p class="eyebrow">Fragen-Import</p>
+            <h1 class="page-title mt-1">Theoriefragen importieren</h1>
+        </div>
     </div>
-    <h4 class="mb-4">Theoriefragen importieren</h4>
 
     {% if results %}
-    <div class="alert {% if results.skipped or results.errors %}alert-warning{% else %}alert-success{% endif %} mb-4">
-        <strong>Import abgeschlossen</strong> in <em>{{ results.catalog }}</em>:<br>
-        <span class="text-success">{{ results.created }} neu erstellt</span> &nbsp;·&nbsp;
-        <span class="text-primary">{{ results.updated }} aktualisiert</span> &nbsp;·&nbsp;
-        <span class="text-warning">{{ results.skipped }} übersprungen</span>
-        {% if results.errors %}
-        <ul class="mt-2 mb-0 small">
-            {% for e in results.errors %}<li>{{ e }}</li>{% endfor %}
-        </ul>
+    <div class="alert {% if results.skipped or results.errors %}alert-warning{% else %}alert-success{% endif %} mb-6" role="status">
+        {% if results.skipped or results.errors %}
+        {% include "icons/exclamation-triangle.html" with cls="size-5 shrink-0" %}
+        {% else %}
+        {% include "icons/check-circle.html" with cls="size-5 shrink-0" %}
         {% endif %}
+        <div class="min-w-0">
+            <p><strong>Import abgeschlossen</strong> in <em>{{ results.catalog }}</em>:</p>
+            <div class="mt-2 flex flex-wrap gap-1.5">
+                <span class="badge badge-success">{{ results.created }} neu erstellt</span>
+                <span class="badge badge-primary">{{ results.updated }} aktualisiert</span>
+                <span class="badge badge-warning">{{ results.skipped }} übersprungen</span>
+            </div>
+            {% if results.errors %}
+            <ul class="mt-2 list-disc space-y-0.5 pl-5 text-xs">
+                {% for e in results.errors %}<li>{{ e }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+        </div>
     </div>
     {% endif %}
 
-    <div class="row gy-4">
-        <!-- Upload-Formular -->
-        <div class="col-md-6">
-            <div class="border rounded-2 border-primary p-4">
-                <h6 class="mb-3">Datei hochladen</h6>
-                <form method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">{{ form.catalog.label }}</label>
-                        {{ form.catalog }}
-                        {% if form.catalog.errors %}<div class="text-danger small mt-1">{{ form.catalog.errors }}</div>{% endif %}
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">{{ form.file.label }}</label>
-                        {{ form.file }}
-                        {% if form.file.errors %}<div class="text-danger small mt-1">{{ form.file.errors }}</div>{% endif %}
-                    </div>
-                    <div class="mb-4 form-check">
-                        {{ form.update_existing }}
-                        <label class="form-check-label" for="{{ form.update_existing.id_for_label }}">
-                            {{ form.update_existing.label }}
-                        </label>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Importieren</button>
-                </form>
+    <div class="grid gap-4 md:grid-cols-2 md:items-start">
+        {# Upload-Formular #}
+        <section class="card">
+            <div class="card-header">
+                <h2 class="section-title">Datei hochladen</h2>
             </div>
-        </div>
+            <form method="post" enctype="multipart/form-data" class="card-body space-y-5">
+                {% csrf_token %}
+                <div>
+                    <label class="form-label" for="{{ form.catalog.id_for_label }}">{{ form.catalog.label }}</label>
+                    {{ form.catalog }}
+                    {% if form.catalog.errors %}<div class="form-error">{{ form.catalog.errors }}</div>{% endif %}
+                </div>
+                <div>
+                    <label class="form-label" for="{{ form.file.id_for_label }}">{{ form.file.label }}</label>
+                    {{ form.file }}
+                    {% if form.file.errors %}<div class="form-error">{{ form.file.errors }}</div>{% endif %}
+                </div>
+                <div class="form-check">
+                    {{ form.update_existing }}
+                    <label class="form-check-label" for="{{ form.update_existing.id_for_label }}">
+                        {{ form.update_existing.label }}
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary w-full">{% include "icons/arrow-up-tray.html" %} Importieren</button>
+            </form>
+        </section>
 
-        <!-- Beispiel-Download & Formatdoku -->
-        <div class="col-md-6">
-            <div class="border rounded-2 border-secondary p-4 small">
-                <h6 class="mb-3">Beispieldateien herunterladen</h6>
-                <div class="d-flex gap-2 mb-4">
-                    <a href="{% url 'admin_import_example' 'xlsx' %}" class="btn btn-outline-success btn-sm">
-                        ↓ XLSX
+        {# Beispiel-Download & Formatdoku #}
+        <section class="card">
+            <div class="card-header">
+                <h2 class="section-title">Beispieldateien herunterladen</h2>
+            </div>
+            <div class="card-body text-sm">
+                <div class="mb-6 flex flex-wrap gap-2">
+                    <a href="{% url 'admin_import_example' 'xlsx' %}" class="btn btn-sm btn-soft">
+                        {% include "icons/arrow-down-tray.html" with cls="size-4" %} XLSX
                     </a>
-                    <a href="{% url 'admin_import_example' 'csv' %}" class="btn btn-outline-secondary btn-sm">
-                        ↓ CSV
+                    <a href="{% url 'admin_import_example' 'csv' %}" class="btn btn-sm btn-secondary">
+                        {% include "icons/arrow-down-tray.html" with cls="size-4" %} CSV
                     </a>
-                    <a href="{% url 'admin_import_example' 'json' %}" class="btn btn-outline-secondary btn-sm">
-                        ↓ JSON
+                    <a href="{% url 'admin_import_example' 'json' %}" class="btn btn-sm btn-secondary">
+                        {% include "icons/arrow-down-tray.html" with cls="size-4" %} JSON
                     </a>
                 </div>
 
-                <p class="fw-semibold mb-1">Spaltenformat (XLSX &amp; CSV)</p>
-                <p class="text-muted mb-2">
-                    Antworten in Spalten <code>A</code>, <code>B</code>, <code>C</code> …<br>
-                    Korrekte Antworten mit <code>Lösung A</code>, <code>Lösung B</code> … markieren
-                    (XLSX: Checkbox&thinsp;=&thinsp;Häkchen; CSV: <code>Ja</code> oder <code>Nein</code>).
+                <p class="mb-1 font-semibold">Spaltenformat (XLSX &amp; CSV)</p>
+                <p class="mb-3 text-ink-2">
+                    Antworten in Spalten <code class="rounded bg-surface-2 px-1 font-mono text-xs">A</code>, <code class="rounded bg-surface-2 px-1 font-mono text-xs">B</code>, <code class="rounded bg-surface-2 px-1 font-mono text-xs">C</code> …<br>
+                    Korrekte Antworten mit <code class="rounded bg-surface-2 px-1 font-mono text-xs">Lösung A</code>, <code class="rounded bg-surface-2 px-1 font-mono text-xs">Lösung B</code> … markieren
+                    (XLSX: Checkbox&thinsp;=&thinsp;Häkchen; CSV: <code class="rounded bg-surface-2 px-1 font-mono text-xs">Ja</code> oder <code class="rounded bg-surface-2 px-1 font-mono text-xs">Nein</code>).
                 </p>
-                <table class="table table-bordered table-sm small mb-3">
-                    <thead class="table-light">
-                        <tr><th>Nr</th><th>Frage</th><th>A</th><th>B</th><th>C</th><th>Lösung A</th><th>Lösung B</th><th>Lösung C</th><th>Hinweis</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td>S-1-01</td><td>Was ist …?</td><td>Opt A</td><td>Opt B</td><td>Opt C</td><td class="text-success fw-bold">Ja</td><td>Nein</td><td>Nein</td><td>Tipp</td></tr>
-                        <tr><td>S-1-02</td><td>Multi?</td><td>Ja</td><td>Nein</td><td>Auch</td><td class="text-success fw-bold">Ja</td><td>Nein</td><td class="text-success fw-bold">Ja</td><td></td></tr>
-                    </tbody>
-                </table>
+                <div class="table-wrap mb-5">
+                    <table class="table text-xs [&_td]:px-2.5 [&_td]:py-1.5 [&_th]:px-2.5 [&_th]:py-2 [&_th]:normal-case">
+                        <thead>
+                            <tr><th>Nr</th><th>Frage</th><th>A</th><th>B</th><th>C</th><th>Lösung A</th><th>Lösung B</th><th>Lösung C</th><th>Hinweis</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td class="whitespace-nowrap">S-1-01</td><td>Was ist …?</td><td>Opt A</td><td>Opt B</td><td>Opt C</td><td class="font-bold text-green-700 dark:text-green-400">Ja</td><td>Nein</td><td>Nein</td><td>Tipp</td></tr>
+                            <tr><td class="whitespace-nowrap">S-1-02</td><td>Multi?</td><td>Ja</td><td>Nein</td><td>Auch</td><td class="font-bold text-green-700 dark:text-green-400">Ja</td><td>Nein</td><td class="font-bold text-green-700 dark:text-green-400">Ja</td><td></td></tr>
+                        </tbody>
+                    </table>
+                </div>
 
-                <p class="fw-semibold mb-1 mt-2">JSON-Format</p>
-                <p class="text-muted mb-1"><code>correct</code> als Texte oder 0-basierte Indizes.</p>
-                <pre class="bg-light rounded p-2 small overflow-x-auto mb-0">[
+                <p class="mb-1 font-semibold">JSON-Format</p>
+                <p class="mb-2 text-ink-2"><code class="rounded bg-surface-2 px-1 font-mono text-xs">correct</code> als Texte oder 0-basierte Indizes.</p>
+                <pre class="overflow-x-auto rounded-xl bg-surface-2 p-3 font-mono text-xs">[
   {
     "number": "S-1-01",
     "question": "Was ist …?",
@@ -99,7 +117,7 @@
   }
 ]</pre>
             </div>
-        </div>
+        </section>
     </div>
 </div>
 {% endblock %}

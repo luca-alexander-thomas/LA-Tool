@@ -1,78 +1,71 @@
 {% extends "base.html" %}
 
+{% block page_title %}{{ exam.name }}{% endblock %}
+
 {% block site_content %}
-<div class="container py-3">
+<div class="page-narrow">
     <!-- Header: title + timer -->
-    <div class="row align-items-center mb-4">
-        <div class="col">
-            <h4 class="mb-0">{{ exam.name }}</h4>
+    <div class="mb-5 flex items-center justify-between gap-3">
+        <div class="min-w-0">
+            <p class="eyebrow">Frage {{ question_number }} / {{ question_total }}</p>
+            <h1 class="mt-0.5 truncate text-lg font-bold tracking-tight text-ink sm:text-xl">{{ exam.name }}</h1>
         </div>
-        <div class="col-auto">
-            <div class="border rounded-1 border-3 border-primary px-3 py-2">
-                <span class="fw-semibold" id="timer-display">--:--</span>
-            </div>
+        <div class="flex shrink-0 items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-2 shadow-xs" aria-live="off" title="Verbleibende Zeit">
+            {% include "icons/clock.html" with cls="size-5 text-ink-3" %}
+            <span class="font-semibold tabular-nums" id="timer-display">--:--</span>
         </div>
     </div>
 
     <!-- Question -->
-    <div class="row mb-3 justify-content-center">
-        <div class="col-md-10 col-xl-8">
-            <div class="alert alert-info py-2 text-center small mb-2">Mehrere Antworten möglich — alle zutreffenden auswählen.</div>
-            <p class="fs-4 fw-bold text-center">{{ question.question }}</p>
-        </div>
+    <div class="alert alert-info mb-4 justify-center text-center">
+        <span>Mehrere Antworten möglich — alle zutreffenden auswählen.</span>
     </div>
+    <h2 class="mb-5 text-center text-xl font-bold text-ink sm:text-2xl">{{ question.question }}</h2>
 
     <!-- Answer form -->
-    <div class="row justify-content-center mb-4">
-        <div class="col-md-10 col-xl-8">
-            <form method="post" id="exam-form" action="{% url 'exam_run' exam.pk %}">
-                {% csrf_token %}
-                <input type="hidden" name="direction" id="direction-input" value="forward">
-                {% for letter, text in labeled_choices %}
-                <div class="mb-3 border rounded-1 border-2 border-primary p-3 d-flex align-items-center answer-option"
-                     style="cursor:pointer;" onclick="toggleAnswer('{{ letter }}')">
-                    <input class="form-check-input me-3 flex-shrink-0" type="checkbox"
-                           name="answer" id="choice_{{ letter }}" value="{{ letter }}"
-                           style="width:1.4em;height:1.4em;"
-                           {% if letter in existing_answers %}checked{% endif %}>
-                    <label class="form-check-label mb-0 w-100" for="choice_{{ letter }}" style="cursor:pointer;">
-                        <span class="text-muted me-2 fw-bold">{{ letter|upper }}.</span>{{ text }}
-                    </label>
-                </div>
-                {% endfor %}
-
-                <!-- Progress -->
-                <div class="d-flex align-items-center mt-4 mb-1 gap-3">
-                    <span class="text-muted small flex-shrink-0">{{ question_number }} / {{ question_total }}</span>
-                    <div class="w-100">
-                        <div class="progress" style="height:10px;">
-                            <div class="progress-bar bg-primary progress-bar-animated"
-                                 role="progressbar"
-                                 aria-valuenow="{{ progress_pct }}"
-                                 aria-valuemin="0" aria-valuemax="100"
-                                 style="width:{{ progress_pct }}%;"></div>
-                        </div>
-                    </div>
-                </div>
-                <p class="text-muted small text-end mb-3">Bestehensgrenze: {{ pass_count }} von {{ question_total }} Punkten ({{ pass_pct }}%)</p>
-
-                <div class="d-flex justify-content-between align-items-center">
-                    {% if can_go_back %}
-                    <button type="button" class="btn btn-outline-secondary px-4" onclick="goBack()">
-                        &larr; Zurück
-                    </button>
-                    {% else %}
-                    <span></span>
-                    {% endif %}
-                    <button type="submit" class="btn btn-primary px-4" id="submit-btn">
-                        {% if question_number == question_total %}Abgeben{% else %}Weiter{% endif %}
-                    </button>
-                </div>
-            </form>
+    <form method="post" id="exam-form" action="{% url 'exam_run' exam.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="direction" id="direction-input" value="forward">
+        <div class="space-y-3">
+            {% for letter, text in labeled_choices %}
+            <label class="answer-option has-focus-visible:ring-2 has-focus-visible:ring-accent" for="choice_{{ letter }}">
+                <input class="sr-only" type="checkbox"
+                       name="answer" id="choice_{{ letter }}" value="{{ letter }}"
+                       {% if letter in existing_answers %}checked{% endif %}>
+                <span class="answer-letter">{{ letter|upper }}</span>
+                <span class="min-w-0 flex-1 text-base text-ink">{{ text }}</span>
+            </label>
+            {% endfor %}
         </div>
-    </div>
-</div>
 
+        <!-- Progress -->
+        <div class="mt-6 flex items-center gap-3">
+            <span class="shrink-0 text-sm text-ink-2 tabular-nums">{{ question_number }} / {{ question_total }}</span>
+            <div class="progress h-2.5" role="progressbar" aria-label="Fortschritt"
+                 aria-valuenow="{{ progress_pct }}" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar" style="width: {{ progress_pct }}%"></div>
+            </div>
+        </div>
+        <p class="mt-2 mb-5 text-right text-xs text-ink-3">Bestehensgrenze: {{ pass_count }} von {{ question_total }} Punkten ({{ pass_pct }}%)</p>
+
+        <div class="flex items-center justify-between gap-3">
+            {% if can_go_back %}
+            <button type="button" class="btn btn-secondary" onclick="goBack()">
+                {% include "icons/arrow-left.html" with cls="size-4" %} Zurück
+            </button>
+            {% else %}
+            <span></span>
+            {% endif %}
+            <button type="submit" class="btn btn-primary min-w-32" id="submit-btn">
+                {% if question_number == question_total %}Abgeben{% else %}Weiter{% endif %}
+                {% include "icons/arrow-right.html" with cls="size-4" %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
 <script>
 (function () {
     const startedAt  = {{ started_at }};
@@ -87,35 +80,20 @@
         const m = Math.floor(remaining / 60);
         const s = remaining % 60;
         display.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
-        if (remaining <= 60) display.classList.add('text-danger');
+        if (remaining <= 60) display.classList.add('text-red-600', 'dark:text-red-400');
         if (remaining <= 0)  { form.submit(); return; }
         setTimeout(tick, 1000);
     }
     tick();
 
-    // Visual highlight on selected option
-    function updateHighlight() {
-        document.querySelectorAll('.answer-option').forEach(el => {
-            const input = el.querySelector('input');
-            el.classList.toggle('border-success', !!input?.checked);
-            el.classList.toggle('border-primary', !input?.checked);
-        });
-    }
-    // Apply highlight for pre-filled answers
-    updateHighlight();
-    document.querySelectorAll('input[name="answer"]').forEach(el => {
-        el.addEventListener('change', updateHighlight);
-    });
+    // Hervorhebung der gewählten Antworten erfolgt per CSS (.answer-option:has(:checked)).
 })();
 
+// Antwort umschalten (das <label> schaltet die Checkbox bereits nativ um;
+// die Funktion bleibt für Aufrufe aus anderem Code erhalten).
 function toggleAnswer(letter) {
     const cb = document.getElementById('choice_' + letter);
     if (cb) cb.checked = !cb.checked;
-    document.querySelectorAll('.answer-option').forEach(el => {
-        const input = el.querySelector('input');
-        el.classList.toggle('border-success', !!input?.checked);
-        el.classList.toggle('border-primary', !input?.checked);
-    });
 }
 
 function goBack() {

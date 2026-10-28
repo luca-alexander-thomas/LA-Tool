@@ -1,140 +1,143 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 
-{% block site_content %}
-<div class="container py-2 mb-2">
-    <a href="{% url 'admin_work_list' %}" class="text-decoration-none text-muted">&larr; Dienste</a>
+{% block page_title %}{{ work.title }} · Dienst bearbeiten{% endblock %}
+
+{% block admin_content %}
+<a href="{% url 'admin_work_list' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Dienste</a>
+
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Dienst bearbeiten</p>
+        <h1 class="page-title mt-1">{{ work.title }}</h1>
+        <p class="page-subtitle">{{ work.date|date:"d.m.Y" }}{% if work.location %} · {{ work.location }}{% endif %}{% if work.divera_id %} · Divera #{{ work.divera_id }}{% endif %}</p>
+    </div>
 </div>
 
-<div class="container py-3">
-    <h3 class="text-center mb-1">{{ work.title }}</h3>
-    <p class="text-center text-muted mb-4">{{ work.date|date:"d.m.Y" }}{% if work.location %} · {{ work.location }}{% endif %}{% if work.divera_id %} · Divera #{{ work.divera_id }}{% endif %}</p>
+<form method="post">
+    {% csrf_token %}
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 xl:items-start">
 
-    <form method="post">
-        {% csrf_token %}
-        <div class="row">
-            <!-- Details -->
-            <div class="col-md-4 p-2">
-                <div class="border rounded-1 border-3 border-primary p-3 h-100">
-                    <h5 class="mb-3">Details</h5>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">{{ form.level.label }}</label>
-                        {{ form.level }}
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">{{ form.description.label }}</label>
-                        {{ form.description }}
-                    </div>
-                    {% if all_groups %}
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Gruppen <span class="text-muted fw-normal small">(leer = alle sehen)</span></label>
-                        <div style="max-height:140px;overflow-y:auto;" class="border rounded p-2">
-                            {% for g in all_groups %}
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="work_group_ids" value="{{ g.pk }}" id="wg-{{ g.pk }}"
-                                       {% if g.pk in sel_work_group_ids %}checked{% endif %}>
-                                <label class="form-check-label small" for="wg-{{ g.pk }}">{{ g.name }}</label>
-                            </div>
-                            {% endfor %}
+        {# Details #}
+        <section class="card">
+            <div class="card-header"><h2 class="section-title">Details</h2></div>
+            <div class="card-body space-y-4">
+                <div>
+                    <label class="form-label" for="{{ form.level.id_for_label }}">{{ form.level.label }}</label>
+                    {{ form.level }}
+                </div>
+                <div>
+                    <label class="form-label" for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+                    {{ form.description }}
+                </div>
+                {% if all_groups %}
+                <div>
+                    <p class="form-label">Gruppen <span class="text-xs font-normal text-ink-3">(leer = alle sehen)</span></p>
+                    <div class="max-h-40 space-y-2 overflow-y-auto rounded-xl border border-line p-3">
+                        {% for g in all_groups %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="work_group_ids" value="{{ g.pk }}" id="wg-{{ g.pk }}"
+                                   {% if g.pk in sel_work_group_ids %}checked{% endif %}>
+                            <label class="form-check-label" for="wg-{{ g.pk }}">{{ g.name }}</label>
                         </div>
-                    </div>
-                    {% endif %}
-                    <div class="form-check mt-2">
-                        {{ form.is_draft }}
-                        <label class="form-check-label small" for="{{ form.is_draft.id_for_label }}">{{ form.is_draft.label }}</label>
+                        {% endfor %}
                     </div>
                 </div>
-            </div>
-
-            <!-- Theoriefragen -->
-            <div class="col-md-4 p-2">
-                <div class="border rounded-1 border-3 border-primary p-3 h-100">
-                    <h5 class="mb-3">Theorie Fragen</h5>
-                    {% for catalog in catalogs %}
-                    {% if catalog.questions_theory_set.exists %}
-                    <div class="mb-2">
-                        <div class="d-flex align-items-center" style="cursor:pointer;" onclick="toggleCat('tcat-{{ catalog.pk }}', this)">
-                            <svg class="bi bi-chevron-right me-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size:18px;transition:transform .2s;" id="tarr-{{ catalog.pk }}">
-                                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
-                            </svg>
-                            <span class="fw-semibold">{{ catalog.short_title }} — {{ catalog.title }}</span>
-                        </div>
-                        <div id="tcat-{{ catalog.pk }}" class="d-none ps-4 mt-1">
-                            {% for q in catalog.questions_theory_set.all %}
-                            <div class="d-flex align-items-start mb-1">
-                                <input class="form-check-input me-2 mt-1 flex-shrink-0 theory-cb" type="checkbox"
-                                       name="theory_ids" value="{{ q.pk }}" id="tq-{{ q.pk }}"
-                                       {% if q.pk in sel_theory_ids %}checked{% endif %}>
-                                <label class="form-check-label small" for="tq-{{ q.pk }}">{{ q.question|truncatechars:80 }}</label>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
-                    {% endfor %}
+                {% endif %}
+                <div class="form-check">
+                    {{ form.is_draft }}
+                    <label class="form-check-label" for="{{ form.is_draft.id_for_label }}">{{ form.is_draft.label }}</label>
                 </div>
             </div>
+        </section>
 
-            <!-- Praxis + Gruppen -->
-            <div class="col-md-4 p-2">
-                <div class="border rounded-1 border-3 border-primary p-3 h-100">
-                    <h5 class="mb-3">Praxis Aufgaben</h5>
-                    {% for p in all_practical %}
-                    <div class="d-flex align-items-start mb-1">
-                        <input class="form-check-input me-2 mt-1 flex-shrink-0" type="checkbox"
-                               name="practical_ids" value="{{ p.pk }}" id="pp-{{ p.pk }}"
-                               {% if p.pk in sel_practical_ids %}checked{% endif %}>
-                        <label class="form-check-label small" for="pp-{{ p.pk }}">
-                            {% if p.catalog %}<span class="badge {% if p.catalog.level %}{{ p.catalog.level.badge_bg_class }} {{ p.catalog.level.badge_text_class }}{% else %}bg-secondary text-white{% endif %} me-1">{% if p.catalog.level %}{{ p.catalog.level.name }}{% else %}–{% endif %}</span>{% endif %}
-                            {% if p.number %}<span class="text-muted me-1">{{ p.number }}</span>{% endif %}{{ p.question|truncatechars:60 }}
-                        </label>
+        {# Theoriefragen #}
+        <section class="card">
+            <div class="card-header"><h2 class="section-title">Theorie Fragen</h2></div>
+            <div class="card-body space-y-2">
+                {% for catalog in catalogs %}
+                {% if catalog.questions_theory_set.exists %}
+                <div>
+                    <div class="flex cursor-pointer items-center gap-2 rounded-xl bg-surface-2 px-3 py-2.5" onclick="toggleCat('tcat-{{ catalog.pk }}', this)">
+                        <span id="tarr-{{ catalog.pk }}" class="inline-flex shrink-0 text-ink-3">{% include "icons/chevron-right.html" with cls="size-4 transition-transform duration-200" %}</span>
+                        <span class="text-sm font-semibold">{{ catalog.short_title }} — {{ catalog.title }}</span>
                     </div>
-                    {% empty %}
-                    <p class="text-muted small">Keine Praxisaufgaben vorhanden.</p>
-                    {% endfor %}
-
-                    <hr>
-                    <h5 class="mb-3">Gruppenaufgaben</h5>
-                    {% for g in all_group %}
-                    <div class="d-flex align-items-start mb-1">
-                        <input class="form-check-input me-2 mt-1 flex-shrink-0" type="checkbox"
-                               name="group_ids" value="{{ g.pk }}" id="gp-{{ g.pk }}"
-                               {% if g.pk in sel_group_ids %}checked{% endif %}>
-                        <label class="form-check-label small" for="gp-{{ g.pk }}">
-                            {% if g.catalog %}<span class="badge {% if g.catalog.level %}{{ g.catalog.level.badge_bg_class }} {{ g.catalog.level.badge_text_class }}{% else %}bg-secondary text-white{% endif %} me-1">{% if g.catalog.level %}{{ g.catalog.level.name }}{% else %}–{% endif %}</span>{% endif %}
-                            {% if g.number %}<span class="text-muted me-1">{{ g.number }}</span>{% endif %}{{ g.question|truncatechars:60 }}
-                        </label>
+                    <div id="tcat-{{ catalog.pk }}" class="hidden space-y-1.5 pt-2 pb-1 pl-4 sm:pl-9">
+                        {% for q in catalog.questions_theory_set.all %}
+                        <div class="form-check">
+                            <input class="form-check-input theory-cb" type="checkbox"
+                                   name="theory_ids" value="{{ q.pk }}" id="tq-{{ q.pk }}"
+                                   {% if q.pk in sel_theory_ids %}checked{% endif %}>
+                            <label class="form-check-label" for="tq-{{ q.pk }}">{{ q.question|truncatechars:80 }}</label>
+                        </div>
+                        {% endfor %}
                     </div>
-                    {% empty %}
-                    <p class="text-muted small">Keine Gruppenaufgaben vorhanden.</p>
-                    {% endfor %}
                 </div>
+                {% endif %}
+                {% endfor %}
             </div>
-        </div>
+        </section>
 
-        <div class="d-flex justify-content-end mt-3 gap-2">
-            <a href="{% url 'admin_work_list' %}" class="btn btn-outline-secondary">Abbrechen</a>
-            <button type="submit" class="btn btn-primary">Speichern</button>
-        </div>
-    </form>
-</div>
+        {# Praxis + Gruppen #}
+        <section class="card md:col-span-2 xl:col-span-1">
+            <div class="card-header"><h2 class="section-title">Praxis Aufgaben</h2></div>
+            <div class="card-body space-y-2">
+                {% for p in all_practical %}
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox"
+                           name="practical_ids" value="{{ p.pk }}" id="pp-{{ p.pk }}"
+                           {% if p.pk in sel_practical_ids %}checked{% endif %}>
+                    <label class="form-check-label" for="pp-{{ p.pk }}">
+                        {% if p.catalog %}{% if p.catalog.level %}<span class="badge {{ p.catalog.level.badge_bg_class|default:'badge-primary' }} {{ p.catalog.level.badge_text_class }} mr-1">{{ p.catalog.level.name }}</span>{% else %}<span class="badge badge-neutral mr-1">–</span>{% endif %}{% endif %}
+                        {% if p.number %}<span class="mr-1 text-ink-3">{{ p.number }}</span>{% endif %}{{ p.question|truncatechars:60 }}
+                    </label>
+                </div>
+                {% empty %}
+                <p class="text-sm text-ink-3">Keine Praxisaufgaben vorhanden.</p>
+                {% endfor %}
+            </div>
+
+            <div class="card-header border-t"><h2 class="section-title">Gruppenaufgaben</h2></div>
+            <div class="card-body space-y-2">
+                {% for g in all_group %}
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox"
+                           name="group_ids" value="{{ g.pk }}" id="gp-{{ g.pk }}"
+                           {% if g.pk in sel_group_ids %}checked{% endif %}>
+                    <label class="form-check-label" for="gp-{{ g.pk }}">
+                        {% if g.catalog %}{% if g.catalog.level %}<span class="badge {{ g.catalog.level.badge_bg_class|default:'badge-primary' }} {{ g.catalog.level.badge_text_class }} mr-1">{{ g.catalog.level.name }}</span>{% else %}<span class="badge badge-neutral mr-1">–</span>{% endif %}{% endif %}
+                        {% if g.number %}<span class="mr-1 text-ink-3">{{ g.number }}</span>{% endif %}{{ g.question|truncatechars:60 }}
+                    </label>
+                </div>
+                {% empty %}
+                <p class="text-sm text-ink-3">Keine Gruppenaufgaben vorhanden.</p>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+
+    <div class="mt-6 flex flex-wrap justify-end gap-2">
+        <a href="{% url 'admin_work_list' %}" class="btn btn-secondary">Abbrechen</a>
+        <button type="submit" class="btn btn-primary">{% include "icons/check.html" with cls="size-4" %} Speichern</button>
+    </div>
+</form>
 
 <script>
 function toggleCat(id, trigger) {
     const el = document.getElementById(id);
     const icon = trigger.querySelector('svg');
-    if (el.classList.contains('d-none')) {
-        el.classList.remove('d-none');
-        icon.style.transform = 'rotate(90deg)';
+    if (el.classList.contains('hidden')) {
+        el.classList.remove('hidden');
+        icon.classList.add('rotate-90');
     } else {
-        el.classList.add('d-none');
-        icon.style.transform = '';
+        el.classList.add('hidden');
+        icon.classList.remove('rotate-90');
     }
 }
 
 // Auto-expand catalogs that have pre-selected questions
 document.querySelectorAll('.theory-cb:checked').forEach(cb => {
     const cat = cb.closest('[id^="tcat-"]');
-    if (cat && cat.classList.contains('d-none')) {
+    if (cat && cat.classList.contains('hidden')) {
         const id = cat.id;
         const trigger = document.querySelector(`[onclick*="${id}"]`);
         if (trigger) toggleCat(id, trigger);

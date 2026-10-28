@@ -1,85 +1,97 @@
 {% extends "base.html" %}
 
+{% block page_title %}{{ question.question|truncatechars:60 }} · Gruppenaufgaben{% endblock %}
+
 {% block site_content %}
-<div class="container py-2 mb-2">
-    <a href="{% url 'group_list' %}" class="text-decoration-none text-muted">&larr; Gruppenaufgaben</a>
-</div>
-<h3 class="text-center mb-4">{{ question.question }}</h3>
-    <div class="container">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <div class="border rounded-1 border-3 border-primary p-3 h-100">
-                    <div class="d-flex flex-row justify-content-evenly align-items-center mb-2">
-                        {% if question.catalog %}<span class="fw-bold">{{ question.catalog.title }}</span>{% endif %}
-                        {% if question.number %}<span class="badge bg-secondary">{{ question.number }}</span>{% endif %}
-                    </div>
-                    {% if question.catalog %}
-                    <div class="d-flex justify-content-center mb-2">
-                        <span class="badge {% if question.catalog.level %}{{ question.catalog.level.badge_bg_class }} {{ question.catalog.level.badge_text_class }}{% else %}bg-secondary text-white{% endif %}">
-                            {% if question.catalog.level %}{{ question.catalog.level.name }}{% else %}–{% endif %}
-                        </span>
-                    </div>
-                    {% endif %}
-                    <div class="mt-3 d-flex flex-column align-items-center">
-                        {% if assessment and assessment.score is not None %}
-                            {% if assessment.score >= 75 %}
-                                <svg xmlns="http://www.w3.org/2000/svg" width="3em" height="3em" fill="currentColor" class="text-success mb-1" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8"/></svg>
-                                <span class="fw-semibold text-success">{{ assessment.score|floatformat:0 }}%</span>
-                                <span class="text-muted small mt-1">Sicher</span>
-                            {% elif assessment.score >= 40 %}
-                                <svg xmlns="http://www.w3.org/2000/svg" width="3em" height="3em" fill="currentColor" class="text-warning mb-1" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8"/></svg>
-                                <span class="fw-semibold text-warning">{{ assessment.score|floatformat:0 }}%</span>
-                                <span class="text-muted small mt-1">Nochmal anschauen</span>
-                            {% else %}
-                                <svg xmlns="http://www.w3.org/2000/svg" width="3em" height="3em" fill="currentColor" class="text-danger mb-1" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8"/></svg>
-                                <span class="fw-semibold text-danger">{{ assessment.score|floatformat:0 }}%</span>
-                                <span class="text-muted small mt-1">Unsicher</span>
-                            {% endif %}
-                        {% else %}
-                            <svg xmlns="http://www.w3.org/2000/svg" width="3em" height="3em" fill="currentColor" class="text-secondary mb-1" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/></svg>
-                            <span class="text-muted small mt-1">Noch nicht bewertet</span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                {% if question.help_reference %}
-                <p>{{ question.help_reference }}</p>
-                {% endif %}
-            </div>
-            <div class="col-md-4">
-                {% include "_pdf_viewer.html" %}
-            </div>
+<div class="page">
+    <a href="{% url 'group_list' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Gruppenaufgaben</a>
+    <div class="page-header">
+        <div class="min-w-0">
+            <p class="eyebrow">Gruppenaufgabe</p>
+            <h1 class="page-title mt-1">{{ question.question }}</h1>
         </div>
     </div>
 
-    <div class="container mt-3">
-        <div class="border rounded-1 border-3 border-primary d-flex flex-column align-items-center p-3">
-            <span class="mb-3 fw-semibold">Wie sicher bin ich bei der Aufgabe?</span>
-            <form method="post" action="{% url 'group_detail' question.pk %}" class="d-flex gap-4 justify-content-center w-100">
-                {% csrf_token %}
-                <button type="submit" name="rating" value="sicher"
-                        class="btn btn-outline-success d-flex flex-column align-items-center p-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="2em" height="2em" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M8.864.046C7.908-.193 7.02.53 6.956 1.466c-.072 1.051-.23 2.016-.428 2.59-.125.36-.479 1.013-1.04 1.639-.557.623-1.282 1.178-2.131 1.41C2.685 7.288 2 7.87 2 8.72v4.001c0 .845.682 1.464 1.448 1.545 1.07.114 1.564.415 2.068.723l.048.03c.272.165.578.348.97.484.397.136.861.217 1.466.217h3.5c.937 0 1.599-.477 1.934-1.064a1.86 1.86 0 0 0 .254-.912c0-.152-.023-.312-.077-.464.201-.263.38-.578.488-.901.11-.33.172-.762.004-1.149.069-.13.12-.269.159-.403.077-.27.113-.568.113-.857 0-.288-.036-.585-.113-.856a2 2 0 0 0-.138-.362 1.9 1.9 0 0 0 .234-1.734c-.206-.592-.682-1.1-1.2-1.272-.847-.282-1.803-.276-2.516-.211a10 10 0 0 0-.443.05 9.4 9.4 0 0 0-.062-4.509A1.38 1.38 0 0 0 9.125.111zM11.5 14.721H8c-.51 0-.863-.069-1.14-.164-.281-.097-.506-.228-.776-.393l-.04-.024c-.555-.339-1.198-.731-2.49-.868-.333-.036-.554-.29-.554-.55V8.72c0-.254.226-.543.62-.65 1.095-.3 1.977-.996 2.614-1.708.635-.71 1.064-1.475 1.238-1.978.243-.7.407-1.768.482-2.85.025-.362.36-.594.667-.518l.262.066c.16.04.258.143.288.255a8.34 8.34 0 0 1-.145 4.725.5.5 0 0 0 .595.644l.003-.001.014-.003.058-.014a9 9 0 0 1 1.036-.157c.663-.06 1.457-.054 2.11.164.175.058.45.3.57.65.107.308.087.67-.266 1.022l-.353.353.353.354c.043.043.105.141.154.315.048.167.075.37.075.581 0 .212-.027.414-.075.582-.05.174-.111.272-.154.315l-.353.353.353.354c.047.047.109.177.005.488a2.2 2.2 0 0 1-.505.805l-.353.353.353.354c.006.005.041.05.041.17a.9.9 0 0 1-.121.416c-.165.288-.503.56-1.066.56z"/>
-                    </svg>
-                    <span class="mt-1 small">Sicher</span>
-                </button>
-                <button type="submit" name="rating" value="nochmal"
-                        class="btn btn-outline-warning d-flex flex-column align-items-center p-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="2em" height="2em" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
-                    </svg>
-                    <span class="mt-1 small">Nochmal</span>
-                </button>
-                <button type="submit" name="rating" value="unsicher"
-                        class="btn btn-outline-danger d-flex flex-column align-items-center p-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="2em" height="2em" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M8.864 15.674c-.956.24-1.843-.484-1.908-1.42-.072-1.05-.23-2.015-.428-2.59-.125-.36-.479-1.012-1.04-1.638-.557-.624-1.282-1.179-2.131-1.41C2.685 8.432 2 7.85 2 7V3c0-.845.682-1.464 1.448-1.546 1.07-.113 1.564-.415 2.068-.723l.048-.029c.272-.166.578-.349.97-.484C6.931.08 7.395 0 8 0h3.5c.937 0 1.599.478 1.934 1.064.164.287.254.607.254.913 0 .152-.023.312-.077.464.201.262.38.577.488.9.11.33.172.762.004 1.15.069.13.12.268.159.403.077.27.113.567.113.856s-.036.586-.113.856c-.035.12-.08.244-.138.363.394.571.418 1.2.234 1.733-.206.592-.682 1.1-1.2 1.272-.847.283-1.803.276-2.516.211a10 10 0 0 1-.443-.05 9.36 9.36 0 0 1-.062 4.51c-.138.508-.55.848-1.012.964zM11.5 1H8c-.51 0-.863.068-1.14.163-.281.097-.506.229-.776.393l-.04.025c-.555.338-1.198.73-2.49.868-.333.035-.554.29-.554.55V7c0 .255.226.543.62.65 1.095.3 1.977.997 2.614 1.709.635.71 1.064 1.475 1.238 1.977.243.7.407 1.768.482 2.85.025.362.36.595.667.518l.262-.065c.16-.04.258-.144.288-.255a8.34 8.34 0 0 0-.145-4.726.5.5 0 0 1 .595-.643h.003l.014.004.058.013a9 9 0 0 0 1.036.157c.663.06 1.457.054 2.11-.163.175-.059.45-.301.57-.651.107-.308.087-.67-.266-1.021L12.793 7l.353-.354c.043-.042.105-.14.154-.315.048-.167.075-.37.075-.581s-.027-.414-.075-.581c-.05-.174-.111-.273-.154-.315l-.353-.354.353-.354c.047-.047.109-.176.005-.488a2.2 2.2 0 0 0-.505-.804l-.353-.354.353-.354c.006-.005.041-.05.041-.17a.9.9 0 0 0-.121-.415C12.4 1.272 12.063 1 11.5 1"/>
-                    </svg>
-                    <span class="mt-1 small">Unsicher</span>
-                </button>
-            </form>
+    <div class="grid items-start gap-4 lg:grid-cols-3">
+        <div class="space-y-4">
+            {# Info & Selbsteinschätzung #}
+            <section class="card card-body">
+                <div class="flex flex-wrap items-center justify-center gap-2">
+                    {% if question.catalog %}<span class="font-semibold text-ink">{{ question.catalog.title }}</span>{% endif %}
+                    {% if question.number %}<span class="badge badge-neutral">{{ question.number }}</span>{% endif %}
+                </div>
+                {% if question.catalog %}
+                <div class="mt-2 flex justify-center">
+                    {% if question.catalog.level %}
+                    <span class="badge {{ question.catalog.level.badge_bg_class|default:'badge-primary' }} {{ question.catalog.level.badge_text_class }}">{{ question.catalog.level.name }}</span>
+                    {% else %}
+                    <span class="badge badge-neutral">–</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+                <div class="mt-5 flex flex-col items-center">
+                    {% if assessment and assessment.score is not None %}
+                        {% if assessment.score >= 75 %}
+                            <span class="mb-2 size-12 rounded-full bg-green-500"></span>
+                            <span class="font-semibold text-green-700 tabular-nums dark:text-green-400">{{ assessment.score|floatformat:0 }}%</span>
+                            <span class="mt-0.5 text-sm text-ink-2">Sicher</span>
+                        {% elif assessment.score >= 40 %}
+                            <span class="mb-2 size-12 rounded-full bg-amber-400"></span>
+                            <span class="font-semibold text-amber-700 tabular-nums dark:text-amber-300">{{ assessment.score|floatformat:0 }}%</span>
+                            <span class="mt-0.5 text-sm text-ink-2">Nochmal anschauen</span>
+                        {% else %}
+                            <span class="mb-2 size-12 rounded-full bg-red-500"></span>
+                            <span class="font-semibold text-red-700 tabular-nums dark:text-red-400">{{ assessment.score|floatformat:0 }}%</span>
+                            <span class="mt-0.5 text-sm text-ink-2">Unsicher</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="mb-2 size-12 rounded-full border-4 border-ink-3/60"></span>
+                        <span class="text-sm text-ink-2">Noch nicht bewertet</span>
+                    {% endif %}
+                </div>
+            </section>
+
+            {% if question.help_reference %}
+            <section class="card card-body">
+                <div class="prose-content">
+                    <p>{{ question.help_reference }}</p>
+                </div>
+            </section>
+            {% endif %}
+        </div>
+
+        <div class="lg:col-span-2">
+            {% include "_pdf_viewer.html" %}
         </div>
     </div>
+
+    {# Selbsteinschätzung abgeben #}
+    <section class="card card-body mt-4">
+        <h2 class="section-title mb-4 text-center">Wie sicher bin ich bei der Aufgabe?</h2>
+        <form method="post" action="{% url 'group_detail' question.pk %}" class="mx-auto grid max-w-lg grid-cols-3 gap-2 sm:gap-4">
+            {% csrf_token %}
+            <button type="submit" name="rating" value="sicher"
+                    class="btn h-auto flex-col border-2 border-green-500/40 bg-green-50 py-4 text-green-800 hover:bg-green-100 dark:bg-green-500/10 dark:text-green-300 dark:hover:bg-green-500/20">
+                <svg class="size-8" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M8.864.046C7.908-.193 7.02.53 6.956 1.466c-.072 1.051-.23 2.016-.428 2.59-.125.36-.479 1.013-1.04 1.639-.557.623-1.282 1.178-2.131 1.41C2.685 7.288 2 7.87 2 8.72v4.001c0 .845.682 1.464 1.448 1.545 1.07.114 1.564.415 2.068.723l.048.03c.272.165.578.348.97.484.397.136.861.217 1.466.217h3.5c.937 0 1.599-.477 1.934-1.064a1.86 1.86 0 0 0 .254-.912c0-.152-.023-.312-.077-.464.201-.263.38-.578.488-.901.11-.33.172-.762.004-1.149.069-.13.12-.269.159-.403.077-.27.113-.568.113-.857 0-.288-.036-.585-.113-.856a2 2 0 0 0-.138-.362 1.9 1.9 0 0 0 .234-1.734c-.206-.592-.682-1.1-1.2-1.272-.847-.282-1.803-.276-2.516-.211a10 10 0 0 0-.443.05 9.4 9.4 0 0 0-.062-4.509A1.38 1.38 0 0 0 9.125.111zM11.5 14.721H8c-.51 0-.863-.069-1.14-.164-.281-.097-.506-.228-.776-.393l-.04-.024c-.555-.339-1.198-.731-2.49-.868-.333-.036-.554-.29-.554-.55V8.72c0-.254.226-.543.62-.65 1.095-.3 1.977-.996 2.614-1.708.635-.71 1.064-1.475 1.238-1.978.243-.7.407-1.768.482-2.85.025-.362.36-.594.667-.518l.262.066c.16.04.258.143.288.255a8.34 8.34 0 0 1-.145 4.725.5.5 0 0 0 .595.644l.003-.001.014-.003.058-.014a9 9 0 0 1 1.036-.157c.663-.06 1.457-.054 2.11.164.175.058.45.3.57.65.107.308.087.67-.266 1.022l-.353.353.353.354c.043.043.105.141.154.315.048.167.075.37.075.581 0 .212-.027.414-.075.582-.05.174-.111.272-.154.315l-.353.353.353.354c.047.047.109.177.005.488a2.2 2.2 0 0 1-.505.805l-.353.353.353.354c.006.005.041.05.041.17a.9.9 0 0 1-.121.416c-.165.288-.503.56-1.066.56z"/>
+                </svg>
+                <span class="text-xs sm:text-sm">Sicher</span>
+            </button>
+            <button type="submit" name="rating" value="nochmal"
+                    class="btn h-auto flex-col border-2 border-amber-400/50 bg-amber-50 py-4 text-amber-900 hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20">
+                <svg class="size-8" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                </svg>
+                <span class="text-xs sm:text-sm">Nochmal</span>
+            </button>
+            <button type="submit" name="rating" value="unsicher"
+                    class="btn h-auto flex-col border-2 border-red-500/40 bg-red-50 py-4 text-red-800 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20">
+                <svg class="size-8" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M8.864 15.674c-.956.24-1.843-.484-1.908-1.42-.072-1.05-.23-2.015-.428-2.59-.125-.36-.479-1.012-1.04-1.638-.557-.624-1.282-1.179-2.131-1.41C2.685 8.432 2 7.85 2 7V3c0-.845.682-1.464 1.448-1.546 1.07-.113 1.564-.415 2.068-.723l.048-.029c.272-.166.578-.349.97-.484C6.931.08 7.395 0 8 0h3.5c.937 0 1.599.478 1.934 1.064.164.287.254.607.254.913 0 .152-.023.312-.077.464.201.262.38.577.488.9.11.33.172.762.004 1.15.069.13.12.268.159.403.077.27.113.567.113.856s-.036.586-.113.856c-.035.12-.08.244-.138.363.394.571.418 1.2.234 1.733-.206.592-.682 1.1-1.2 1.272-.847.283-1.803.276-2.516.211a10 10 0 0 1-.443-.05 9.36 9.36 0 0 1-.062 4.51c-.138.508-.55.848-1.012.964zM11.5 1H8c-.51 0-.863.068-1.14.163-.281.097-.506.229-.776.393l-.04.025c-.555.338-1.198.73-2.49.868-.333.035-.554.29-.554.55V7c0 .255.226.543.62.65 1.095.3 1.977.997 2.614 1.709.635.71 1.064 1.475 1.238 1.977.243.7.407 1.768.482 2.85.025.362.36.595.667.518l.262-.065c.16-.04.258-.144.288-.255a8.34 8.34 0 0 0-.145-4.726.5.5 0 0 1 .595-.643h.003l.014.004.058.013a9 9 0 0 0 1.036.157c.663.06 1.457.054 2.11-.163.175-.059.45-.301.57-.651.107-.308.087-.67-.266-1.021L12.793 7l.353-.354c.043-.042.105-.14.154-.315.048-.167.075-.37.075-.581s-.027-.414-.075-.581c-.05-.174-.111-.273-.154-.315l-.353-.354.353-.354c.047-.047.109-.176.005-.488a2.2 2.2 0 0 0-.505-.804l-.353-.354.353-.354c.006-.005.041-.05.041-.17a.9.9 0 0 0-.121-.415C12.4 1.272 12.063 1 11.5 1"/>
+                </svg>
+                <span class="text-xs sm:text-sm">Unsicher</span>
+            </button>
+        </form>
+    </section>
+</div>
 {% endblock %}

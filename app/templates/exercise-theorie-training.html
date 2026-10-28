@@ -1,81 +1,75 @@
 {% extends "base.html" %}
 
+{% block page_title %}Theorie-Training · Frage {{ question_number }}{% endblock %}
+
 {% block site_content %}
-<div class="container py-4">
+<div class="page-narrow">
     <form method="post" action="{% url 'training_run' %}" id="training-form">
         {% csrf_token %}
         <input type="hidden" name="direction" id="direction-input" value="forward">
 
-        <div class="row mb-4">
-            <div class="col-md-2 col-xl-1 d-flex justify-content-center align-items-start pt-1">
-                <span class="text-muted small">{% if question.number %}{{ question.number }}{% endif %}</span>
+        {# Fortschritt #}
+        <div class="mb-6 flex items-center gap-3">
+            <span class="text-sm font-semibold text-ink-2 tabular-nums">{{ question_number }} / {{ question_total }}</span>
+            <div class="progress flex-1" role="progressbar" aria-valuenow="{{ progress_pct }}" aria-valuemin="0" aria-valuemax="100" aria-label="Fortschritt">
+                <div class="progress-bar bg-green-600" style="width: {{ progress_pct }}%"></div>
             </div>
-            <div class="col-md-8 col-xl-10 fs-4 fw-bold text-center">
-                {{ question.question }}
-            </div>
-            <div class="col-md-2 col-xl-1 d-flex justify-content-center align-items-start">
+            <span class="text-xs text-ink-3 tabular-nums">{{ progress_pct }}%</span>
+        </div>
+
+        {# Frage #}
+        <div class="mb-6" x-data="{ hint: false }">
+            <div class="flex items-start gap-3">
+                <div class="min-w-0 flex-1">
+                    {% if question.number %}<p class="eyebrow mb-1">{{ question.number }}</p>{% endif %}
+                    <h1 class="text-xl font-bold tracking-tight text-ink sm:text-2xl">{{ question.question }}</h1>
+                </div>
                 {% if question.help_reference %}
-                <svg class="bi bi-question-circle text-warning" xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" fill="currentColor" viewBox="0 0 16 16"
-                     data-bs-toggle="popover" data-bs-trigger="hover focus" title="Hinweis" data-bs-content="{{ question.help_reference }}" style="cursor:pointer;">
-                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
-                    <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286m1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94"/>
-                </svg>
-                {% endif %}
-            </div>
-        </div>
-
-        <div class="row mb-4">
-            <div class="col-md-2 col-xl-2"></div>
-            <div class="col-md-8 col-xl-8">
-                <p class="text-muted small text-center mb-2">Mehrere Antworten möglich</p>
-                {% for letter, text in labeled_choices %}
-                <div class="border rounded-2 border-2 border-primary d-flex align-items-center p-2 mb-2">
-                    <div class="form-check d-flex align-items-center w-100 mb-0">
-                        <input class="form-check-input me-3" type="checkbox" name="answer"
-                               id="choice-{{ letter }}" value="{{ letter }}"
-                               {% if letter in existing_answers %}checked{% endif %}>
-                        <label class="form-check-label w-100" for="choice-{{ letter }}">
-                            <span class="fw-bold me-2">{{ letter|upper }}.</span>{{ text }}
-                        </label>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            <div class="col-md-2 col-xl-2"></div>
-        </div>
-
-        <div class="row mb-3">
-            <div class="col d-flex justify-content-center align-items-center gap-3">
-                <span class="text-muted">{{ question_number }} / {{ question_total }}</span>
-                <div class="flex-grow-1" style="max-width:400px;">
-                    <div class="progress">
-                        <div class="progress-bar bg-success" role="progressbar" style="width:{{ progress_pct }}%;" aria-valuenow="{{ progress_pct }}" aria-valuemin="0" aria-valuemax="100">{{ progress_pct }}%</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col d-flex justify-content-center gap-3">
-                {% if can_go_back %}
-                <button type="button" class="btn btn-outline-secondary btn-lg" onclick="goBack()">
-                    &larr; Zurück
+                <button type="button" class="btn btn-ghost btn-icon size-11 shrink-0 text-amber-500 hover:text-amber-600"
+                        @click="hint = !hint" :aria-expanded="hint" aria-label="Hinweis anzeigen" title="Hinweis">
+                    {% include "icons/question-mark-circle.html" with cls="size-7" %}
                 </button>
                 {% endif %}
-                <button type="submit" class="btn btn-primary btn-lg">
-                    {% if question_number == question_total %}Abschließen{% else %}Weiter{% endif %}
-                </button>
             </div>
+            {% if question.help_reference %}
+            <div x-show="hint" x-cloak x-transition class="alert alert-warning mt-3">
+                {% include "icons/light-bulb.html" with cls="size-5 shrink-0" %}
+                <div><strong class="block">Hinweis</strong>{{ question.help_reference }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        {# Antworten #}
+        <p class="mb-2 text-xs font-medium text-ink-3">Mehrere Antworten möglich</p>
+        <div class="space-y-2.5">
+            {% for letter, text in labeled_choices %}
+            <label class="answer-option has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-accent/25" for="choice-{{ letter }}">
+                <input class="sr-only" type="checkbox" name="answer"
+                       id="choice-{{ letter }}" value="{{ letter }}"
+                       {% if letter in existing_answers %}checked{% endif %}>
+                <span class="answer-letter">{{ letter|upper }}</span>
+                <span class="min-w-0 flex-1 text-sm text-ink sm:text-base">{{ text }}</span>
+            </label>
+            {% endfor %}
+        </div>
+
+        {# Navigation #}
+        <div class="mt-8 flex gap-3">
+            {% if can_go_back %}
+            <button type="button" class="btn btn-secondary btn-lg flex-1" onclick="goBack()">
+                {% include "icons/arrow-left.html" with cls="size-5" %} Zurück
+            </button>
+            {% endif %}
+            <button type="submit" class="btn btn-primary btn-lg flex-1">
+                {% if question_number == question_total %}Abschließen {% include "icons/check.html" with cls="size-5" %}{% else %}Weiter {% include "icons/arrow-right.html" with cls="size-5" %}{% endif %}
+            </button>
         </div>
     </form>
 </div>
+{% endblock %}
 
+{% block extra_scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
-    popoverTriggerList.forEach(function (el) { new bootstrap.Popover(el); });
-});
-
 function goBack() {
     document.getElementById('direction-input').value = 'back';
     document.getElementById('training-form').submit();

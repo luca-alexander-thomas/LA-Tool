@@ -1,119 +1,131 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 
-{% block site_content %}
-<div class="container py-4" style="max-width:740px;">
-    <div class="mb-3">
-        <a href="{% url 'admin_level_list' %}" class="text-decoration-none text-muted">&larr; Stufen</a>
+{% block page_title %}{{ title }} · Admin{% endblock %}
+
+{% block admin_content %}
+<div class="max-w-3xl">
+    <a href="{% url 'admin_level_list' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Stufen</a>
+
+    <div class="page-header">
+        <div>
+            <p class="eyebrow">LA-Stufen</p>
+            <h1 class="page-title mt-1">{{ title }}</h1>
+        </div>
     </div>
-    <h2 class="mb-4">{{ title }}</h2>
 
     {% if confirm_delete %}
-    <div class="alert alert-danger">
-        <p class="mb-3">Soll die Stufe <strong>{{ level.name }}</strong> wirklich gelöscht werden?
-            Alle Inhalte (Kataloge, Prüfungen, Dienste) dieser Stufe verlieren ihre Stufenzuordnung.</p>
-        <form method="post" action="{% url 'admin_level_delete' level.pk %}">
+    <div class="alert alert-danger flex-col">
+        <div class="flex gap-3">
+            {% include "icons/exclamation-triangle.html" with cls="size-5 shrink-0" %}
+            <p>Soll die Stufe <strong>{{ level.name }}</strong> wirklich gelöscht werden?
+                Alle Inhalte (Kataloge, Prüfungen, Dienste) dieser Stufe verlieren ihre Stufenzuordnung.</p>
+        </div>
+        <form method="post" action="{% url 'admin_level_delete' level.pk %}" class="flex flex-wrap gap-2">
             {% csrf_token %}
-            <button type="submit" class="btn btn-danger">Ja, löschen</button>
-            <a href="{% url 'admin_level_list' %}" class="btn btn-secondary ms-2">Abbrechen</a>
+            <button type="submit" class="btn btn-danger">{% include "icons/trash.html" with cls="size-4" %} Ja, löschen</button>
+            <a href="{% url 'admin_level_list' %}" class="btn btn-secondary">Abbrechen</a>
         </form>
     </div>
     {% else %}
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" enctype="multipart/form-data" class="space-y-4">
         {% csrf_token %}
 
-        <div class="border rounded-1 border-3 border-primary p-4 mb-3">
-            <h6 class="mb-3">Basis</h6>
-            <div class="row g-3">
-                <div class="col-md-5">
-                    <label class="form-label fw-semibold">{{ form.name.label }}</label>
+        <section class="card">
+            <div class="card-header"><h2 class="section-title">Basis</h2></div>
+            <div class="card-body grid gap-4 sm:grid-cols-12">
+                <div class="sm:col-span-5">
+                    <label class="form-label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
                     {{ form.name }}
-                    {% for e in form.name.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
+                    {% for e in form.name.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
                 </div>
-                <div class="col-md-5">
-                    <label class="form-label fw-semibold">{{ form.slug.label }}</label>
+                <div class="sm:col-span-5">
+                    <label class="form-label" for="{{ form.slug.id_for_label }}">{{ form.slug.label }}</label>
                     {{ form.slug }}
                     <div class="form-text">Eindeutig, nur Kleinbuchstaben, Zahlen und Bindestriche.</div>
-                    {% for e in form.slug.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
+                    {% for e in form.slug.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label fw-semibold">{{ form.order.label }}</label>
+                <div class="sm:col-span-2">
+                    <label class="form-label" for="{{ form.order.id_for_label }}">{{ form.order.label }}</label>
                     {{ form.order }}
-                    {% for e in form.order.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
+                    {% for e in form.order.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
                 </div>
             </div>
-        </div>
+        </section>
 
-        <div class="border rounded-1 border-3 border-primary p-4 mb-3">
-            <h6 class="mb-3">Darstellung</h6>
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">{{ form.icon.label }}</label>
+        <section class="card">
+            <div class="card-header"><h2 class="section-title">Darstellung</h2></div>
+            <div class="card-body grid gap-4 sm:grid-cols-2">
+                <div class="sm:col-span-2">
+                    <label class="form-label" for="{{ form.icon.id_for_label }}">{{ form.icon.label }}</label>
                     {% if level and level.icon %}
-                    <div class="mb-2 d-flex align-items-center gap-2">
-                        <img src="{{ level.icon.url }}" style="max-height:40px;max-width:70px;object-fit:contain;">
-                        <span class="text-muted small">Aktuelles Logo</span>
+                    <div class="mb-2 flex items-center gap-2">
+                        <img src="{{ level.icon.url }}" alt="" class="max-h-10 max-w-18 object-contain">
+                        <span class="text-xs text-ink-3">Aktuelles Logo</span>
                     </div>
                     {% endif %}
                     {{ form.icon }}
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold">{{ form.badge_bg_class.label }}</label>
+                <div>
+                    <label class="form-label" for="{{ form.badge_bg_class.id_for_label }}">{{ form.badge_bg_class.label }}</label>
                     {{ form.badge_bg_class }}
                     <div class="form-text">z.B. <code>bg-warning</code>, <code>bg-secondary</code></div>
-                    {% for e in form.badge_bg_class.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
+                    {% for e in form.badge_bg_class.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold">{{ form.badge_text_class.label }}</label>
+                <div>
+                    <label class="form-label" for="{{ form.badge_text_class.id_for_label }}">{{ form.badge_text_class.label }}</label>
                     {{ form.badge_text_class }}
                     <div class="form-text">z.B. <code>text-dark</code>, <code>text-white</code></div>
-                    {% for e in form.badge_text_class.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
+                    {% for e in form.badge_text_class.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
                 </div>
                 {% if level and level.badge_bg_class %}
-                <div class="col-12">
-                    <span class="text-muted small me-2">Vorschau:</span>
-                    <span class="badge {{ level.badge_bg_class }} {{ level.badge_text_class }}">{{ level.name }}</span>
+                <div class="flex items-center gap-2 sm:col-span-2">
+                    <span class="text-xs text-ink-3">Vorschau:</span>
+                    <span class="badge {{ level.badge_bg_class|default:'badge-primary' }} {{ level.badge_text_class }}">{{ level.name }}</span>
                 </div>
                 {% endif %}
             </div>
-        </div>
+        </section>
 
-        <div class="border rounded-1 border-3 border-primary p-4 mb-3">
-            <h6 class="mb-3">Standardwerte <span class="text-muted fw-normal small">(werden beim Erstellen von Trainings/Prüfungen vorausgefüllt)</span></h6>
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label">{{ form.default_training_count.label }}</label>
+        <section class="card">
+            <div class="card-header">
+                <h2 class="section-title">Standardwerte <span class="text-xs font-normal text-ink-3">(werden beim Erstellen von Trainings/Prüfungen vorausgefüllt)</span></h2>
+            </div>
+            <div class="card-body grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label class="form-label" for="{{ form.default_training_count.id_for_label }}">{{ form.default_training_count.label }}</label>
                     {{ form.default_training_count }}
-                    {% for e in form.default_training_count.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
+                    {% for e in form.default_training_count.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">{{ form.default_training_pass_pct.label }}</label>
+                <div>
+                    <label class="form-label" for="{{ form.default_training_pass_pct.id_for_label }}">{{ form.default_training_pass_pct.label }}</label>
                     <div class="input-group">{{ form.default_training_pass_pct }}<span class="input-group-text">%</span></div>
-                    {% for e in form.default_training_pass_pct.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
+                    {% for e in form.default_training_pass_pct.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">{{ form.default_exam_count.label }}</label>
+                <div>
+                    <label class="form-label" for="{{ form.default_exam_count.id_for_label }}">{{ form.default_exam_count.label }}</label>
                     {{ form.default_exam_count }}
-                    {% for e in form.default_exam_count.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
+                    {% for e in form.default_exam_count.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">{{ form.default_exam_pass_pct.label }}</label>
+                <div>
+                    <label class="form-label" for="{{ form.default_exam_pass_pct.id_for_label }}">{{ form.default_exam_pass_pct.label }}</label>
                     <div class="input-group">{{ form.default_exam_pass_pct }}<span class="input-group-text">%</span></div>
-                    {% for e in form.default_exam_pass_pct.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
+                    {% for e in form.default_exam_pass_pct.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
                 </div>
             </div>
-        </div>
+        </section>
 
         {% if form.non_field_errors %}
         <div class="alert alert-danger">
-            {% for e in form.non_field_errors %}<p class="mb-0">{{ e }}</p>{% endfor %}
+            {% include "icons/exclamation-triangle.html" with cls="size-5 shrink-0" %}
+            <div>{% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div>
         </div>
         {% endif %}
 
-        <div class="d-flex gap-2 align-items-center">
-            <button type="submit" class="btn btn-primary">Speichern</button>
-            <a href="{% url 'admin_level_list' %}" class="btn btn-outline-secondary">Abbrechen</a>
+        <div class="flex flex-wrap items-center gap-2 pt-2">
+            <button type="submit" class="btn btn-primary">{% include "icons/check.html" with cls="size-4" %} Speichern</button>
+            <a href="{% url 'admin_level_list' %}" class="btn btn-secondary">Abbrechen</a>
             {% if level %}
-            <a href="{% url 'admin_level_delete' level.pk %}" class="btn btn-outline-danger ms-auto">Löschen</a>
+            <a href="{% url 'admin_level_delete' level.pk %}" class="btn btn-danger-soft ml-auto">{% include "icons/trash.html" with cls="size-4" %} Löschen</a>
             {% endif %}
         </div>
     </form>

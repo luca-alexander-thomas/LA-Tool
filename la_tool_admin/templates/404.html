@@ -1,7 +1,15 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
+
+{% block page_title %}Seite nicht gefunden{% endblock %}
 
 {% block site_content %}
-
-<h1>This is a 404</h1>
-
+<div class="page-narrow">
+    <div class="card card-body flex flex-col items-center py-12 text-center sm:py-16">
+        <span class="icon-tile size-14">{% include "icons/question-mark-circle.html" with cls="size-8" %}</span>
+        <p class="eyebrow mt-6">Fehler 404</p>
+        <h1 class="page-title mt-2">Seite nicht gefunden</h1>
+        <p class="page-subtitle max-w-md">Die aufgerufene Seite existiert nicht oder wurde verschoben. Prüfe die Adresse oder kehre zur Startseite zurück.</p>
+        <a href="{% url 'home' %}" class="btn btn-primary mt-8">{% include "icons/home.html" %} Zur Startseite</a>
+    </div>
+</div>
 {% endblock %}

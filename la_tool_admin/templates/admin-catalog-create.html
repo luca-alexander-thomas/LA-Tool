@@ -1,26 +1,35 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 
-{% block site_content %}
-<div class="container py-4" style="max-width:640px;">
-    <div class="mb-3">
-        <a href="{% url 'admin_catalog' %}" class="text-decoration-none text-muted">&larr; Alle Kataloge</a>
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block admin_content %}
+<div class="max-w-2xl">
+    <a href="{% url 'admin_catalog' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Alle Kataloge</a>
+    <div class="page-header">
+        <h1 class="page-title">{{ title }}</h1>
     </div>
-    <h4 class="mb-4">{{ title }}</h4>
-    <div class="border rounded-2 border-primary p-4">
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
+    <form method="post" enctype="multipart/form-data" class="card">
+        {% csrf_token %}
+        <div class="card-body space-y-5">
             {% for field in form %}
-            <div class="mb-3">
-                <label class="form-label fw-semibold">{{ field.label }}</label>
+            <div>
+                {% if field.widget_type == 'checkbox' %}
+                <div class="form-check">
+                    {{ field }}
+                    <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                </div>
+                {% else %}
+                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {{ field }}
-                {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors }}</div>{% endif %}
+                {% endif %}
+                {% if field.errors %}<div class="form-error">{{ field.errors }}</div>{% endif %}
             </div>
             {% endfor %}
-            <div class="d-flex justify-content-end gap-2 mt-4">
-                <a href="{% url 'admin_catalog' %}" class="btn btn-outline-secondary">Abbrechen</a>
-                <button type="submit" class="btn btn-primary">Speichern</button>
-            </div>
-        </form>
-    </div>
+        </div>
+        <div class="card-footer">
+            <a href="{% url 'admin_catalog' %}" class="btn btn-secondary">Abbrechen</a>
+            <button type="submit" class="btn btn-primary">{% include "icons/check.html" %} Speichern</button>
+        </div>
+    </form>
 </div>
 {% endblock %}

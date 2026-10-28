@@ -1,70 +1,82 @@
 {% extends "base.html" %}
 {# Training result: score + per-question breakdown #}
 
+{% block page_title %}Auswertung{% endblock %}
+
 {% block site_content %}
-<div class="container py-4">
-    <div class="row mb-4">
-        <div class="col-md-8 col-xl-6 text-center mx-auto">
-            <h2>Auswertung</h2>
-            <p class="text-muted">{{ result.name }}</p>
+<div class="page">
+    <a href="{% url 'excercise' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Übungen</a>
+    <div class="page-header">
+        <div>
+            <p class="eyebrow">Theorie-Training</p>
+            <h1 class="page-title mt-1">Auswertung</h1>
+            <p class="page-subtitle">{{ result.name }}</p>
         </div>
     </div>
 
-    <div class="row g-3">
-        <div class="col-md-4 col-xl-3">
-            <div class="border rounded-2 border-3 border-primary p-3 text-center">
-                {% if pct >= pass_threshold %}
-                    <div class="alert alert-success mb-2"><strong>Bestanden!</strong></div>
-                    <p class="fs-3 fw-bold text-success">{{ score }} von {{ total }}</p>
-                {% else %}
-                    <div class="alert alert-danger mb-2"><strong>Nicht bestanden</strong></div>
-                    <p class="fs-3 fw-bold text-danger">{{ score }} von {{ total }}</p>
-                {% endif %}
-                <p class="text-muted">{{ pct }}% richtig</p>
-                <p class="text-muted small">Bestehensgrenze: {{ pass_threshold }}%</p>
-                <div class="progress mt-2" style="height:12px;">
-                    <div class="progress-bar {% if pct >= pass_threshold %}bg-success{% else %}bg-danger{% endif %}" style="width:{{ pct }}%;"></div>
+    <div class="grid items-start gap-4 lg:grid-cols-3">
+        {# Ergebnis #}
+        <section class="card card-body text-center lg:sticky lg:top-20">
+            {% if pct >= pass_threshold %}
+                <div class="alert alert-success justify-center">
+                    {% include "icons/check-circle.html" with cls="size-5 shrink-0" %}
+                    <strong>Bestanden!</strong>
                 </div>
-                <div class="mt-3">
-                    <a href="{% url 'training_config' %}" class="btn btn-primary">Nochmal üben</a>
+                <p class="mt-4 text-3xl font-bold tracking-tight text-green-700 tabular-nums dark:text-green-400">{{ score }} von {{ total }}</p>
+            {% else %}
+                <div class="alert alert-danger justify-center">
+                    {% include "icons/x-circle.html" with cls="size-5 shrink-0" %}
+                    <strong>Nicht bestanden</strong>
                 </div>
+                <p class="mt-4 text-3xl font-bold tracking-tight text-red-700 tabular-nums dark:text-red-400">{{ score }} von {{ total }}</p>
+            {% endif %}
+            <p class="mt-1 text-sm text-ink-2">{{ pct }}% richtig</p>
+            <p class="mt-0.5 text-xs text-ink-3">Bestehensgrenze: {{ pass_threshold }}%</p>
+            <div class="progress mt-4 h-3">
+                <div class="progress-bar {% if pct >= pass_threshold %}bg-green-600{% else %}bg-red-600{% endif %}" style="width: {{ pct }}%"></div>
             </div>
-        </div>
+            <a href="{% url 'training_config' %}" class="btn btn-primary mt-5 w-full">{% include "icons/arrow-path.html" with cls="size-4" %} Nochmal üben</a>
+        </section>
 
-        <div class="col-md-8 col-xl-9">
+        {# Fragen #}
+        <div class="space-y-3 lg:col-span-2">
             {% for item in questions_data %}
-            <div class="border rounded-2 border-2 {% if item.is_correct %}border-success{% else %}border-danger{% endif %} mb-2 p-2">
-                <div class="d-flex align-items-center mb-1">
-                    <span class="fw-bold flex-grow-1">{{ item.question.question }}{% if item.is_multi_answer %}<span class="badge bg-secondary ms-2 fw-normal small">Mehrfachauswahl</span>{% endif %}</span>
+            <section class="card overflow-hidden border-l-4 {% if item.is_correct %}border-l-green-500{% else %}border-l-red-500{% endif %}">
+                <div class="flex items-start gap-3 px-4 pt-4 pb-3 sm:px-5">
+                    <p class="min-w-0 flex-1 font-semibold text-ink">
+                        {{ item.question.question }}{% if item.is_multi_answer %} <span class="badge badge-neutral ml-1 align-middle font-normal">Mehrfachauswahl</span>{% endif %}
+                    </p>
                     {% if item.is_correct %}
-                        <svg class="bi bi-check text-success ms-2" xmlns="http://www.w3.org/2000/svg" width="1.8em" height="1.8em" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"/>
-                        </svg>
+                        <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300" title="Richtig">
+                            {% include "icons/check.html" with cls="size-5" %}<span class="sr-only">Richtig</span>
+                        </span>
                     {% else %}
-                        <svg class="bi bi-x text-danger ms-2" xmlns="http://www.w3.org/2000/svg" width="1.8em" height="1.8em" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
-                        </svg>
+                        <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300" title="Falsch">
+                            {% include "icons/x-mark.html" with cls="size-5" %}<span class="sr-only">Falsch</span>
+                        </span>
                     {% endif %}
                 </div>
-                <div class="row row-cols-3 small">
-                    <div class="col fw-semibold text-muted">Antwort</div>
-                    <div class="col fw-semibold text-success text-center">Richtig</div>
-                    <div class="col fw-semibold text-center">Deine Antwort</div>
-                </div>
-                {% for letter, text in item.labeled_choices %}
-                {% if text %}
-                <div class="row row-cols-3 small">
-                    <div class="col">{{ letter|upper }}. {{ text }}</div>
-                    <div class="col text-center">
-                        {% if text in item.correct_texts %}<input type="checkbox" checked disabled>{% else %}<input type="checkbox" disabled>{% endif %}
+                <div class="border-t border-line px-4 py-3 text-sm sm:px-5">
+                    <div class="grid grid-cols-[1fr_4rem_4rem] gap-x-2 pb-1.5 text-xs font-semibold text-ink-3 sm:grid-cols-[1fr_6rem_6rem]">
+                        <span>Antwort</span>
+                        <span class="text-center text-green-700 dark:text-green-400">Richtig</span>
+                        <span class="text-center">Deine Antwort</span>
                     </div>
-                    <div class="col text-center">
-                        {% if letter in item.user_letters %}<input type="checkbox" checked disabled>{% else %}<input type="checkbox" disabled>{% endif %}
+                    {% for letter, text in item.labeled_choices %}
+                    {% if text %}
+                    <div class="grid grid-cols-[1fr_4rem_4rem] items-center gap-x-2 border-t border-line/60 py-2 sm:grid-cols-[1fr_6rem_6rem]">
+                        <span class="text-ink"><span class="font-bold">{{ letter|upper }}.</span> {{ text }}</span>
+                        <span class="flex justify-center">
+                            {% if text in item.correct_texts %}<input type="checkbox" class="form-check-input mt-0" checked disabled aria-label="Richtig">{% else %}<input type="checkbox" class="form-check-input mt-0" disabled aria-label="Nicht richtig">{% endif %}
+                        </span>
+                        <span class="flex justify-center">
+                            {% if letter in item.user_letters %}<input type="checkbox" class="form-check-input mt-0" checked disabled aria-label="Gewählt">{% else %}<input type="checkbox" class="form-check-input mt-0" disabled aria-label="Nicht gewählt">{% endif %}
+                        </span>
                     </div>
+                    {% endif %}
+                    {% endfor %}
                 </div>
-                {% endif %}
-                {% endfor %}
-            </div>
+            </section>
             {% endfor %}
         </div>
     </div>

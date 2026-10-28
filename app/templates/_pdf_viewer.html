@@ -1,43 +1,45 @@
 {% if question.file %}
-<div class="border rounded-1 border-3 border-primary p-2">
-    <div class="d-flex align-items-center gap-1 mb-2">
-        <button id="pdf-prev" class="btn btn-sm btn-outline-secondary" style="line-height:1;padding:.2rem .5rem;" disabled title="Vorherige Seite">&#8249;</button>
-        <span id="pdf-page-info" class="small text-muted" style="min-width:4.5rem;text-align:center;">— / —</span>
-        <button id="pdf-next" class="btn btn-sm btn-outline-secondary" style="line-height:1;padding:.2rem .5rem;" disabled title="Nächste Seite">&#8250;</button>
-        <span class="flex-grow-1"></span>
-        <button id="pdf-zoom-out" class="btn btn-sm btn-outline-secondary" style="line-height:1;padding:.2rem .45rem;" title="Verkleinern">&#8722;</button>
-        <button id="pdf-zoom-in"  class="btn btn-sm btn-outline-secondary" style="line-height:1;padding:.2rem .45rem;" title="Vergrößern">&#43;</button>
-        <button id="pdf-fs-open" class="btn btn-sm btn-outline-secondary ms-1" style="line-height:1;padding:.2rem .45rem;" title="Vollbild">
-            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M1.5 1h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 1M10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4c0 .276.224.5.5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"/>
-            </svg>
-        </button>
-        <a href="{{ question.file.url }}" download class="btn btn-sm btn-outline-primary ms-1" style="line-height:1;padding:.2rem .5rem;" title="Herunterladen">&#8595;</a>
+<section class="card p-2 sm:p-3">
+    <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-0.5">
+            <button type="button" id="pdf-prev" class="btn btn-ghost btn-icon size-11" disabled title="Vorherige Seite" aria-label="Vorherige Seite">{% include "icons/chevron-left.html" with cls="size-5" %}</button>
+            <span id="pdf-page-info" class="min-w-16 text-center text-sm text-ink-2 tabular-nums">— / —</span>
+            <button type="button" id="pdf-next" class="btn btn-ghost btn-icon size-11" disabled title="Nächste Seite" aria-label="Nächste Seite">{% include "icons/chevron-right.html" with cls="size-5" %}</button>
+        </div>
+        <div class="flex items-center gap-0.5">
+            <button type="button" id="pdf-zoom-out" class="btn btn-ghost btn-icon size-11 text-lg" title="Verkleinern" aria-label="Verkleinern">&#8722;</button>
+            <button type="button" id="pdf-zoom-in" class="btn btn-ghost btn-icon size-11 text-lg" title="Vergrößern" aria-label="Vergrößern">&#43;</button>
+            <button type="button" id="pdf-fs-open" class="btn btn-ghost btn-icon size-11" title="Vollbild" aria-label="Vollbild">
+                <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M1.5 1h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 1M10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4c0 .276.224.5.5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"/>
+                </svg>
+            </button>
+            <a href="{{ question.file.url }}" download class="btn btn-soft btn-icon size-11" title="Herunterladen" aria-label="Herunterladen">{% include "icons/arrow-down-tray.html" with cls="size-5" %}</a>
+        </div>
     </div>
-    <div id="pdf-scroll" style="overflow:auto;max-height:62vh;background:#f0f0f0;">
-        <canvas id="pdf-canvas" style="display:block;margin:0 auto;"></canvas>
+    <div id="pdf-scroll" class="max-h-[62vh] overflow-auto rounded-xl bg-surface-2">
+        <canvas id="pdf-canvas" class="mx-auto block"></canvas>
     </div>
-    <p id="pdf-error" class="text-danger small mt-1 mb-0" style="display:none;">PDF konnte nicht geladen werden.</p>
-</div>
+    <p id="pdf-error" class="form-error hidden">PDF konnte nicht geladen werden.</p>
+</section>
 
 <!-- Fullscreen overlay -->
-<div id="pdf-fs-overlay" style="display:none;position:fixed;inset:0;z-index:1050;flex-direction:column;background:rgba(0,0,0,.88);">
-    <div style="display:flex;align-items:center;gap:.4rem;padding:.5rem .75rem;background:#1a1a1a;flex-shrink:0;">
-        <button id="pdf-fs-prev" class="btn btn-sm btn-outline-light" style="line-height:1;padding:.2rem .5rem;" disabled title="Vorherige Seite">&#8249;</button>
-        <span id="pdf-fs-page-info" class="small text-white-50" style="min-width:4.5rem;text-align:center;">— / —</span>
-        <button id="pdf-fs-next" class="btn btn-sm btn-outline-light" style="line-height:1;padding:.2rem .5rem;" disabled title="Nächste Seite">&#8250;</button>
-        <span style="flex:1;"></span>
-        <button id="pdf-fs-zoom-out" class="btn btn-sm btn-outline-light" style="line-height:1;padding:.2rem .45rem;" title="Verkleinern">&#8722;</button>
-        <button id="pdf-fs-zoom-in"  class="btn btn-sm btn-outline-light" style="line-height:1;padding:.2rem .45rem;" title="Vergrößern">&#43;</button>
-        <a href="{{ question.file.url }}" download class="btn btn-sm btn-outline-light ms-1" style="line-height:1;padding:.2rem .5rem;" title="Herunterladen">&#8595;</a>
-        <button id="pdf-fs-close" class="btn btn-sm btn-outline-light ms-2" style="line-height:1;padding:.2rem .5rem;" title="Schließen">
-            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
-            </svg>
-        </button>
+<div id="pdf-fs-overlay" class="fixed inset-0 z-[70] hidden flex-col bg-black/90" role="dialog" aria-modal="true" aria-label="PDF Vollbild">
+    <div class="flex shrink-0 flex-wrap items-center justify-between gap-2 bg-neutral-900 px-2 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-2 text-white sm:px-3">
+        <div class="flex items-center gap-0.5">
+            <button type="button" id="pdf-fs-prev" class="btn btn-icon size-11 text-white hover:bg-white/10" disabled title="Vorherige Seite" aria-label="Vorherige Seite">{% include "icons/chevron-left.html" with cls="size-5" %}</button>
+            <span id="pdf-fs-page-info" class="min-w-16 text-center text-sm text-white/60 tabular-nums">— / —</span>
+            <button type="button" id="pdf-fs-next" class="btn btn-icon size-11 text-white hover:bg-white/10" disabled title="Nächste Seite" aria-label="Nächste Seite">{% include "icons/chevron-right.html" with cls="size-5" %}</button>
+        </div>
+        <div class="flex items-center gap-0.5">
+            <button type="button" id="pdf-fs-zoom-out" class="btn btn-icon size-11 text-lg text-white hover:bg-white/10" title="Verkleinern" aria-label="Verkleinern">&#8722;</button>
+            <button type="button" id="pdf-fs-zoom-in" class="btn btn-icon size-11 text-lg text-white hover:bg-white/10" title="Vergrößern" aria-label="Vergrößern">&#43;</button>
+            <a href="{{ question.file.url }}" download class="btn btn-icon size-11 text-white hover:bg-white/10" title="Herunterladen" aria-label="Herunterladen">{% include "icons/arrow-down-tray.html" with cls="size-5" %}</a>
+            <button type="button" id="pdf-fs-close" class="btn btn-icon ml-1 size-11 bg-white/10 text-white hover:bg-white/20" title="Schließen" aria-label="Schließen">{% include "icons/x-mark.html" with cls="size-5" %}</button>
+        </div>
     </div>
-    <div id="pdf-fs-scroll" style="flex:1;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:1.25rem;background:#444;">
-        <canvas id="pdf-canvas-fs" style="display:block;box-shadow:0 6px 32px rgba(0,0,0,.6);"></canvas>
+    <div id="pdf-fs-scroll" class="flex flex-1 items-start justify-center overflow-auto bg-neutral-700 p-3 sm:p-5">
+        <canvas id="pdf-canvas-fs" class="block shadow-[0_6px_32px_rgb(0_0_0/0.6)]"></canvas>
     </div>
 </div>
 
@@ -118,15 +120,21 @@
         btnFsNext.disabled = !pdf || page >= pdf.numPages;
     }
 
+    function isFsOpen() {
+        return !overlay.classList.contains('hidden');
+    }
+
     function openFs() {
-        overlay.style.display = 'flex';
+        overlay.classList.remove('hidden');
+        overlay.classList.add('flex');
         document.body.style.overflow = 'hidden';
         scaleFs = null;
         renderFs(page);
     }
 
     function closeFs() {
-        overlay.style.display = 'none';
+        overlay.classList.add('hidden');
+        overlay.classList.remove('flex');
         document.body.style.overflow = '';
         if (taskFs) { taskFs.cancel(); taskFs = null; }
     }
@@ -134,7 +142,7 @@
     pdfjsLib.getDocument(FILE_URL).promise.then(doc => {
         pdf = doc;
         renderSmall(1);
-    }).catch(() => { errMsg.style.display = ''; });
+    }).catch(() => { errMsg.classList.remove('hidden'); });
 
     btnPrev.addEventListener('click',    () => { if (page > 1) renderSmall(page - 1); });
     btnNext.addEventListener('click',    () => { if (pdf && page < pdf.numPages) renderSmall(page + 1); });
@@ -149,11 +157,11 @@
     btnFsZoomOut.addEventListener('click', () => { scaleFs = Math.max((scaleFs ?? 1) / 1.25, 0.25); renderFs(page); });
 
     overlay.addEventListener('click', e => { if (e.target === overlay || e.target === scrollFs) closeFs(); });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && overlay.style.display !== 'none') closeFs(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && isFsOpen()) closeFs(); });
 })();
 </script>
 {% else %}
-<div class="border rounded-1 border-3 border-primary p-2">
-    <p class="text-muted text-center py-4 mb-0">Kein PDF hochgeladen.</p>
-</div>
+<section class="card">
+    <p class="empty-state m-2 border-0">Kein PDF hochgeladen.</p>
+</section>
 {% endif %}

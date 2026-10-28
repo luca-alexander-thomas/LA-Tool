@@ -1,67 +1,71 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 
-{% block site_content %}
-<div class="container py-4">
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <div>
-            <a href="{% url 'admin_settings' %}" class="text-decoration-none text-muted small">&larr; Einstellungen</a>
-            <h2 class="mb-0 mt-1">LA-Stufen</h2>
-        </div>
-        <a href="{% url 'admin_level_create' %}" class="btn btn-primary">+ Neue Stufe</a>
-    </div>
+{% block page_title %}LA-Stufen · Admin{% endblock %}
 
-    {% if levels %}
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th style="width:60px;">Nr.</th>
-                    <th>Name</th>
-                    <th>Slug</th>
-                    <th>Badge</th>
-                    <th>Standard Training</th>
-                    <th>Standard Prüfung</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for level in levels %}
-                <tr>
-                    <td class="text-muted">{{ level.order }}</td>
-                    <td>
-                        {% if level.icon %}
-                        <img src="{{ level.icon.url }}" style="max-height:28px;max-width:48px;object-fit:contain;" class="me-2 align-middle">
-                        {% endif %}
-                        <span class="fw-semibold">{{ level.name }}</span>
-                        {% if level.is_draft %}<span class="badge bg-warning text-dark ms-1">Entwurf</span>{% endif %}
-                    </td>
-                    <td><code class="small">{{ level.slug }}</code></td>
-                    <td>
-                        <span class="badge {{ level.badge_bg_class }} {{ level.badge_text_class }}">{{ level.name }}</span>
-                    </td>
-                    <td class="small text-muted">{{ level.default_training_count }} Fragen &middot; {{ level.default_training_pass_pct }}% Bestehen</td>
-                    <td class="small text-muted">{{ level.default_exam_count }} Fragen &middot; {{ level.default_exam_pass_pct }}% Bestehen</td>
-                    <td>
-                        <div class="d-flex gap-1">
-                            <form method="post" action="{% url 'admin_draft_toggle' 'level' level.pk %}">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm {% if level.is_draft %}btn-warning{% else %}btn-outline-secondary{% endif %}">
-                                    {% if level.is_draft %}Entwurf aufheben{% else %}Als Entwurf{% endif %}
-                                </button>
-                            </form>
-                            <a href="{% url 'admin_level_edit' level.pk %}" class="btn btn-sm btn-outline-secondary">Bearbeiten</a>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+{% block admin_content %}
+<a href="{% url 'admin_settings' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Einstellungen</a>
+
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Konfiguration</p>
+        <h1 class="page-title mt-1">LA-Stufen</h1>
     </div>
-    {% else %}
-    <div class="border rounded-1 border-3 border-primary p-4 text-center text-muted">
-        <p class="mb-2">Noch keine LA-Stufen angelegt.</p>
-        <a href="{% url 'admin_level_create' %}" class="btn btn-primary">Erste Stufe anlegen</a>
-    </div>
-    {% endif %}
+    <a href="{% url 'admin_level_create' %}" class="btn btn-primary">{% include "icons/plus.html" %} Neue Stufe</a>
 </div>
+
+{% if levels %}
+<div class="table-wrap">
+    <table class="table">
+        <thead>
+            <tr>
+                <th class="w-16">Nr.</th>
+                <th>Name</th>
+                <th>Slug</th>
+                <th>Badge</th>
+                <th>Standard Training</th>
+                <th>Standard Prüfung</th>
+                <th><span class="sr-only">Aktionen</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for level in levels %}
+            <tr>
+                <td class="text-ink-3 tabular-nums">{{ level.order }}</td>
+                <td>
+                    <div class="flex items-center gap-2 whitespace-nowrap">
+                        {% if level.icon %}
+                        <img src="{{ level.icon.url }}" alt="" class="max-h-7 max-w-12 object-contain">
+                        {% endif %}
+                        <span class="font-semibold">{{ level.name }}</span>
+                        {% if level.is_draft %}<span class="badge badge-warning">Entwurf</span>{% endif %}
+                    </div>
+                </td>
+                <td><code class="rounded bg-surface-2 px-1.5 py-0.5 text-xs">{{ level.slug }}</code></td>
+                <td>
+                    <span class="badge {{ level.badge_bg_class|default:'badge-primary' }} {{ level.badge_text_class }}">{{ level.name }}</span>
+                </td>
+                <td class="text-xs whitespace-nowrap text-ink-2">{{ level.default_training_count }} Fragen &middot; {{ level.default_training_pass_pct }}% Bestehen</td>
+                <td class="text-xs whitespace-nowrap text-ink-2">{{ level.default_exam_count }} Fragen &middot; {{ level.default_exam_pass_pct }}% Bestehen</td>
+                <td>
+                    <div class="flex justify-end gap-2">
+                        <form method="post" action="{% url 'admin_draft_toggle' 'level' level.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm {% if level.is_draft %}btn-soft{% else %}btn-secondary{% endif %}">
+                                {% if level.is_draft %}{% include "icons/eye.html" with cls="size-4" %} Entwurf aufheben{% else %}{% include "icons/eye-slash.html" with cls="size-4" %} Als Entwurf{% endif %}
+                            </button>
+                        </form>
+                        <a href="{% url 'admin_level_edit' level.pk %}" class="btn btn-sm btn-secondary">{% include "icons/pencil-square.html" with cls="size-4" %} Bearbeiten</a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <p class="mb-4">Noch keine LA-Stufen angelegt.</p>
+    <a href="{% url 'admin_level_create' %}" class="btn btn-primary">{% include "icons/plus.html" %} Erste Stufe anlegen</a>
+</div>
+{% endif %}
 {% endblock %}

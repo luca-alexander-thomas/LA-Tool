@@ -1,54 +1,45 @@
 {% extends "base.html" %}
 
+{% block page_title %}Gruppenaufgaben{% endblock %}
+
 {% block site_content %}
-<div class="container py-4">
-    <div class="row mb-4">
-        <div class="col"></div>
-        <div class="col-md-8 col-xl-6 text-center mx-auto">
-            <h2>Gruppenaufgaben</h2>
-            <p class="text-muted">Bereite dich auf die Gruppenaufgaben vor</p>
+<div class="page">
+    <div class="page-header">
+        <div>
+            <p class="eyebrow">Gruppen</p>
+            <h1 class="page-title mt-1">Gruppenaufgaben</h1>
+            <p class="page-subtitle">Bereite dich auf die Gruppenaufgaben vor</p>
         </div>
-        <div class="col"></div>
     </div>
 
-    {% for question, score in questions_with_score %}
-    <div class="row mt-2">
-        <div class="col border rounded-1 border-3 border-primary p-2">
-            <div class="d-flex flex-row justify-content-center align-items-center">
-                <div class="col-3 col-sm-2 col-md-2 col-lg-1 col-xl-1 d-flex justify-content-center">
-                    <span class="text-muted small">{{ question.number }}</span>
-                </div>
-                <div class="col"><span class="fw-bold">{{ question.question }}</span></div>
-                <div class="col-2 col-sm-2 col-md-1 col-xl-1 d-flex justify-content-center">
-                    {% if question.catalog %}
-                        <span class="badge {% if question.catalog.level %}{{ question.catalog.level.badge_bg_class }} {{ question.catalog.level.badge_text_class }}{% else %}bg-secondary text-white{% endif %} small">
-                            {% if question.catalog.level %}{{ question.catalog.level.name }}{% else %}–{% endif %}
-                        </span>
-                    {% endif %}
-                </div>
-                <div class="col col-sm-2 col-md-2 col-lg-1 col-xl-1 d-none d-md-flex justify-content-center">
-                    {% if score is None %}
-                        <svg xmlns="http://www.w3.org/2000/svg" width="1.4em" height="1.4em" fill="currentColor" class="text-secondary" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/></svg>
-                    {% elif score >= 75 %}
-                        <svg xmlns="http://www.w3.org/2000/svg" width="1.4em" height="1.4em" fill="currentColor" class="text-success" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8"/></svg>
-                    {% elif score >= 40 %}
-                        <svg xmlns="http://www.w3.org/2000/svg" width="1.4em" height="1.4em" fill="currentColor" class="text-warning" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8"/></svg>
-                    {% else %}
-                        <svg xmlns="http://www.w3.org/2000/svg" width="1.4em" height="1.4em" fill="currentColor" class="text-danger" viewBox="0 0 16 16"><circle cx="8" cy="8" r="8"/></svg>
-                    {% endif %}
-                </div>
-                <div class="col-1 d-flex justify-content-center">
-                    <a class="text-reset d-flex align-items-center" href="{% url 'group_detail' question.pk %}">
-                        <svg class="bi bi-chevron-right" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size:40px;">
-                            <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
-                        </svg>
-                    </a>
-                </div>
-            </div>
-        </div>
+    <div class="space-y-2">
+        {% for question, score in questions_with_score %}
+        <a href="{% url 'group_detail' question.pk %}" class="list-row min-h-16">
+            <span class="w-10 shrink-0 text-center text-xs font-medium text-ink-3 tabular-nums">{{ question.number }}</span>
+            <span class="min-w-0 flex-1 text-sm font-semibold text-ink sm:text-base">{{ question.question }}</span>
+            {% if question.catalog %}
+                {% if question.catalog.level %}
+                <span class="badge {{ question.catalog.level.badge_bg_class|default:'badge-primary' }} {{ question.catalog.level.badge_text_class }} shrink-0">{{ question.catalog.level.name }}</span>
+                {% else %}
+                <span class="badge badge-neutral shrink-0">–</span>
+                {% endif %}
+            {% endif %}
+            <span class="flex w-6 shrink-0 justify-center">
+                {% if score is None %}
+                    <span class="size-4 rounded-full border-2 border-ink-3" title="Noch nicht bewertet"><span class="sr-only">Noch nicht bewertet</span></span>
+                {% elif score >= 75 %}
+                    <span class="size-4 rounded-full bg-green-500" title="Sicher"><span class="sr-only">Sicher</span></span>
+                {% elif score >= 40 %}
+                    <span class="size-4 rounded-full bg-amber-400" title="Nochmal anschauen"><span class="sr-only">Nochmal anschauen</span></span>
+                {% else %}
+                    <span class="size-4 rounded-full bg-red-500" title="Unsicher"><span class="sr-only">Unsicher</span></span>
+                {% endif %}
+            </span>
+            {% include "icons/chevron-right.html" with cls="size-5 shrink-0 text-ink-3" %}
+        </a>
+        {% empty %}
+        <p class="empty-state">Keine Gruppenaufgaben vorhanden.</p>
+        {% endfor %}
     </div>
-    {% empty %}
-    <div class="text-center text-muted py-5">Keine Gruppenaufgaben vorhanden.</div>
-    {% endfor %}
 </div>
 {% endblock %}

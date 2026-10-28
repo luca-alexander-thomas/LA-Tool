@@ -1,106 +1,117 @@
 {% extends "base.html" %}
 
+{% block page_title %}Mein Konto{% endblock %}
+
 {% block site_content %}
-<div class="container py-4">
-    <div class="row mb-4">
-        <div class="col-md-8 col-xl-6 text-center mx-auto">
-            <h2>Mein Konto</h2>
+<div class="page">
+    <div class="page-header">
+        <div>
+            <p class="eyebrow">Profil</p>
+            <h1 class="page-title mt-1">Mein Konto</h1>
         </div>
     </div>
 
-    <div class="row gy-3">
+    <div class="grid items-start gap-4 lg:grid-cols-3">
         <!-- Kontoübersicht -->
-        <div class="col-md-4">
-            <div class="border rounded-1 border-3 border-primary p-3">
-                <h5 class="mb-3">Kontoübersicht</h5>
-                <div class="d-flex flex-column gap-1 mb-3">
-                    <span><span class="text-muted">Name:</span> {{ user.first_name }} {{ user.last_name }}</span>
-                    <span><span class="text-muted">Benutzername:</span> {{ user.username }}</span>
-                    <span><span class="text-muted">E-Mail:</span> {{ user.email }}</span>
-                </div>
-                <hr>
-                <h6 class="mb-2">DIVERA 24/7 Verknüpfung</h6>
-                {% if user.profile.divera_api_key %}
-                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
-                    <span class="badge bg-success">Verbunden</span>
-                    {% if user.profile.divera_la_level %}
-                    <span class="badge fs-6
-                        {% if user.profile.divera_la_level == 'gold' %}bg-warning text-dark
-                        {% elif user.profile.divera_la_level == 'silber' %}bg-secondary
-                        {% else %}bg-warning text-dark{% endif %}">
-                        {{ user.profile.divera_la_display }}
-                    </span>
+        <section class="card">
+            <div class="card-header">
+                <h2 class="section-title">Kontoübersicht</h2>
+            </div>
+            <div class="card-body">
+                <dl class="space-y-3 text-sm">
+                    <div>
+                        <dt class="text-xs font-medium text-ink-3">Name:</dt>
+                        <dd class="mt-0.5 font-medium text-ink">{{ user.first_name }} {{ user.last_name }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-ink-3">Benutzername:</dt>
+                        <dd class="mt-0.5 font-medium break-all text-ink">{{ user.username }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-ink-3">E-Mail:</dt>
+                        <dd class="mt-0.5 font-medium break-all text-ink">{{ user.email }}</dd>
+                    </div>
+                </dl>
+
+                <div class="mt-5 border-t border-line pt-5">
+                    <h3 class="mb-3 text-sm font-semibold text-ink">DIVERA 24/7 Verknüpfung</h3>
+                    {% if user.profile.divera_api_key %}
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="badge badge-success">{% include "icons/check.html" with cls="size-3.5" %} Verbunden</span>
+                        {% if user.profile.divera_la_level %}
+                        <span class="badge
+                            {% if user.profile.divera_la_level == 'gold' %}bg-warning text-dark
+                            {% elif user.profile.divera_la_level == 'silber' %}bg-secondary text-white
+                            {% else %}bg-warning text-dark{% endif %}">
+                            {{ user.profile.divera_la_display }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% if user.profile.divera_qualification_details %}
+                    <div class="mt-3 flex flex-wrap gap-1.5">
+                        {% for q in user.profile.divera_qualification_details %}
+                        <span class="badge badge-primary" title="{{ q.name }}">{{ q.shortname }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <span class="badge badge-warning">Nicht verbunden</span>
+                    <a href="{% url 'first_run_wizard' %}" class="btn btn-soft mt-3 w-full">{% include "icons/link.html" with cls="size-4" %} Verbinden</a>
                     {% endif %}
                 </div>
-                {% if user.profile.divera_qualification_details %}
-                <div class="d-flex flex-wrap gap-1 mt-1">
-                    {% for q in user.profile.divera_qualification_details %}
-                    <span class="badge bg-primary bg-opacity-75 text-white" title="{{ q.name }}">{{ q.shortname }}</span>
-                    {% endfor %}
-                </div>
-                {% endif %}
-                {% else %}
-                <div class="badge bg-warning text-dark mb-2">Nicht verbunden</div>
-                <a href="{% url 'first_run_wizard' %}" class="btn btn-sm btn-outline-primary d-block mt-2">Verbinden</a>
-                {% endif %}
             </div>
-        </div>
+        </section>
 
         <!-- Lernfortschritt -->
-        <div class="col-md-8">
-            <div class="border rounded-1 border-3 border-primary p-3">
-                <h5 class="mb-3">Lernfortschritt — Theorie-Trainings</h5>
+        <section class="card lg:col-span-2">
+            <div class="card-header">
+                <h2 class="section-title">Lernfortschritt — Theorie-Trainings</h2>
+            </div>
+            <div class="card-body">
                 {% if avg_pct is not None %}
-                <div class="d-flex align-items-center mb-3 gap-3">
-                    <div class="text-center">
-                        <div class="fs-3 fw-bold text-primary">{{ avg_pct }}%</div>
-                        <div class="text-muted small">Ø Ergebnis</div>
+                <div class="mb-5 flex flex-wrap items-center gap-x-6 gap-y-3">
+                    <div>
+                        <div class="stat-value text-accent-ink">{{ avg_pct }}%</div>
+                        <div class="stat-label">Ø Ergebnis</div>
                     </div>
-                    <div class="text-center">
-                        <div class="fs-3 fw-bold text-primary">{{ total_sessions }}</div>
-                        <div class="text-muted small">Sessions</div>
+                    <div>
+                        <div class="stat-value text-accent-ink">{{ total_sessions }}</div>
+                        <div class="stat-label">Sessions</div>
                     </div>
-                    <div class="flex-grow-1">
-                        <div class="progress" style="height:12px;">
-                            <div class="progress-bar bg-primary" role="progressbar"
-                                 style="width:{{ avg_pct }}%;" aria-valuenow="{{ avg_pct }}"
-                                 aria-valuemin="0" aria-valuemax="100">
-                            </div>
+                    <div class="min-w-40 flex-1">
+                        <div class="progress h-3" role="progressbar" aria-label="Ø Ergebnis"
+                             aria-valuenow="{{ avg_pct }}" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar" style="width: {{ avg_pct }}%"></div>
                         </div>
                     </div>
                 </div>
                 {% endif %}
-                {% for r in training_results %}
-                {% with meta=r.meta_reference %}
-                <a href="{% url 'training_result' r.pk %}" class="text-decoration-none text-reset">
-                    <div class="border rounded-1 border-2 border-primary d-flex align-items-center p-2 mb-2">
-                        <div class="col ms-1">
-                            <div class="small fw-semibold">{{ r.name }}</div>
-                            <div class="text-muted small">{{ r.meta_time|date:"d.m.Y H:i" }}</div>
+
+                <div class="space-y-2">
+                    {% for r in training_results %}
+                    {% with meta=r.meta_reference %}
+                    <a href="{% url 'training_result' r.pk %}" class="list-row">
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-semibold">{{ r.name }}</p>
+                            <p class="text-xs text-ink-3">{{ r.meta_time|date:"d.m.Y H:i" }}</p>
                         </div>
-                        <div class="col-auto me-2">
-                            {% if meta %}
-                            <span class="fw-semibold text-primary">{{ meta.score }}/{{ meta.total }}</span>
-                            {% with pct=meta.score|floatformat:0 %}
-                            {% endwith %}
-                            {% endif %}
-                        </div>
-                        <div class="col-auto me-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size:24px;">
-                                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
-                            </svg>
-                        </div>
-                    </div>
-                </a>
-                {% endwith %}
-                {% empty %}
-                <p class="text-muted text-center py-3">
-                    Noch keine Trainings absolviert.
-                    <a href="{% url 'training_config' %}">Jetzt starten →</a>
-                </p>
-                {% endfor %}
+                        {% if meta %}
+                        <span class="badge badge-primary tabular-nums">{{ meta.score }}/{{ meta.total }}</span>
+                        {% with pct=meta.score|floatformat:0 %}
+                        {% endwith %}
+                        {% endif %}
+                        {% include "icons/chevron-right.html" with cls="size-4 shrink-0 text-ink-3" %}
+                    </a>
+                    {% endwith %}
+                    {% empty %}
+                    <p class="empty-state">
+                        Noch keine Trainings absolviert.
+                        <a href="{% url 'training_config' %}" class="link">Jetzt starten →</a>
+                    </p>
+                    {% endfor %}
+                </div>
             </div>
-        </div>
+        </section>
     </div>
 </div>
 {% endblock %}

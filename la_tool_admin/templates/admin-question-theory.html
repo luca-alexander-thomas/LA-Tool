@@ -1,54 +1,60 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 
-{% block site_content %}
-<div class="container py-4" style="max-width:740px;">
-    <div class="mb-3">
-        <a href="{% url 'admin_catalog_detail' catalog.pk %}?tab=theory" class="text-decoration-none text-muted">&larr; {{ catalog.title }}</a>
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block admin_content %}
+<div class="max-w-3xl">
+    <a href="{% url 'admin_catalog_detail' catalog.pk %}?tab=theory" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} {{ catalog.title }}</a>
+    <div class="page-header">
+        <div>
+            <p class="eyebrow">Theoriefrage</p>
+            <h1 class="page-title mt-1">{{ title }}</h1>
+        </div>
     </div>
-    <h4 class="mb-4">{{ title }}</h4>
 
     {% if form.non_field_errors %}
-    <div class="alert alert-danger">
-        {% for e in form.non_field_errors %}{{ e }}{% endfor %}
+    <div class="alert alert-danger mb-6" role="alert">
+        {% include "icons/exclamation-triangle.html" with cls="size-5 shrink-0" %}
+        <div>{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>
     </div>
     {% endif %}
 
-    <div class="border rounded-2 border-primary p-4">
-        <form method="post" id="theory-form">
-            {% csrf_token %}
-
-            <div class="mb-3">
-                <label class="form-label fw-semibold">{{ form.number.label }}</label>
+    <form method="post" id="theory-form" class="card">
+        {% csrf_token %}
+        <div class="card-body space-y-5">
+            <div>
+                <label class="form-label" for="{{ form.number.id_for_label }}">{{ form.number.label }}</label>
                 {{ form.number }}
             </div>
 
-            <div class="mb-3">
-                <label class="form-label fw-semibold">{{ form.question.label }}</label>
+            <div>
+                <label class="form-label" for="{{ form.question.id_for_label }}">{{ form.question.label }}</label>
                 {{ form.question }}
-                {% if form.question.errors %}<div class="text-danger small mt-1">{{ form.question.errors }}</div>{% endif %}
+                {% if form.question.errors %}<div class="form-error">{{ form.question.errors }}</div>{% endif %}
             </div>
 
-            <!-- Dynamische Antwortoptionen -->
-            <div class="mb-1 d-flex justify-content-between align-items-center">
-                <label class="form-label fw-semibold mb-0">Antwortoptionen</label>
-                <small class="text-muted">Haken = korrekte Antwort(en) markieren</small>
+            {# Dynamische Antwortoptionen #}
+            <div>
+                <div class="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                    <span class="form-label mb-0">Antwortoptionen</span>
+                    <small class="text-xs text-ink-2">Haken = korrekte Antwort(en) markieren</small>
+                </div>
+                <div id="choices-container" class="flex flex-col gap-2"></div>
+                <button type="button" class="btn btn-sm btn-soft mt-3" id="add-choice-btn">
+                    {% include "icons/plus.html" with cls="size-4" %} Antwort hinzufügen
+                </button>
             </div>
-            <div id="choices-container" class="d-flex flex-column gap-2 mb-2"></div>
-            <button type="button" class="btn btn-sm btn-outline-primary mb-3" id="add-choice-btn">
-                + Antwort hinzufügen
-            </button>
 
-            <div class="mb-3">
-                <label class="form-label fw-semibold">{{ form.help_reference.label }}</label>
+            <div>
+                <label class="form-label" for="{{ form.help_reference.id_for_label }}">{{ form.help_reference.label }}</label>
                 {{ form.help_reference }}
             </div>
-
-            <div class="d-flex justify-content-end gap-2 mt-4">
-                <a href="{% url 'admin_catalog_detail' catalog.pk %}?tab=theory" class="btn btn-outline-secondary">Abbrechen</a>
-                <button type="submit" class="btn btn-primary">Speichern</button>
-            </div>
-        </form>
-    </div>
+        </div>
+        <div class="card-footer">
+            <a href="{% url 'admin_catalog_detail' catalog.pk %}?tab=theory" class="btn btn-secondary">Abbrechen</a>
+            <button type="submit" class="btn btn-primary">{% include "icons/check.html" %} Speichern</button>
+        </div>
+    </form>
 </div>
 
 <script>
@@ -67,15 +73,17 @@
     function createRow(index, value, isCorrect) {
         const letter = LETTERS[index] ?? String(index + 1);
         const row = document.createElement('div');
-        row.className = 'input-group choice-row';
+        row.className = 'choice-row flex items-center gap-2';
         row.innerHTML =
-            `<span class="input-group-text fw-bold choice-label" style="min-width:2.6rem;">${letter}</span>` +
-            `<input type="text" class="form-control" name="choice" placeholder="Antwort ${letter}" value="${esc(value)}">` +
-            `<span class="input-group-text gap-1">` +
+            `<div class="input-group min-w-0 flex-1">` +
+            `  <span class="input-group-text w-10 shrink-0 justify-center font-bold choice-label">${letter}</span>` +
+            `  <input type="text" class="form-control" name="choice" placeholder="Antwort ${letter}" value="${esc(value)}">` +
+            `</div>` +
+            `<label class="flex min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-line bg-surface-2 px-3 text-xs font-medium text-ink-2 transition has-checked:border-green-500 has-checked:bg-green-50 has-checked:text-green-800 dark:has-checked:bg-green-500/10 dark:has-checked:text-green-300">` +
             `  <input class="form-check-input mt-0 correct-check" type="checkbox" name="correct" value="${index}" ${isCorrect ? 'checked' : ''} title="Korrekte Antwort">` +
-            `  <span class="small text-muted">Korrekt</span>` +
-            `</span>` +
-            `<button type="button" class="btn btn-outline-danger remove-btn px-2" title="Entfernen">&times;</button>`;
+            `  <span>Korrekt</span>` +
+            `</label>` +
+            `<button type="button" class="btn btn-danger-soft btn-icon shrink-0 text-lg remove-btn" title="Entfernen" aria-label="Entfernen">&times;</button>`;
         row.querySelector('.remove-btn').addEventListener('click', () => {
             if (container.children.length > 2) { row.remove(); reindex(); }
             else { alert('Mindestens 2 Antwortoptionen erforderlich.'); }

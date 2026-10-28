@@ -1,74 +1,70 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 
-{% block site_content %}
-<div class="container py-2 mb-2">
-    <a href="{% url 'admin_exam_results' exam.pk %}" class="text-decoration-none text-muted">&larr; {{ exam.name }}</a>
+{% block page_title %}{{ exam.name }} · Abgabe{% endblock %}
+
+{% block admin_content %}
+<a href="{% url 'admin_exam_results' exam.pk %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} {{ exam.name }}</a>
+
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Abgabe</p>
+        <h1 class="page-title mt-1">{{ exam.name }}</h1>
+        <p class="page-subtitle">Abgabe von {{ result.user.last_name }}, {{ result.user.first_name }}</p>
+    </div>
 </div>
-<h3 class="text-center mb-1">{{ exam.name }}</h3>
-<p class="text-center text-muted mb-1">Abgabe von {{ result.user.last_name }}, {{ result.user.first_name }}</p>
 
-<div class="container">
-    <div class="row">
-        <!-- Score + Freigabe -->
-        <div class="col-md-4 p-2">
-            <div class="border rounded-1 border-3 border-primary p-3 h-100">
-                {% if is_passed %}
-                <div class="alert alert-success text-center mb-3"><strong>Bestanden!</strong></div>
-                <p class="fs-4 fw-bold text-center text-success">{{ score }} von {{ total }} Punkten</p>
-                {% else %}
-                <div class="alert alert-danger text-center mb-3"><strong>Nicht bestanden</strong></div>
-                <p class="fs-4 fw-bold text-center text-danger">{{ score }} von {{ total }} Punkten</p>
-                {% endif %}
-                <p class="text-center text-muted small">Abgegeben: {{ result.meta_time|date:"d.m.Y H:i" }}</p>
-                <div class="d-flex justify-content-center mt-3">
-                    <form method="post" action="{% url 'admin_exam_result_release' exam.pk result.pk %}">
-                        {% csrf_token %}
-                        {% if result.state == 'published' %}
-                        <button type="submit" class="btn btn-outline-warning">Freigabe zurückziehen</button>
-                        {% else %}
-                        <div class="form-check mb-2 text-start">
-                            <input class="form-check-input" type="checkbox" name="notify_divera" id="notify_divera_cb" value="1">
-                            <label class="form-check-label small" for="notify_divera_cb">Divera-Benachrichtigung senden</label>
-                        </div>
-                        <button type="submit" class="btn btn-success w-100">Ergebnis freigeben</button>
-                        {% endif %}
-                    </form>
-                </div>
+<div class="grid gap-4 lg:grid-cols-3 lg:items-start">
+    {# Score + Freigabe #}
+    <section class="card card-body lg:sticky lg:top-24">
+        {% if is_passed %}
+        <div class="alert alert-success justify-center">{% include "icons/check-circle.html" with cls="size-5 shrink-0" %}<strong>Bestanden!</strong></div>
+        <p class="mt-4 text-center text-2xl font-bold text-green-700 tabular-nums dark:text-green-400">{{ score }} von {{ total }} Punkten</p>
+        {% else %}
+        <div class="alert alert-danger justify-center">{% include "icons/x-circle.html" with cls="size-5 shrink-0" %}<strong>Nicht bestanden</strong></div>
+        <p class="mt-4 text-center text-2xl font-bold text-red-700 tabular-nums dark:text-red-400">{{ score }} von {{ total }} Punkten</p>
+        {% endif %}
+        <p class="mt-1 text-center text-xs text-ink-3">Abgegeben: {{ result.meta_time|date:"d.m.Y H:i" }}</p>
+
+        <form method="post" action="{% url 'admin_exam_result_release' exam.pk result.pk %}" class="mt-5 border-t border-line pt-5">
+            {% csrf_token %}
+            {% if result.state == 'published' %}
+            <button type="submit" class="btn btn-secondary w-full">{% include "icons/eye-slash.html" with cls="size-4" %} Freigabe zurückziehen</button>
+            {% else %}
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" name="notify_divera" id="notify_divera_cb" value="1">
+                <label class="form-check-label" for="notify_divera_cb">Divera-Benachrichtigung senden</label>
             </div>
-        </div>
+            <button type="submit" class="btn btn-success w-full">{% include "icons/check.html" with cls="size-4" %} Ergebnis freigeben</button>
+            {% endif %}
+        </form>
+    </section>
 
-        <!-- Fragendetails -->
-        <div class="col-md-8">
-            {% for d in questions_data %}
-            <div class="row border rounded-1 border-3 {% if d.is_correct %}border-success{% else %}border-danger{% endif %} m-1 p-2 mb-2">
-                <div class="col">
-                    <div class="row">
-                        <div class="col fw-bold d-flex align-items-center">
-                            <span>{{ d.question.question }}</span>
-                            {% if d.is_correct %}
-                            <svg class="text-success ms-2" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size:28px;flex-shrink:0;">
-                                <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"/>
-                            </svg>
-                            {% else %}
-                            <svg class="text-danger ms-2" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size:28px;flex-shrink:0;">
-                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
-                            </svg>
-                            {% endif %}
-                        </div>
-                        <div class="col-3 text-center small fw-semibold">Richtig</div>
-                        <div class="col-3 text-center small fw-semibold">Antwort</div>
-                    </div>
+    {# Fragendetails #}
+    <div class="space-y-3 lg:col-span-2">
+        {% for d in questions_data %}
+        <div class="card overflow-hidden border-l-4 {% if d.is_correct %}border-l-green-500{% else %}border-l-red-500{% endif %}">
+            <div class="flex items-start gap-3 px-4 pt-4 sm:px-5">
+                <p class="flex-1 font-semibold">{{ d.question.question }}</p>
+                {% if d.is_correct %}
+                <span class="text-green-600 dark:text-green-400" title="Richtig">{% include "icons/check-circle.html" with cls="size-6 shrink-0" %}</span>
+                {% else %}
+                <span class="text-red-600 dark:text-red-400" title="Falsch">{% include "icons/x-circle.html" with cls="size-6 shrink-0" %}</span>
+                {% endif %}
+            </div>
+            <div class="px-4 pt-2 pb-4 sm:px-5">
+                <div class="grid grid-cols-[minmax(0,1fr)_4.5rem_4.5rem] items-center gap-x-2 gap-y-1.5 text-sm">
+                    <span></span>
+                    <span class="text-center text-xs font-semibold text-ink-2">Richtig</span>
+                    <span class="text-center text-xs font-semibold text-ink-2">Antwort</span>
                     {% for letter, text in d.labeled_choices %}
-                    <div class="row">
-                        <div class="col"><span class="text-muted me-1 small">{{ letter|upper }}:</span>{{ text }}</div>
-                        <div class="col-3 text-center"><input type="checkbox" {% if text in d.correct_texts %}checked{% endif %} disabled></div>
-                        <div class="col-3 text-center"><input type="checkbox" {% if letter in d.user_letters %}checked{% endif %} disabled></div>
-                    </div>
+                    <span><span class="mr-1 text-xs text-ink-3">{{ letter|upper }}:</span>{{ text }}</span>
+                    <span class="flex justify-center"><input class="form-check-input mt-0" type="checkbox" {% if text in d.correct_texts %}checked{% endif %} disabled></span>
+                    <span class="flex justify-center"><input class="form-check-input mt-0" type="checkbox" {% if letter in d.user_letters %}checked{% endif %} disabled></span>
                     {% endfor %}
                 </div>
             </div>
-            {% endfor %}
         </div>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}

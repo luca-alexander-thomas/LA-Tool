@@ -1,98 +1,93 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 
-{% block site_content %}
-<div class="container py-4">
-    <h3 class="text-center mb-4">Admin Übersicht</h3>
+{% block page_title %}Admin Übersicht{% endblock %}
 
-    <!-- KPI-Kacheln -->
-    <div class="row mb-4 gy-3">
-        <div class="col-6 col-md-3">
-            <div class="border rounded-1 border-3 border-primary p-3 text-center">
-                <div class="fs-2 fw-bold text-primary">{{ total_users }}</div>
-                <div class="text-muted small">Aktive Nutzer</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="border rounded-1 border-3 border-primary p-3 text-center">
-                <div class="fs-2 fw-bold text-primary">{{ active_exams }}</div>
-                <div class="text-muted small">Aktive Prüfungen</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="border rounded-1 border-3 {% if unreleased_count > 0 %}border-warning{% else %}border-primary{% endif %} p-3 text-center">
-                <div class="fs-2 fw-bold {% if unreleased_count > 0 %}text-warning{% else %}text-primary{% endif %}">{{ unreleased_count }}</div>
-                <div class="text-muted small">Nicht freigegeben</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="border rounded-1 border-3 border-primary p-3 text-center">
-                <div class="fs-2 fw-bold text-primary">{{ upcoming_works.count }}</div>
-                <div class="text-muted small">Kommende Dienste</div>
-            </div>
-        </div>
+{% block admin_content %}
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Admin-Bereich</p>
+        <h1 class="page-title mt-1">Admin Übersicht</h1>
     </div>
+</div>
 
-    <div class="row gy-3">
-        <!-- Neueste Ergebnisse -->
-        <div class="col-md-7">
-            <div class="border rounded-1 border-3 border-primary p-3">
-                <h5 class="mb-3">Neueste Prüfungsabgaben</h5>
-                {% for r in recent_results %}
-                {% with meta=r.meta_reference %}
-                <a href="{% url 'admin_exam_result_user' r.exam.pk r.pk %}" class="text-decoration-none text-reset">
-                    <div class="border rounded-1 border-2 border-primary d-flex align-items-center p-2 mb-2">
-                        <div class="col ms-1">
-                            <div class="fw-semibold small">{{ r.user.last_name }}, {{ r.user.first_name }}</div>
-                            <div class="text-muted small">{{ r.exam.name }} · {{ r.meta_time|date:"d.m.Y H:i" }}</div>
-                        </div>
-                        <div class="col-auto d-flex gap-2 align-items-center me-2">
-                            {% if meta %}
-                            <span class="small fw-semibold text-primary">{{ meta.score }}/{{ meta.total }}</span>
-                            {% endif %}
-                            {% if r.state == 'published' %}
-                            <span class="badge bg-success">freigegeben</span>
-                            {% else %}
-                            <span class="badge bg-secondary">offen</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                </a>
-                {% endwith %}
-                {% empty %}
-                <p class="text-muted text-center py-3">Noch keine Prüfungsabgaben.</p>
-                {% endfor %}
-                <div class="d-flex justify-content-end mt-2">
-                    <a href="{% url 'admin_exam_list' %}" class="btn btn-sm btn-outline-primary">Alle Prüfungen</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Nächste Dienste -->
-        <div class="col-md-5">
-            <div class="border rounded-1 border-3 border-primary p-3">
-                <h5 class="mb-3">Nächste Dienste</h5>
-                {% for w in upcoming_works %}
-                <a href="{% url 'admin_work_edit' w.pk %}" class="text-decoration-none text-reset">
-                    <div class="border rounded-1 border-2 border-primary d-flex align-items-center p-2 mb-2">
-                        <div class="col ms-1">
-                            <div class="fw-semibold small">{{ w.title }}</div>
-                            <div class="text-muted small">{{ w.date|date:"d.m.Y" }}{% if w.location %} · {{ w.location }}{% endif %}</div>
-                        </div>
-                        {% if w.level %}
-                        <div class="col-auto me-2">
-                            <span class="badge {{ w.level.badge_bg_class }} {{ w.level.badge_text_class }}">{{ w.level.name }}</span>
-                        </div>
-                        {% endif %}
-                    </div>
-                </a>
-                {% empty %}
-                <p class="text-muted text-center py-3">Keine kommenden Dienste.</p>
-                {% endfor %}
-                <div class="d-flex justify-content-end mt-2">
-                    <a href="{% url 'admin_work_list' %}" class="btn btn-sm btn-outline-primary">Alle Dienste</a>
-                </div>
-            </div>
-        </div>
+{# KPI-Kacheln #}
+<div class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+    <div class="card card-body">
+        <p class="stat-value text-accent-ink">{{ total_users }}</p>
+        <p class="stat-label mt-1">Aktive Nutzer</p>
     </div>
+    <div class="card card-body">
+        <p class="stat-value text-accent-ink">{{ active_exams }}</p>
+        <p class="stat-label mt-1">Aktive Prüfungen</p>
+    </div>
+    <div class="card card-body {% if unreleased_count > 0 %}border-amber-300 dark:border-amber-500/40{% endif %}">
+        <p class="stat-value {% if unreleased_count > 0 %}text-amber-600 dark:text-amber-400{% else %}text-accent-ink{% endif %}">{{ unreleased_count }}</p>
+        <p class="stat-label mt-1">Nicht freigegeben</p>
+    </div>
+    <div class="card card-body">
+        <p class="stat-value text-accent-ink">{{ upcoming_works.count }}</p>
+        <p class="stat-label mt-1">Kommende Dienste</p>
+    </div>
+</div>
+
+<div class="grid gap-4 lg:grid-cols-12">
+    {# Neueste Ergebnisse #}
+    <section class="card flex flex-col lg:col-span-7">
+        <div class="card-header">
+            <h2 class="section-title">Neueste Prüfungsabgaben</h2>
+        </div>
+        <div class="flex-1 space-y-2 p-4">
+            {% for r in recent_results %}
+            {% with meta=r.meta_reference %}
+            <a href="{% url 'admin_exam_result_user' r.exam.pk r.pk %}" class="list-row">
+                <div class="min-w-0 flex-1">
+                    <p class="truncate text-sm font-semibold">{{ r.user.last_name }}, {{ r.user.first_name }}</p>
+                    <p class="truncate text-xs text-ink-3">{{ r.exam.name }} · {{ r.meta_time|date:"d.m.Y H:i" }}</p>
+                </div>
+                <div class="flex shrink-0 items-center gap-2">
+                    {% if meta %}
+                    <span class="text-sm font-semibold text-accent-ink tabular-nums">{{ meta.score }}/{{ meta.total }}</span>
+                    {% endif %}
+                    {% if r.state == 'published' %}
+                    <span class="badge badge-success">freigegeben</span>
+                    {% else %}
+                    <span class="badge badge-neutral">offen</span>
+                    {% endif %}
+                </div>
+            </a>
+            {% endwith %}
+            {% empty %}
+            <p class="empty-state">Noch keine Prüfungsabgaben.</p>
+            {% endfor %}
+        </div>
+        <div class="card-footer">
+            <a href="{% url 'admin_exam_list' %}" class="btn btn-sm btn-soft">Alle Prüfungen {% include "icons/arrow-right.html" with cls="size-4" %}</a>
+        </div>
+    </section>
+
+    {# Nächste Dienste #}
+    <section class="card flex flex-col lg:col-span-5">
+        <div class="card-header">
+            <h2 class="section-title">Nächste Dienste</h2>
+        </div>
+        <div class="flex-1 space-y-2 p-4">
+            {% for w in upcoming_works %}
+            <a href="{% url 'admin_work_edit' w.pk %}" class="list-row">
+                <div class="min-w-0 flex-1">
+                    <p class="truncate text-sm font-semibold">{{ w.title }}</p>
+                    <p class="truncate text-xs text-ink-3">{{ w.date|date:"d.m.Y" }}{% if w.location %} · {{ w.location }}{% endif %}</p>
+                </div>
+                {% if w.level %}
+                <span class="badge {{ w.level.badge_bg_class|default:'badge-primary' }} {{ w.level.badge_text_class }}">{{ w.level.name }}</span>
+                {% endif %}
+            </a>
+            {% empty %}
+            <p class="empty-state">Keine kommenden Dienste.</p>
+            {% endfor %}
+        </div>
+        <div class="card-footer">
+            <a href="{% url 'admin_work_list' %}" class="btn btn-sm btn-soft">Alle Dienste {% include "icons/arrow-right.html" with cls="size-4" %}</a>
+        </div>
+    </section>
 </div>
 {% endblock %}

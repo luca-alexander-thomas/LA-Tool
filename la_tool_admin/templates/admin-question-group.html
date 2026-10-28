@@ -1,53 +1,57 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 
-{% block site_content %}
-<div class="container py-4" style="max-width:640px;">
-    <div class="mb-3">
-        <a href="{% url 'admin_catalog_detail' catalog.pk %}?tab=group" class="text-decoration-none text-muted">&larr; {{ catalog.title }}</a>
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block admin_content %}
+<div class="max-w-2xl">
+    <a href="{% url 'admin_catalog_detail' catalog.pk %}?tab=group" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} {{ catalog.title }}</a>
+    <div class="page-header">
+        <div>
+            <p class="eyebrow">Gruppenaufgabe</p>
+            <h1 class="page-title mt-1">{{ title }}</h1>
+        </div>
     </div>
-    <h4 class="mb-4">{{ title }}</h4>
-    <div class="border rounded-2 border-primary p-4">
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
 
-            <div class="mb-3">
-                <label class="form-label fw-semibold">{{ form.number.label }}</label>
+    <form method="post" enctype="multipart/form-data" class="card">
+        {% csrf_token %}
+        <div class="card-body space-y-5">
+            <div>
+                <label class="form-label" for="{{ form.number.id_for_label }}">{{ form.number.label }}</label>
                 {{ form.number }}
-                {% if form.number.errors %}<div class="text-danger small mt-1">{{ form.number.errors }}</div>{% endif %}
+                {% if form.number.errors %}<div class="form-error">{{ form.number.errors }}</div>{% endif %}
             </div>
 
-            <div class="mb-3">
-                <label class="form-label fw-semibold">{{ form.question.label }}</label>
+            <div>
+                <label class="form-label" for="{{ form.question.id_for_label }}">{{ form.question.label }}</label>
                 {{ form.question }}
-                {% if form.question.errors %}<div class="text-danger small mt-1">{{ form.question.errors }}</div>{% endif %}
+                {% if form.question.errors %}<div class="form-error">{{ form.question.errors }}</div>{% endif %}
             </div>
 
-            <div class="mb-3">
+            <div>
                 {% if question and question.file %}
-                <div class="mb-2 p-2 rounded border d-flex align-items-center gap-2 small">
-                    <span class="text-muted">Aktuell:</span>
-                    <a href="{{ question.file.url }}" target="_blank" class="text-primary text-truncate" style="max-width:260px;">{{ question.file.name }}</a>
-                    <span class="text-muted ms-auto text-nowrap">bleibt erhalten wenn leer gelassen</span>
+                <div class="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-line bg-surface-2 px-3 py-2 text-sm">
+                    <span class="text-ink-2">Aktuell:</span>
+                    <a href="{{ question.file.url }}" target="_blank" class="link inline-flex min-w-0 max-w-full items-center gap-1 truncate sm:max-w-xs">{% include "icons/document-text.html" with cls="size-4 shrink-0" %}<span class="truncate">{{ question.file.name }}</span></a>
+                    <span class="text-xs whitespace-nowrap text-ink-3 sm:ml-auto">bleibt erhalten wenn leer gelassen</span>
                 </div>
-                <label class="form-label fw-semibold">Neue Datei hochladen <span class="text-muted fw-normal small">(optional)</span></label>
+                <label class="form-label" for="{{ form.file.id_for_label }}">Neue Datei hochladen <span class="text-xs font-normal text-ink-3">(optional)</span></label>
                 {% else %}
-                <label class="form-label fw-semibold">{{ form.file.label }}</label>
+                <label class="form-label" for="{{ form.file.id_for_label }}">{{ form.file.label }}</label>
                 {% endif %}
                 {{ form.file }}
-                {% if form.file.errors %}<div class="text-danger small mt-1">{{ form.file.errors }}</div>{% endif %}
+                {% if form.file.errors %}<div class="form-error">{{ form.file.errors }}</div>{% endif %}
             </div>
 
-            <div class="mb-3">
-                <label class="form-label fw-semibold">{{ form.help_reference.label }}</label>
+            <div>
+                <label class="form-label" for="{{ form.help_reference.id_for_label }}">{{ form.help_reference.label }}</label>
                 {{ form.help_reference }}
-                {% if form.help_reference.errors %}<div class="text-danger small mt-1">{{ form.help_reference.errors }}</div>{% endif %}
+                {% if form.help_reference.errors %}<div class="form-error">{{ form.help_reference.errors }}</div>{% endif %}
             </div>
-
-            <div class="d-flex justify-content-end gap-2 mt-4">
-                <a href="{% url 'admin_catalog_detail' catalog.pk %}?tab=group" class="btn btn-outline-secondary">Abbrechen</a>
-                <button type="submit" class="btn btn-primary">Speichern</button>
-            </div>
-        </form>
-    </div>
+        </div>
+        <div class="card-footer">
+            <a href="{% url 'admin_catalog_detail' catalog.pk %}?tab=group" class="btn btn-secondary">Abbrechen</a>
+            <button type="submit" class="btn btn-primary">{% include "icons/check.html" %} Speichern</button>
+        </div>
+    </form>
 </div>
 {% endblock %}

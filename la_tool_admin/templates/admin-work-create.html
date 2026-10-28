@@ -1,80 +1,91 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 
-{% block site_content %}
-<div class="container py-2 mb-2">
-    <a href="{% url 'admin_work_list' %}" class="text-decoration-none text-muted">&larr; Dienste</a>
+{% block page_title %}Dienst manuell erstellen · Admin{% endblock %}
+
+{% block admin_content %}
+<a href="{% url 'admin_work_list' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Dienste</a>
+
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Dienste</p>
+        <h1 class="page-title mt-1">Dienst manuell erstellen</h1>
+    </div>
 </div>
 
-<div class="container py-3">
-    <h3 class="text-center mb-4">Dienst manuell erstellen</h3>
+<form method="post">
+    {% csrf_token %}
+    <div class="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
 
-    <form method="post">
-        {% csrf_token %}
-        <div class="row g-3 justify-content-center">
-
-            <!-- Grunddaten -->
-            <div class="col-md-5">
-                <div class="border rounded-1 border-3 border-primary p-3 h-100">
-                    <h5 class="mb-3">Details</h5>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">{{ form.title.label }}</label>
-                        {{ form.title }}
-                        {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors }}</div>{% endif %}
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">{{ form.date.label }}</label>
+        {# Grunddaten #}
+        <section class="card">
+            <div class="card-header"><h2 class="section-title">Details</h2></div>
+            <div class="card-body space-y-4">
+                <div>
+                    <label class="form-label" for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+                    {{ form.title }}
+                    {% if form.title.errors %}<div class="form-error">{{ form.title.errors }}</div>{% endif %}
+                </div>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="form-label" for="{{ form.date.id_for_label }}">{{ form.date.label }}</label>
                         {{ form.date }}
-                        {% if form.date.errors %}<div class="text-danger small mt-1">{{ form.date.errors }}</div>{% endif %}
+                        {% if form.date.errors %}<div class="form-error">{{ form.date.errors }}</div>{% endif %}
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">{{ form.date_end.label }}</label>
+                    <div>
+                        <label class="form-label" for="{{ form.date_end.id_for_label }}">{{ form.date_end.label }}</label>
                         {{ form.date_end }}
-                        {% if form.date_end.errors %}<div class="text-danger small mt-1">{{ form.date_end.errors }}</div>{% endif %}
+                        {% if form.date_end.errors %}<div class="form-error">{{ form.date_end.errors }}</div>{% endif %}
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">{{ form.location.label }}</label>
+                </div>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="form-label" for="{{ form.location.id_for_label }}">{{ form.location.label }}</label>
                         {{ form.location }}
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">{{ form.level.label }}</label>
+                    <div>
+                        <label class="form-label" for="{{ form.level.id_for_label }}">{{ form.level.label }}</label>
                         {{ form.level }}
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">{{ form.description.label }}</label>
-                        {{ form.description }}
-                    </div>
-                    <div class="form-check mt-2">
-                        {{ form.is_draft }}
-                        <label class="form-check-label small" for="{{ form.is_draft.id_for_label }}">{{ form.is_draft.label }}</label>
-                    </div>
+                </div>
+                <div>
+                    <label class="form-label" for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+                    {{ form.description }}
+                </div>
+                <div class="form-check">
+                    {{ form.is_draft }}
+                    <label class="form-check-label" for="{{ form.is_draft.id_for_label }}">{{ form.is_draft.label }}</label>
                 </div>
             </div>
+        </section>
 
-            <!-- Gruppen -->
-            <div class="col-md-3">
-                <div class="border rounded-1 border-3 border-primary p-3 h-100">
-                    <h5 class="mb-1">Gruppen</h5>
-                    <p class="text-muted small mb-3">Leer lassen = für alle sichtbar</p>
-                    {% if form.groups %}
-                    <div>
-                        {% for choice in form.groups %}
-                        <div class="form-check mb-1">
-                            {{ choice.tag }}
-                            <label class="form-check-label small" for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <p class="text-muted small">Keine Gruppen vorhanden.</p>
-                    {% endif %}
+        {# Gruppen #}
+        <section class="card">
+            <div class="card-header">
+                <div>
+                    <h2 class="section-title">Gruppen</h2>
+                    <p class="text-xs text-ink-2">Leer lassen = für alle sichtbar</p>
                 </div>
             </div>
-        </div>
+            <div class="card-body">
+                {% if form.groups %}
+                <div class="space-y-2.5">
+                    {% for choice in form.groups %}
+                    <div class="form-check">
+                        {{ choice.tag }}
+                        <label class="form-check-label" for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-sm text-ink-3">Keine Gruppen vorhanden.</p>
+                {% endif %}
+            </div>
+        </section>
+    </div>
 
-        <div class="d-flex justify-content-end mt-4 gap-2">
-            <a href="{% url 'admin_work_list' %}" class="btn btn-outline-secondary">Abbrechen</a>
-            <button type="submit" class="btn btn-primary">Dienst erstellen</button>
-        </div>
-    </form>
-</div>
+    <div class="mt-6 flex flex-wrap justify-end gap-2">
+        <a href="{% url 'admin_work_list' %}" class="btn btn-secondary">Abbrechen</a>
+        <button type="submit" class="btn btn-primary">{% include "icons/plus.html" with cls="size-4" %} Dienst erstellen</button>
+    </div>
+</form>
 {% endblock %}

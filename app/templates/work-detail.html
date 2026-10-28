@@ -1,138 +1,135 @@
 {% extends "base.html" %}
 
-{% block site_content %}
-<div class="container py-2 mb-2">
-    <a href="{% url 'work' %}" class="text-decoration-none text-muted">&larr; Dienste</a>
-</div>
+{% block page_title %}{{ work.title }}{% endblock %}
 
-<div class="container py-3">
-    <div class="row mb-3 text-center">
-        <div class="col">
+{% block site_content %}
+<div class="page">
+    <a href="{% url 'work' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Dienste</a>
+
+    <div class="page-header">
+        <div class="min-w-0">
             {% if work.level %}
-            <span class="badge fs-6 {{ work.level.badge_bg_class }} {{ work.level.badge_text_class }}">
+            <span class="badge {{ work.level.badge_bg_class|default:'badge-primary' }} {{ work.level.badge_text_class }} mb-2">
                 {{ work.level.name }}
             </span>
             {% endif %}
-        </div>
-        <div class="col-md-8">
-            <h2 class="mb-1">{{ work.title }}</h2>
-            <p class="text-muted mb-0">
-                {{ work.date|date:"l, d. F Y" }}
+            <h1 class="page-title">{{ work.title }}</h1>
+            <p class="page-subtitle flex flex-wrap items-center gap-x-1.5">
+                <span class="inline-flex items-center gap-1.5">{% include "icons/calendar-days.html" with cls="size-4 text-ink-3" %} {{ work.date|date:"l, d. F Y" }}</span>
                 {% if work.date %}
-                · {{ work.date|date:"H:i" }}{% if work.date_end %} – {{ work.date_end|date:"H:i" }}{% endif %} Uhr
+                <span>· {{ work.date|date:"H:i" }}{% if work.date_end %} – {{ work.date_end|date:"H:i" }}{% endif %} Uhr</span>
                 {% endif %}
-                {% if work.location %} · {{ work.location }}{% endif %}
+                {% if work.location %}<span>· {{ work.location }}</span>{% endif %}
             </p>
         </div>
-        <div class="col"></div>
     </div>
 
-    <div class="row">
+    <div class="grid items-start gap-4 lg:grid-cols-3">
         <!-- Theoriefragen -->
-        <div class="col-md-4 p-2">
-            <div class="border rounded-1 border-3 border-primary p-2 h-100">
-                <h5 class="text-center mb-3">Theorie Fragen</h5>
+        <section class="card flex flex-col">
+            <div class="card-header">
+                <h2 class="section-title">Theorie Fragen</h2>
+            </div>
+            <div class="flex-1 space-y-2 p-4">
                 {% for q in work.theory_questions.all %}
-                <div class="border rounded-1 border-2 border-secondary p-2 mb-2">
-                    <div class="d-flex align-items-center justify-content-between" style="cursor:pointer;" onclick="toggleQ('tq-{{ q.pk }}', this)">
-                        <div>
-                            <span class="text-muted small me-2">{{ q.catalog.short_title }}</span>
-                            <span class="small">{{ q.question|truncatechars:60 }}</span>
-                        </div>
-                        <svg class="bi bi-chevron-right flex-shrink-0 ms-2" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size:20px;transition:transform .2s;">
-                            <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
-                        </svg>
-                    </div>
-                    <div id="tq-{{ q.pk }}" class="d-none mt-2 small">
-                        <div class="fw-semibold mb-1">{{ q.question }}</div>
+                <div class="rounded-xl border border-line">
+                    <button type="button" class="flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-surface-2"
+                            aria-expanded="false" aria-controls="tq-{{ q.pk }}" onclick="toggleQ('tq-{{ q.pk }}', this)">
+                        <span class="min-w-0 text-sm">
+                            <span class="mr-2 text-xs font-semibold text-ink-3">{{ q.catalog.short_title }}</span>
+                            <span>{{ q.question|truncatechars:60 }}</span>
+                        </span>
+                        {% include "icons/chevron-right.html" with cls="size-5 shrink-0 text-ink-3 transition-transform duration-200" %}
+                    </button>
+                    <div id="tq-{{ q.pk }}" class="hidden space-y-1 border-t border-line px-3 py-3 text-sm">
+                        <p class="mb-2 font-semibold text-ink">{{ q.question }}</p>
                         {% for choice in q.answer_choice %}
                         {% if choice %}
-                        <div class="{% if choice == q.answer_text %}text-success fw-bold{% else %}text-danger{% endif %}">{{ choice }}</div>
+                        {% if choice == q.answer_text %}
+                        <p class="flex gap-1.5 font-semibold text-green-700 dark:text-green-400">{% include "icons/check-circle.html" with cls="size-5 shrink-0" %}<span>{{ choice }}</span></p>
+                        {% else %}
+                        <p class="flex gap-1.5 text-red-700 dark:text-red-400">{% include "icons/x-circle.html" with cls="size-5 shrink-0" %}<span>{{ choice }}</span></p>
+                        {% endif %}
                         {% endif %}
                         {% endfor %}
                     </div>
                 </div>
                 {% empty %}
-                <p class="text-muted text-center small">Keine Theoriefragen zugewiesen.</p>
+                <p class="empty-state">Keine Theoriefragen zugewiesen.</p>
                 {% endfor %}
-                {% if work.theory_questions.exists %}
-                <div class="d-flex justify-content-center mt-2">
-                    <a class="btn btn-sm btn-outline-primary" href="{% url 'work_training_start' work.pk %}">Üben</a>
-                </div>
-                {% endif %}
             </div>
-        </div>
+            {% if work.theory_questions.exists %}
+            <div class="card-footer justify-center">
+                <a class="btn btn-soft w-full sm:w-auto" href="{% url 'work_training_start' work.pk %}">{% include "icons/play.html" with cls="size-4" %} Üben</a>
+            </div>
+            {% endif %}
+        </section>
 
         <!-- Beschreibung / Agenda -->
-        <div class="col-md-4 p-2">
-            <div class="border rounded-1 border-3 border-primary p-3 h-100">
-                <h5 class="text-center mb-3">Agenda</h5>
+        <section class="card">
+            <div class="card-header">
+                <h2 class="section-title">Agenda</h2>
+            </div>
+            <div class="card-body">
                 {% if work.description %}
-                <p>{{ work.description|linebreaksbr }}</p>
+                <p class="prose-content">{{ work.description|linebreaksbr }}</p>
                 {% else %}
-                <p class="text-muted text-center small">Keine Beschreibung vorhanden.</p>
+                <p class="empty-state">Keine Beschreibung vorhanden.</p>
                 {% endif %}
             </div>
-        </div>
+        </section>
 
         <!-- Praxis + Gruppen -->
-        <div class="col-md-4 p-2">
+        <div class="space-y-4">
             {% if work.practical_exercises.exists %}
-            <div class="border rounded-1 border-3 border-primary p-2 mb-3">
-                <h5 class="text-center mb-2">Praxis Aufgaben</h5>
-                {% for p in work.practical_exercises.all %}
-                <div class="d-flex align-items-center border rounded-1 border-2 border-secondary p-1 mb-1">
-                    <div class="col small">{% if p.number %}<span class="text-muted me-1">{{ p.number }}</span>{% endif %}{{ p.question|truncatechars:50 }}</div>
-                    <div class="col-auto">
-                        <a href="{% url 'practical_detail' p.pk %}" class="text-reset">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size:28px;">
-                                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
-                            </svg>
-                        </a>
-                    </div>
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="section-title">Praxis Aufgaben</h2>
                 </div>
-                {% endfor %}
-            </div>
+                <div class="space-y-2 p-4">
+                    {% for p in work.practical_exercises.all %}
+                    <a href="{% url 'practical_detail' p.pk %}" class="list-row text-sm">
+                        <span class="min-w-0 flex-1">{% if p.number %}<span class="mr-1 font-semibold text-ink-3">{{ p.number }}</span>{% endif %}{{ p.question|truncatechars:50 }}</span>
+                        {% include "icons/chevron-right.html" with cls="size-5 shrink-0 text-ink-3" %}
+                    </a>
+                    {% endfor %}
+                </div>
+            </section>
             {% endif %}
 
             {% if work.group_exercises.exists %}
-            <div class="border rounded-1 border-3 border-primary p-2">
-                <h5 class="text-center mb-2">Gruppenaufgaben</h5>
-                {% for g in work.group_exercises.all %}
-                <div class="d-flex align-items-center border rounded-1 border-2 border-secondary p-1 mb-1">
-                    <div class="col small">{{ g.question|truncatechars:50 }}</div>
-                    <div class="col-auto">
-                        <a href="{% url 'group_detail' g.pk %}" class="text-reset">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 16 16" style="font-size:28px;">
-                                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/>
-                            </svg>
-                        </a>
-                    </div>
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="section-title">Gruppenaufgaben</h2>
                 </div>
-                {% endfor %}
-            </div>
+                <div class="space-y-2 p-4">
+                    {% for g in work.group_exercises.all %}
+                    <a href="{% url 'group_detail' g.pk %}" class="list-row text-sm">
+                        <span class="min-w-0 flex-1">{{ g.question|truncatechars:50 }}</span>
+                        {% include "icons/chevron-right.html" with cls="size-5 shrink-0 text-ink-3" %}
+                    </a>
+                    {% endfor %}
+                </div>
+            </section>
             {% endif %}
 
             {% if not work.practical_exercises.exists and not work.group_exercises.exists %}
-            <div class="border rounded-1 border-3 border-primary p-3 h-100 d-flex align-items-center justify-content-center">
-                <p class="text-muted text-center small mb-0">Keine Praxis-/Gruppenaufgaben zugewiesen.</p>
-            </div>
+            <p class="empty-state">Keine Praxis-/Gruppenaufgaben zugewiesen.</p>
             {% endif %}
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_scripts %}
 <script>
 function toggleQ(id, trigger) {
     const el = document.getElementById(id);
     const icon = trigger.querySelector('svg');
-    if (el.classList.contains('d-none')) {
-        el.classList.remove('d-none');
-        icon.style.transform = 'rotate(90deg)';
-    } else {
-        el.classList.add('d-none');
-        icon.style.transform = '';
-    }
+    const opening = el.classList.contains('hidden');
+    el.classList.toggle('hidden', !opening);
+    if (icon) icon.classList.toggle('rotate-90', opening);
+    trigger.setAttribute('aria-expanded', opening ? 'true' : 'false');
 }
 </script>
 {% endblock %}

@@ -1,86 +1,81 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 
-{% block site_content %}
-<div class="container py-4" style="max-width:1100px;">
-    <div class="mb-3">
-        <a href="{{ back_url }}" class="text-decoration-none text-muted">&larr; Zurück zum Formular</a>
+{% block page_title %}Datei bereits vorhanden{% endblock %}
+
+{% block admin_content %}
+<a href="{{ back_url }}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Zurück zum Formular</a>
+<div class="page-header">
+    <div>
+        <p class="eyebrow">{{ model_label }}</p>
+        <h1 class="page-title mt-1">Datei bereits vorhanden</h1>
+        <p class="page-subtitle max-w-3xl">
+            Eine Datei mit dem Namen <strong class="font-semibold text-ink">{{ filename }}</strong> existiert bereits.
+            Vergleiche beide Versionen und wähle, welche für diese {{ model_label }} verwendet werden soll.
+        </p>
     </div>
-    <h4 class="mb-1">Datei bereits vorhanden</h4>
-    <p class="text-muted mb-4">
-        Eine Datei mit dem Namen <strong>{{ filename }}</strong> existiert bereits.
-        Vergleiche beide Versionen und wähle, welche für diese {{ model_label }} verwendet werden soll.
-    </p>
+</div>
 
-    <div class="row g-4 mb-4">
+<div class="mb-6 grid gap-4 md:grid-cols-2">
 
-        {# ── Vorhandene Datei ─────────────────────────────────────────────── #}
-        <div class="col-md-6">
-            <div class="border rounded-2 p-3 h-100 d-flex flex-column">
-                <div class="d-flex align-items-center gap-2 mb-2">
-                    <span class="badge bg-secondary">Vorhanden</span>
-                    <span class="text-muted small text-truncate">{{ filename }}</span>
-                </div>
-                <div class="flex-grow-1">
-                    <div class="border rounded-1 border-2 p-2">
-                        <div class="d-flex align-items-center gap-1 mb-2">
-                            <button class="btn btn-sm btn-outline-secondary pdf-prev" data-pdf="a" style="line-height:1;padding:.2rem .5rem;" disabled>&#8249;</button>
-                            <span class="small text-muted pdf-page-info" data-pdf="a" style="min-width:4.5rem;text-align:center;">— / —</span>
-                            <button class="btn btn-sm btn-outline-secondary pdf-next" data-pdf="a" style="line-height:1;padding:.2rem .5rem;" disabled>&#8250;</button>
-                            <span class="flex-grow-1"></span>
-                            <button class="btn btn-sm btn-outline-secondary pdf-zoom-out" data-pdf="a" style="line-height:1;padding:.2rem .45rem;">&#8722;</button>
-                            <button class="btn btn-sm btn-outline-secondary pdf-zoom-in"  data-pdf="a" style="line-height:1;padding:.2rem .45rem;">&#43;</button>
-                            <a href="{{ existing_url }}" download class="btn btn-sm btn-outline-primary ms-1" style="line-height:1;padding:.2rem .5rem;" title="Herunterladen">&#8595;</a>
-                        </div>
-                        <div class="pdf-scroll" data-pdf="a" style="overflow:auto;max-height:55vh;background:#f0f0f0;">
-                            <canvas class="pdf-canvas" data-pdf="a" style="display:block;margin:0 auto;"></canvas>
-                        </div>
-                        <p class="pdf-error text-danger small mt-1 mb-0" data-pdf="a" style="display:none;">PDF konnte nicht geladen werden.</p>
-                    </div>
-                </div>
-            </div>
+    {# ── Vorhandene Datei ─────────────────────────────────────────────── #}
+    <section class="card flex h-full flex-col p-3 sm:p-4">
+        <div class="mb-3 flex min-w-0 items-center gap-2">
+            <span class="badge badge-neutral">Vorhanden</span>
+            <span class="truncate text-xs text-ink-2">{{ filename }}</span>
         </div>
-
-        {# ── Neue Datei ───────────────────────────────────────────────────── #}
-        <div class="col-md-6">
-            <div class="border border-primary rounded-2 p-3 h-100 d-flex flex-column">
-                <div class="d-flex align-items-center gap-2 mb-2">
-                    <span class="badge bg-primary">Neu hochgeladen</span>
-                    <span class="text-muted small text-truncate">{{ filename }}</span>
-                </div>
-                <div class="flex-grow-1">
-                    <div class="border rounded-1 border-2 border-primary p-2">
-                        <div class="d-flex align-items-center gap-1 mb-2">
-                            <button class="btn btn-sm btn-outline-secondary pdf-prev" data-pdf="b" style="line-height:1;padding:.2rem .5rem;" disabled>&#8249;</button>
-                            <span class="small text-muted pdf-page-info" data-pdf="b" style="min-width:4.5rem;text-align:center;">— / —</span>
-                            <button class="btn btn-sm btn-outline-secondary pdf-next" data-pdf="b" style="line-height:1;padding:.2rem .5rem;" disabled>&#8250;</button>
-                            <span class="flex-grow-1"></span>
-                            <button class="btn btn-sm btn-outline-secondary pdf-zoom-out" data-pdf="b" style="line-height:1;padding:.2rem .45rem;">&#8722;</button>
-                            <button class="btn btn-sm btn-outline-secondary pdf-zoom-in"  data-pdf="b" style="line-height:1;padding:.2rem .45rem;">&#43;</button>
-                            <a href="{{ temp_url }}" download class="btn btn-sm btn-outline-primary ms-1" style="line-height:1;padding:.2rem .5rem;" title="Herunterladen">&#8595;</a>
-                        </div>
-                        <div class="pdf-scroll" data-pdf="b" style="overflow:auto;max-height:55vh;background:#f0f0f0;">
-                            <canvas class="pdf-canvas" data-pdf="b" style="display:block;margin:0 auto;"></canvas>
-                        </div>
-                        <p class="pdf-error text-danger small mt-1 mb-0" data-pdf="b" style="display:none;">PDF konnte nicht geladen werden.</p>
-                    </div>
-                </div>
+        <div class="flex-1 rounded-xl border border-line p-2">
+            <div class="mb-2 flex items-center gap-1">
+                <button type="button" class="btn btn-sm btn-secondary px-2.5 pdf-prev" data-pdf="a" disabled aria-label="Vorherige Seite">{% include "icons/chevron-left.html" with cls="size-4" %}</button>
+                <span class="pdf-page-info min-w-18 text-center text-xs text-ink-2 tabular-nums" data-pdf="a">— / —</span>
+                <button type="button" class="btn btn-sm btn-secondary px-2.5 pdf-next" data-pdf="a" disabled aria-label="Nächste Seite">{% include "icons/chevron-right.html" with cls="size-4" %}</button>
+                <span class="flex-1"></span>
+                <button type="button" class="btn btn-sm btn-secondary px-2.5 pdf-zoom-out" data-pdf="a" aria-label="Verkleinern">&#8722;</button>
+                <button type="button" class="btn btn-sm btn-secondary px-2.5 pdf-zoom-in" data-pdf="a" aria-label="Vergrößern">&#43;</button>
+                <a href="{{ existing_url }}" download class="btn btn-sm btn-soft ml-1 px-2.5" title="Herunterladen" aria-label="Herunterladen">{% include "icons/arrow-down-tray.html" with cls="size-4" %}</a>
             </div>
+            <div class="pdf-scroll max-h-[55vh] overflow-auto rounded-lg bg-neutral-200 dark:bg-neutral-800" data-pdf="a">
+                <canvas class="pdf-canvas mx-auto block" data-pdf="a"></canvas>
+            </div>
+            <p class="pdf-error form-error hidden" data-pdf="a">PDF konnte nicht geladen werden.</p>
         </div>
+    </section>
 
-    </div>
+    {# ── Neue Datei ───────────────────────────────────────────────────── #}
+    <section class="card flex h-full flex-col border-accent/50 p-3 ring-1 ring-accent/20 sm:p-4">
+        <div class="mb-3 flex min-w-0 items-center gap-2">
+            <span class="badge badge-primary">Neu hochgeladen</span>
+            <span class="truncate text-xs text-ink-2">{{ filename }}</span>
+        </div>
+        <div class="flex-1 rounded-xl border border-accent/40 p-2">
+            <div class="mb-2 flex items-center gap-1">
+                <button type="button" class="btn btn-sm btn-secondary px-2.5 pdf-prev" data-pdf="b" disabled aria-label="Vorherige Seite">{% include "icons/chevron-left.html" with cls="size-4" %}</button>
+                <span class="pdf-page-info min-w-18 text-center text-xs text-ink-2 tabular-nums" data-pdf="b">— / —</span>
+                <button type="button" class="btn btn-sm btn-secondary px-2.5 pdf-next" data-pdf="b" disabled aria-label="Nächste Seite">{% include "icons/chevron-right.html" with cls="size-4" %}</button>
+                <span class="flex-1"></span>
+                <button type="button" class="btn btn-sm btn-secondary px-2.5 pdf-zoom-out" data-pdf="b" aria-label="Verkleinern">&#8722;</button>
+                <button type="button" class="btn btn-sm btn-secondary px-2.5 pdf-zoom-in" data-pdf="b" aria-label="Vergrößern">&#43;</button>
+                <a href="{{ temp_url }}" download class="btn btn-sm btn-soft ml-1 px-2.5" title="Herunterladen" aria-label="Herunterladen">{% include "icons/arrow-down-tray.html" with cls="size-4" %}</a>
+            </div>
+            <div class="pdf-scroll max-h-[55vh] overflow-auto rounded-lg bg-neutral-200 dark:bg-neutral-800" data-pdf="b">
+                <canvas class="pdf-canvas mx-auto block" data-pdf="b"></canvas>
+            </div>
+            <p class="pdf-error form-error hidden" data-pdf="b">PDF konnte nicht geladen werden.</p>
+        </div>
+    </section>
 
-    <div class="d-flex justify-content-center gap-3">
-        <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="choice" value="existing">
-            <button type="submit" class="btn btn-outline-secondary btn-lg">Vorhandene verwenden</button>
-        </form>
-        <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="choice" value="new">
-            <button type="submit" class="btn btn-primary btn-lg">Neue Datei verwenden</button>
-        </form>
-    </div>
+</div>
+
+<div class="flex flex-col-reverse justify-center gap-3 sm:flex-row">
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="choice" value="existing">
+        <button type="submit" class="btn btn-lg btn-secondary w-full sm:w-auto">Vorhandene verwenden</button>
+    </form>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="choice" value="new">
+        <button type="submit" class="btn btn-lg btn-primary w-full sm:w-auto">{% include "icons/arrow-up-tray.html" %} Neue Datei verwenden</button>
+    </form>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
@@ -133,7 +128,7 @@
         pdfjsLib.getDocument(url).promise.then(doc => {
             pdf = doc;
             render(1);
-        }).catch(() => { errMsg.style.display = ''; });
+        }).catch(() => { errMsg.classList.remove('hidden'); });
 
         btnPrev.addEventListener('click',    () => { if (page > 1) render(page - 1); });
         btnNext.addEventListener('click',    () => { if (pdf && page < pdf.numPages) render(page + 1); });
