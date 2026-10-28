@@ -1,9 +1,15 @@
-from django.urls import path
+from django.templatetags.static import static
+from django.urls import path, re_path
+from django.views.generic import RedirectView
 
 from . import views, pwa
 from la_tool_admin import views as views_admin
 
 urlpatterns = [
+    # Browser fragen diese Icons fest an der Wurzel ab (iOS: auch mit Größe/-precomposed)
+    path('favicon.ico', RedirectView.as_view(url=static('pwa/favicon.png'), permanent=True)),
+    re_path(r'^apple-touch-icon(?:-\d+x\d+)?(?:-precomposed)?\.png$',
+            RedirectView.as_view(url=static('pwa/apple-touch-icon.png'), permanent=True)),
     path('manifest.webmanifest', pwa.manifest, name='manifest'),
     path('sw.js', pwa.service_worker, name='service_worker'),
     path('offline/', pwa.offline, name='offline'),
