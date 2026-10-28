@@ -1,0 +1,75 @@
+{% extends "admin_base.html" %}
+
+{% block page_title %}Benachrichtigungen · Admin{% endblock %}
+
+{% block admin_content %}
+<div class="max-w-2xl">
+    <div class="page-header">
+        <div>
+            <p class="eyebrow">Inhalte</p>
+            <h1 class="page-title mt-1">Benachrichtigungen</h1>
+            <p class="page-subtitle">Push-Nachricht an die installierte App der Nutzer senden.</p>
+        </div>
+    </div>
+
+    {% if not push_enabled %}
+    <div class="alert alert-warning mb-4">
+        {% include "icons/exclamation-triangle.html" with cls="size-5 shrink-0" %}
+        <span>Push ist auf diesem Server noch nicht eingerichtet. Schlüssel mit <code>python manage.py generate_vapid_keys</code> erzeugen und in die <code>.env</code> eintragen.</span>
+    </div>
+    {% endif %}
+
+    <div class="mb-4 grid grid-cols-2 gap-3">
+        <div class="card card-body">
+            <p class="stat-value">{{ subscribed_users }}</p>
+            <p class="stat-label">Nutzer mit Push</p>
+        </div>
+        <div class="card card-body">
+            <p class="stat-value">{{ subscribed_devices }}</p>
+            <p class="stat-label">Geräte</p>
+        </div>
+    </div>
+
+    <form method="post" class="card">
+        {% csrf_token %}
+        <div class="card-body space-y-4">
+            {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+            <div>
+                <label class="form-label" for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+                {{ form.title }}
+                {{ form.title.errors }}
+            </div>
+            <div>
+                <label class="form-label" for="{{ form.body.id_for_label }}">{{ form.body.label }}</label>
+                {{ form.body }}
+                <p class="form-text">Maximal 200 Zeichen. Wird in der Benachrichtigung ggf. gekürzt angezeigt.</p>
+                {{ form.body.errors }}
+            </div>
+            <div>
+                <label class="form-label" for="{{ form.target.id_for_label }}">{{ form.target.label }}</label>
+                {{ form.target }}
+                {{ form.target.errors }}
+            </div>
+            <fieldset>
+                <legend class="form-label">{{ form.groups.label }}</legend>
+                <div class="space-y-2.5">
+                    {% for choice in form.groups %}
+                    <div class="form-check">
+                        {{ choice.tag }}
+                        <label class="form-check-label" for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <p class="form-text">{{ form.groups.help_text }}</p>
+                {{ form.groups.errors }}
+            </fieldset>
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary" {% if not push_enabled %}disabled{% endif %}
+                    onclick="return confirm('Benachrichtigung jetzt senden?')">
+                {% include "icons/paper-airplane.html" with cls="size-4" %} Senden
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

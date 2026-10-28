@@ -50,3 +50,35 @@ self.addEventListener('fetch', (event) => {
         );
     }
 });
+
+// Web Push: Benachrichtigung anzeigen (Payload aus la_tool_admin/push.py: title, body, url)
+self.addEventListener('push', (event) => {
+    let data = {};
+    try {
+        data = event.data ? event.data.json() : {};
+    } catch (e) {
+        data = { body: event.data ? event.data.text() : '' };
+    }
+    event.waitUntil(
+        self.registration.showNotification(data.title || 'LA-Tool', {
+            body: data.body || '',
+            icon: '{{ icon_url|escapejs }}',
+            badge: '{{ badge_url|escapejs }}',
+            data: { url: data.url || '/' },
+        })
+    );
+});
+
+// Antippen: vorhandenes App-Fenster nutzen, sonst neues öffnen
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    const target = new URL(event.notification.data.url || '/', self.location.origin);
+    if (target.origin !== self.location.origin) return;
+    event.waitUntil(
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+            const win = windows.find((w) => 'focus' in w);
+            if (win) return win.navigate(target.href).then((w) => (w || win).focus());
+            return self.clients.openWindow(target.href);
+        })
+    );
+});

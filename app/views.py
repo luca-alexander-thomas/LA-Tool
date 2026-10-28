@@ -9,6 +9,8 @@ from django.utils import timezone
 from django.urls import reverse
 from . import login_function as login_func
 from .context_processors import current_la_filter
+from django.conf import settings
+from la_tool_admin.push import push_configured
 from .models import (
     Questions_Catalogs, Questions_Theory, TrainingResultData,
     Questions_Practical, Questions_GroupExercise,
@@ -165,6 +167,7 @@ def profile(request):
         "training_results": training_results,
         "total_sessions": total_sessions,
         "avg_pct": avg_pct,
+        "push_public_key": settings.VAPID_PUBLIC_KEY if push_configured() else '',
     })
 
 

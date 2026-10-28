@@ -1,11 +1,17 @@
+import json
 from datetime import timedelta
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from django.contrib.auth.models import Group, Permission, User
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
+from pywebpush import WebPushException
 
 from app.models import Levels, Questions_Catalogs, Questions_Practical, Work
+from la_tool_admin.models import PushSubscription
+from la_tool_admin.push import send_push
 
 
 def grant(user, *codenames):
@@ -147,3 +153,80 @@ class DraftLevelTests(TestCase):
     def test_next_level_skips_drafts(self):
         after = Levels.objects.create(name='Danach', slug='danach', order=902)
         self.assertEqual(self.live.next_level, after)
+
+
+@override_settings(VAPID_PUBLIC_KEY='pub', VAPID_PRIVATE_KEY='priv', VAPID_SUBJECT='mailto:test@example.org')
+class PushTests(TestCase):
+    """Web Push: Abos verwalten, Versand, Admin-Nachricht. webpush() ist gemockt."""
+
+    def setUp(self):
+        self.user = User.objects.create_user('jugend', password='pw')
+        self.other = User.objects.create_user('andere', password='pw')
+        self.group = Group.objects.create(name='Jugendliche')
+        self.user.groups.add(self.group)
+        self.sender = User.objects.create_user('betreuer', password='pw')
+        grant(self.sender, 'access_admin', 'send_notifications')
+
+    def subscribe(self, user, endpoint):
+        return PushSubscription.objects.create(user=user, endpoint=endpoint, p256dh='k', auth='a')
+
+    def login(self, user):
+        self.client.force_login(user)
+
+    def test_subscribe_requires_login(self):
+        response = self.client.post(reverse('push_subscribe'), '{}', content_type='application/json')
+        self.assertEqual(response.status_code, 401)
+
+    def test_subscribe_stores_and_unsubscribe_removes(self):
+        self.login(self.user)
+        body = {'endpoint': 'https://push.example/abc', 'keys': {'p256dh': 'key', 'auth': 'secret'}}
+        response = self.client.post(reverse('push_subscribe'), json.dumps(body), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(PushSubscription.objects.filter(user=self.user, endpoint=body['endpoint']).exists())
+        self.client.post(reverse('push_unsubscribe'), json.dumps({'endpoint': body['endpoint']}), content_type='application/json')
+        self.assertFalse(PushSubscription.objects.exists())
+
+    def test_subscribe_rejects_invalid_data(self):
+        self.login(self.user)
+        response = self.client.post(reverse('push_subscribe'), json.dumps({'endpoint': 'http://x'}), content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+
+    @patch('la_tool_admin.push.webpush')
+    def test_send_push_removes_expired_subscriptions(self, webpush):
+        self.subscribe(self.user, 'https://push.example/ok')
+        gone = self.subscribe(self.user, 'https://push.example/gone')
+
+        def fake(subscription_info, **kwargs):
+            if subscription_info['endpoint'] == gone.endpoint:
+                raise WebPushException('gone', response=SimpleNamespace(status_code=410))
+        webpush.side_effect = fake
+
+        self.assertEqual(send_push([self.user], 'Titel', 'Text', '/'), 1)
+        self.assertFalse(PushSubscription.objects.filter(pk=gone.pk).exists())
+        payload = json.loads(webpush.call_args_list[0].kwargs['data'])
+        self.assertEqual(payload, {'title': 'Titel', 'body': 'Text', 'url': '/'})
+
+    @override_settings(VAPID_PRIVATE_KEY='')
+    @patch('la_tool_admin.push.webpush')
+    def test_send_push_without_keys_sends_nothing(self, webpush):
+        self.subscribe(self.user, 'https://push.example/ok')
+        self.assertEqual(send_push([self.user], 'T', 'B'), 0)
+        webpush.assert_not_called()
+
+    def test_admin_message_requires_permission(self):
+        viewer = User.objects.create_user('viewer', password='pw')
+        grant(viewer, 'access_admin')
+        self.login(viewer)
+        self.assertEqual(self.client.get(reverse('admin_push_message')).status_code, 403)
+
+    @patch('la_tool_admin.push.webpush')
+    def test_admin_message_to_group_reaches_only_members(self, webpush):
+        self.subscribe(self.user, 'https://push.example/member')
+        self.subscribe(self.other, 'https://push.example/other')
+        self.login(self.sender)
+        response = self.client.post(reverse('admin_push_message'), {
+            'title': 'Dienst fällt aus', 'body': 'Heute kein Dienst.', 'target': 'work', 'groups': [self.group.pk],
+        }, follow=True)
+        self.assertContains(response, 'Push-Benachrichtigung an 1 Gerät gesendet')
+        endpoints = [c.kwargs['subscription_info']['endpoint'] for c in webpush.call_args_list]
+        self.assertEqual(endpoints, ['https://push.example/member'])

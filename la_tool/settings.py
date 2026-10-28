@@ -74,6 +74,11 @@ MICROSOFT_AUTH_REDIRECT_URI = env.AZURE_REDIRECT_URI
 # Azure AD Gruppen Mapping
 AZURE_GROUPS_MAPPING = env.AZURE_GROUPS_MAPPING
 
+# Web Push (PWA-Benachrichtigungen)
+VAPID_PUBLIC_KEY = env.VAPID_PUBLIC_KEY
+VAPID_PRIVATE_KEY = env.VAPID_PRIVATE_KEY
+VAPID_SUBJECT = env.VAPID_SUBJECT
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -87,6 +92,7 @@ TEMPLATES = [
                 'django.template.context_processors.media',
                 'app.context_processors.la_filter',
                 'app.context_processors.nav_section',
+                'app.context_processors.push',
             ],
         },
     },

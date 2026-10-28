@@ -97,3 +97,17 @@ class Changes(models.Model):
 
     def __str__(self):
         return self.change
+
+
+class PushSubscription(models.Model):
+    """Ein Gerät/Browser, das Web-Push-Benachrichtigungen für einen Nutzer empfängt."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='push_subscriptions')
+    # max_length 700: passt in einen MySQL-Unique-Index (utf8mb4)
+    endpoint = models.URLField(max_length=700, unique=True)
+    p256dh = models.CharField(max_length=200)
+    auth = models.CharField(max_length=100)
+    user_agent = models.CharField(max_length=300, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.user} – {self.user_agent[:40]}'

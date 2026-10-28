@@ -1,4 +1,5 @@
-"""Progressive Web App: Manifest, Service Worker und Offline-Seite."""
+"""Progressive Web App: Manifest, Service Worker, Offline-Seite und Web-Push-Abos."""
+import json
 from pathlib import Path
 
 from django.contrib.staticfiles import finders
@@ -7,6 +8,10 @@ from django.shortcuts import render
 from django.templatetags.static import static
 from django.urls import reverse
 from django.views.decorators.cache import cache_control
+from django.views.decorators.http import require_POST
+
+from la_tool_admin.models import PushSubscription
+from la_tool_admin.push import send_push
 
 
 def manifest(request):
@@ -50,6 +55,8 @@ def service_worker(request):
         'version': _asset_version(),
         'offline_url': reverse('offline'),
         'static_prefix': static(''),
+        'icon_url': static('pwa/icon-192.png'),
+        'badge_url': static('pwa/badge-96.png'),
         'precache': [
             reverse('offline'),
             static('css/tailwind.css'),
@@ -65,3 +72,53 @@ def service_worker(request):
 
 def offline(request):
     return render(request, 'pwa/offline.html')
+
+
+# ── Web Push: Geräte an-/abmelden ────────────────────────────────────────────
+
+def _json_body(request):
+    try:
+        return json.loads(request.body or b'{}')
+    except ValueError:
+        return None
+
+
+@require_POST
+def push_subscribe(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Nicht angemeldet.'}, status=401)
+    data = _json_body(request)
+    keys = (data or {}).get('keys') or {}
+    endpoint = (data or {}).get('endpoint', '')
+    if not (endpoint.startswith('https://') and keys.get('p256dh') and keys.get('auth')) or len(endpoint) > 700:
+        return JsonResponse({'error': 'Ungültiges Abo.'}, status=400)
+    PushSubscription.objects.update_or_create(
+        endpoint=endpoint,
+        defaults={
+            'user': request.user,
+            'p256dh': keys['p256dh'][:200],
+            'auth': keys['auth'][:100],
+            'user_agent': request.META.get('HTTP_USER_AGENT', '')[:300],
+        },
+    )
+    return JsonResponse({'ok': True})
+
+
+@require_POST
+def push_unsubscribe(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Nicht angemeldet.'}, status=401)
+    endpoint = (_json_body(request) or {}).get('endpoint', '')
+    PushSubscription.objects.filter(user=request.user, endpoint=endpoint).delete()
+    return JsonResponse({'ok': True})
+
+
+@require_POST
+def push_test(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Nicht angemeldet.'}, status=401)
+    sent = send_push([request.user], 'Test-Benachrichtigung',
+                     'Push-Benachrichtigungen funktionieren auf diesem Gerät.', reverse('profile'))
+    if not sent:
+        return JsonResponse({'error': 'Keine Benachrichtigung zugestellt.'}, status=502)
+    return JsonResponse({'ok': True, 'sent': sent})

@@ -31,6 +31,7 @@ _NAV_SECTIONS = {
     'admin_autogroup_list': 'admin_autogroup', 'admin_autogroup_create': 'admin_autogroup',
     'admin_autogroup_edit': 'admin_autogroup',
     'admin_settings': 'admin_settings',
+    'admin_push_message': 'admin_push',
 }
 
 
@@ -89,3 +90,8 @@ def la_filter(request):
         'all_levels': all_levels,
         'user_has_admin_access': is_authenticated and _user_has_admin_access(user),
     }
+
+
+def push(request):
+    from la_tool_admin.push import push_configured
+    return {'push_enabled': push_configured()}

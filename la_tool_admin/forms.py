@@ -278,3 +278,32 @@ class ExamForm(forms.ModelForm):
             'closed': 'Gesperrt (keine Abgaben möglich)',
             'archived': 'Archiviert',
         }
+
+
+class PushMessageForm(forms.Form):
+    # Ziel beim Antippen: nur feste Seiten der App, keine freien Links
+    TARGET_CHOICES = [
+        ('home', 'Startseite'),
+        ('exam_list', 'Prüfungen'),
+        ('work', 'Dienste'),
+        ('training_config', 'Theorie-Training'),
+        ('practical_list', 'Praxisaufgaben'),
+    ]
+
+    title = forms.CharField(
+        max_length=60, label='Titel',
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'z.B. Dienst fällt aus'}),
+    )
+    body = forms.CharField(
+        max_length=200, label='Nachricht',
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'maxlength': 200}),
+    )
+    target = forms.ChoiceField(
+        choices=TARGET_CHOICES, initial='home', label='Beim Antippen öffnen',
+        widget=forms.Select(attrs={'class': 'form-select'}),
+    )
+    groups = forms.ModelMultipleChoiceField(
+        queryset=Group.objects.order_by('name'), required=False, label='Empfänger-Gruppen',
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        help_text='Keine Gruppe gewählt = alle Nutzer mit aktivierten Benachrichtigungen.',
+    )

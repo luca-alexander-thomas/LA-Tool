@@ -42,6 +42,12 @@
                 <input class="form-check-input" type="checkbox" name="notify_divera" id="notify_divera_cb" value="1">
                 <label class="form-check-label" for="notify_divera_cb">Divera-Benachrichtigung senden</label>
             </div>
+            {% if push_enabled %}
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" name="notify_push" id="notify_push_cb" value="1">
+                <label class="form-check-label" for="notify_push_cb">Push-Benachrichtigung senden</label>
+            </div>
+            {% endif %}
             <button type="submit" class="btn btn-success w-full">{% include "icons/check.html" with cls="size-4" %} Ergebnis freigeben</button>
             {% endif %}
         </form>

@@ -17,6 +17,7 @@ Admin-Seiten füllen {% block admin_content %}.
         {% if perms.app.manage_theory %}<a href="{% url 'admin_import_questions' %}" class="nav-link shrink-0 {% if nav_section == 'admin_import' %}nav-link-active{% endif %}">Import</a>{% endif %}
         <a href="{% url 'admin_exam_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_exam' %}nav-link-active{% endif %}">Prüfungen</a>
         <a href="{% url 'admin_work_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_work' %}nav-link-active{% endif %}">Dienste</a>
+        {% if perms.app.send_notifications %}<a href="{% url 'admin_push_message' %}" class="nav-link shrink-0 {% if nav_section == 'admin_push' %}nav-link-active{% endif %}">Benachrichtigungen</a>{% endif %}
         <a href="{% url 'admin_level_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_level' %}nav-link-active{% endif %}">Stufen</a>
         {% if perms.app.manage_groups %}<a href="{% url 'admin_autogroup_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_autogroup' %}nav-link-active{% endif %}">Autogruppen</a>{% endif %}
         {% if perms.app.manage_settings %}<a href="{% url 'admin_settings' %}" class="nav-link shrink-0 {% if nav_section == 'admin_settings' %}nav-link-active{% endif %}">Einstellungen</a>{% endif %}
@@ -34,6 +35,7 @@ Admin-Seiten füllen {% block admin_content %}.
             {% if perms.app.manage_theory %}<a href="{% url 'admin_import_questions' %}" class="sidebar-link {% if nav_section == 'admin_import' %}sidebar-link-active{% endif %}">{% include "icons/arrow-up-tray.html" %} Fragen-Import</a>{% endif %}
             <a href="{% url 'admin_exam_list' %}" class="sidebar-link {% if nav_section == 'admin_exam' %}sidebar-link-active{% endif %}">{% include "icons/clipboard-document-check.html" %} Prüfungen</a>
             <a href="{% url 'admin_work_list' %}" class="sidebar-link {% if nav_section == 'admin_work' %}sidebar-link-active{% endif %}">{% include "icons/calendar-days.html" %} Dienste</a>
+            {% if perms.app.send_notifications %}<a href="{% url 'admin_push_message' %}" class="sidebar-link {% if nav_section == 'admin_push' %}sidebar-link-active{% endif %}">{% include "icons/paper-airplane.html" %} Benachrichtigungen</a>{% endif %}
 
             <p class="sidebar-heading">Konfiguration</p>
             <a href="{% url 'admin_level_list' %}" class="sidebar-link {% if nav_section == 'admin_level' %}sidebar-link-active{% endif %}">{% include "icons/trophy.html" %} LA-Stufen</a>

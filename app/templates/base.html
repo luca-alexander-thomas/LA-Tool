@@ -139,6 +139,17 @@
 
     {# ---------------------------------------------------------------- Inhalt #}
     <main id="inhalt" class="flex-1">
+        {% if messages %}
+        <div class="container-app space-y-2 pt-4" role="status">
+            {% for message in messages %}
+            <div x-data="{ show: true }" x-show="show" x-transition.opacity
+                 class="alert {% if message.level_tag == 'success' %}alert-success{% elif message.level_tag == 'error' %}alert-danger{% elif message.level_tag == 'warning' %}alert-warning{% else %}alert-info{% endif %} items-center">
+                <span class="flex-1">{{ message }}</span>
+                <button type="button" class="btn btn-ghost btn-icon size-8 shrink-0" aria-label="Hinweis schließen" @click="show = false">{% include "icons/x-mark.html" with cls="size-4" %}</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
         {% block site_content %}
         {% endblock %}
     </main>

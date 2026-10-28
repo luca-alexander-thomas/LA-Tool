@@ -301,6 +301,7 @@ class SiteSettings(models.Model):
             ('manage_settings', 'Einstellungen verwalten'),
             ('manage_users', 'Nutzer verwalten'),
             ('manage_groups', 'Gruppen und Berechtigungen verwalten'),
+            ('send_notifications', 'Benachrichtigungen senden'),
         ]
 
     @classmethod

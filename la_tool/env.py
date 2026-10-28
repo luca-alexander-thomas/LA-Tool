@@ -38,3 +38,8 @@ AZURE_GROUPS_MAPPING = {
 DIVERA_ADMIN_USER_API_KEY = os.getenv('DIVERA_ADMIN_USER_API_KEY', '')
 DIVERA_Site_ID = os.getenv('DIVERA_SITE_ID', '20369')
 DIVERA_EVENTS_GROUP = os.getenv('DIVERA_EVENTS_GROUP', 'Jugendliche')
+
+# Web Push (PWA-Benachrichtigungen). Schlüssel erzeugen: python manage.py generate_vapid_keys
+VAPID_PUBLIC_KEY = os.getenv('VAPID_PUBLIC_KEY', '')
+VAPID_PRIVATE_KEY = os.getenv('VAPID_PRIVATE_KEY', '')
+VAPID_SUBJECT = os.getenv('VAPID_SUBJECT', '')

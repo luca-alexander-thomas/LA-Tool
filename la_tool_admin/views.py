@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, Http404
-from django.contrib import auth
+from django.contrib import auth, messages
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User, Group, Permission
@@ -8,14 +8,15 @@ from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from functools import wraps
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Exists, OuterRef
+from django.db.models import Exists, OuterRef, Q
 from app.models import (
     Questions_Catalogs, Questions_Theory, Questions_Practical,
     Questions_GroupExercise, Exams, ExamResultData, Work, SiteSettings, Levels,
 )
 from app.login_function import post_login_setup, safe_next_url
-from .forms import CatalogForm, TheoryQuestionForm, PracticalForm, GroupExerciseForm, ExamForm, WorkForm, WorkCreateForm, ImportQuestionForm, LevelForm
-from .models import Profile
+from .forms import CatalogForm, TheoryQuestionForm, PracticalForm, GroupExerciseForm, ExamForm, WorkForm, WorkCreateForm, ImportQuestionForm, LevelForm, PushMessageForm
+from .models import Profile, PushSubscription
+from .push import push_configured, send_push
 import msal
 import requests
 import uuid
@@ -43,6 +44,7 @@ APP_PERMISSIONS = [
     ('manage_settings', 'Einstellungen verwalten'),
     ('manage_users', 'Nutzer verwalten'),
     ('manage_groups', 'Gruppen und Berechtigungen verwalten'),
+    ('send_notifications', 'Benachrichtigungen senden'),
 ]
 
 
@@ -73,6 +75,14 @@ def _missing_permission_text(user, required):
 
 # Zugriff auf den Admin-Bereich ohne weiteres Einzelrecht
 admin_required = admin_permission_required()
+
+
+def _report_push(request, sent):
+    """Rückmeldung an den Admin, wie viele Geräte eine Push-Benachrichtigung erhalten haben."""
+    if sent:
+        messages.success(request, f'Push-Benachrichtigung an {sent} Gerät{"e" if sent != 1 else ""} gesendet.')
+    else:
+        messages.info(request, 'Keine Push-Benachrichtigung zugestellt: kein Empfänger hat Push aktiviert.')
 
 
 def send_divera_notification(user_profile, subject, message):
@@ -1230,6 +1240,16 @@ def admin_exam_create(request):
                     )
                 except Exception:
                     pass
+        if request.POST.get('notify_push'):
+            recipients = User.objects.filter(
+                Q(pk__in=user_ids) | Q(groups__pk__in=group_ids)
+            ).distinct()
+            _report_push(request, send_push(
+                recipients,
+                title='Neue Prüfung zugewiesen',
+                body=f'Dir wurde die Prüfung „{exam.name}" zugewiesen.',
+                url=reverse('exam_start', args=[exam.pk]),
+            ))
         return redirect('admin_exam_list')
 
     catalog_data = []
@@ -1417,6 +1437,14 @@ def admin_exam_result_release(request, exam_id, result_id):
                 )
             except Exception:
                 pass
+    if was_hidden and result.state == 'published' and request.POST.get('notify_push') and result.user:
+        exam_name = result.exam.name if result.exam else result.name
+        _report_push(request, send_push(
+            [result.user],
+            title='Prüfungsergebnis freigegeben',
+            body=f'Dein Ergebnis für „{exam_name}" ist freigegeben.',
+            url=reverse('exam_result', args=[exam_id]),
+        ))
     return redirect('admin_exam_result_user', exam_id=exam_id, result_id=result_id)
 
 
@@ -1495,6 +1523,32 @@ def admin_work_sync(request):
         from django.core.management import call_command
         call_command('sync_divera')
     return redirect('admin_work_list')
+
+
+# ── BENACHRICHTIGUNGEN ────────────────────────────────────────────────────────
+
+@admin_permission_required('app.send_notifications')
+def admin_push_message(request):
+    form = PushMessageForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        recipients = User.objects.filter(is_active=True)
+        if form.cleaned_data['groups']:
+            recipients = recipients.filter(groups__in=form.cleaned_data['groups']).distinct()
+        _report_push(request, send_push(
+            recipients,
+            title=form.cleaned_data['title'],
+            body=form.cleaned_data['body'],
+            url=reverse(form.cleaned_data['target']),
+        ))
+        return redirect('admin_push_message')
+
+    subscribed = PushSubscription.objects.filter(user__is_active=True)
+    return render(request, 'admin-push-message.html', {
+        'form': form,
+        'push_enabled': push_configured(),
+        'subscribed_users': subscribed.values('user').distinct().count(),
+        'subscribed_devices': subscribed.count(),
+    })
 
 
 # ── EINSTELLUNGEN ─────────────────────────────────────────────────────────────

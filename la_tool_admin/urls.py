@@ -43,6 +43,9 @@ urlpatterns = [
     path('exam/<int:exam_id>/results/<int:result_id>/', views.admin_exam_result_user, name='admin_exam_result_user'),
     path('exam/<int:exam_id>/results/<int:result_id>/release/', views.admin_exam_result_release, name='admin_exam_result_release'),
 
+    # Benachrichtigungen
+    path('benachrichtigungen/', views.admin_push_message, name='admin_push_message'),
+
     # Einstellungen
     path('settings/', views.admin_settings, name='admin_settings'),
 

@@ -49,6 +49,19 @@ sudo systemctl restart <gunicorn-dienst>
 
 Für die PWA muss die Seite über HTTPS laufen. Der Service Worker liegt unter `/sw.js` und wird von Django ausgeliefert.
 
+## Push-Benachrichtigungen
+
+Einmalig ein VAPID-Schlüsselpaar erzeugen und in die `.env` eintragen (privaten Schlüssel nie ins Repository):
+
+```bash
+python manage.py generate_vapid_keys
+```
+
+- Nutzer aktivieren Push pro Gerät unter **Mein Konto → Benachrichtigungen** (iPhone/iPad: nur in der installierten App).
+- Admins können beim Anlegen einer Prüfung und beim Freigeben eines Ergebnisses „Push-Benachrichtigung“ anhaken.
+- Freie Nachrichten an alle oder einzelne Gruppen: **Admin → Benachrichtigungen** (Recht „Benachrichtigungen senden“).
+- Neue Schlüssel machen bestehende Abos ungültig; Nutzer müssen Push dann neu aktivieren.
+
 ## Dienste automatisch aus DIVERA abgleichen
 
 `python manage.py sync_divera` legt Dienste aus DIVERA an bzw. aktualisiert sie (dasselbe wie der Button im Admin-Bereich).
