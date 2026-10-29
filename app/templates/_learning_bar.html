@@ -1,0 +1,7 @@
+{# Gestapelter Lernstand-Balken. Parameter: summary (learning.summary), height (z.B. "h-3"), compact #}
+<div class="{% if not compact %}mt-4 {% endif %}flex {{ height|default:'h-2' }} w-full overflow-hidden rounded-full bg-surface-2"
+     role="img" aria-label="{% for seg in summary.segments %}{{ seg.label }}: {{ seg.count }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+    {% for seg in summary.segments %}{% if seg.count and seg.key != 'new' %}
+    <span class="h-full {% if seg.key == 'mastered' %}bg-green-500{% elif seg.key == 'learning' %}bg-amber-400{% else %}bg-red-500{% endif %}" style="width: {{ seg.pct|stringformat:'s' }}%"></span>
+    {% endif %}{% endfor %}
+</div>

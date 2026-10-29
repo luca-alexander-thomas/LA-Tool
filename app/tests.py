@@ -344,3 +344,59 @@ class GroupExerciseTests(TestCase):
         exercise = self.G.objects.get()
         self.assertIsNone(exercise.level)
         self.assertEqual(self.client.get(reverse('admin_group_list')).status_code, 200)
+
+
+class LearningProgressTests(TestCase):
+    """Lernerfolg, „Schwierige Fragen“ und „Noch nicht geübt“."""
+
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.user = User.objects.create_user('jugend')
+        self.client.force_login(self.user)
+        level = Levels.objects.create(name='Teststufe', slug='teststufe', order=99)
+        self.catalog = Questions_Catalogs.objects.create(title='K', short_title='K', level=level)
+        self.q = [Questions_Theory.objects.create(question=f'F{i}', catalog=self.catalog, answer_text='Ja',
+                                                  answer_choice=['Ja', 'Nein']) for i in range(4)]
+        session = self.client.session
+        session['la_filter'] = 'teststufe'
+        session.save()
+
+    def train(self, user, results):
+        """results: {Frage: True/False}"""
+        TrainingResultData.objects.create(
+            name='T', user=user, questions=[q.pk for q in results],
+            answers={str(q.pk): ['a'] if ok else ['b'] for q, ok in results.items()})
+
+    def test_score_and_status(self):
+        from . import learning
+        self.train(self.user, {self.q[0]: True, self.q[1]: False})
+        self.train(self.user, {self.q[0]: True, self.q[1]: True})
+        summary = learning.summary([q.pk for q in self.q], learning.user_history(self.user))
+        # q0: 2/2 → 1.0 gefestigt, q1: 1/2 → 0.5 in Arbeit, q2/q3 neu → (1 + 0.5) / 4
+        self.assertEqual(summary['score'], 38)
+        self.assertEqual(summary['counts'], {'mastered': 1, 'learning': 1, 'weak': 0, 'new': 2})
+        self.assertEqual(summary['hard'], 1)
+
+    def test_hard_mode_uses_own_weaknesses_then_global(self):
+        self.train(self.user, {self.q[0]: False, self.q[1]: True})
+        other = User.objects.create_user('andere')
+        for _ in range(3):
+            self.train(other, {self.q[2]: False})
+        self.client.post(reverse('training_config'), {'catalogs': [self.catalog.pk], 'count': 10, 'mode': 'hard'})
+        self.assertEqual(sorted(self.client.session['training_question_ids']), sorted([self.q[0].pk, self.q[2].pk]))
+
+    def test_new_mode_only_unpracticed(self):
+        self.train(self.user, {self.q[0]: True, self.q[1]: False})
+        self.client.post(reverse('training_config'), {'catalogs': [self.catalog.pk], 'count': 10, 'mode': 'new'})
+        self.assertEqual(sorted(self.client.session['training_question_ids']), sorted([self.q[2].pk, self.q[3].pk]))
+
+    def test_hard_mode_without_history_shows_hint(self):
+        response = self.client.post(reverse('training_config'), {'catalogs': [self.catalog.pk], 'mode': 'hard'})
+        self.assertContains(response, 'Noch keine schwierigen Fragen')
+
+    def test_start_page_shows_score(self):
+        self.train(self.user, {self.q[0]: True})
+        response = self.client.get(reverse('training_config'))
+        self.assertEqual(response.context['progress']['score'], 25)
+        self.assertContains(response, 'Dein Lernerfolg')

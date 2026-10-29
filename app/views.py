@@ -14,6 +14,8 @@ from django.utils import timezone
 from django.urls import reverse
 from . import login_function as login_func
 from .context_processors import current_la_filter
+from . import learning
+from .scoring import score_question as _score_question
 from django.conf import settings
 from la_tool_admin.push import push_configured
 from .models import (
@@ -370,39 +372,6 @@ def exam_run(request, exam_id):
     })
 
 
-def _score_question(q, user_answer):
-    """Returns points for a question (float 0–1)."""
-    correct_set = set(q.correct_answers)
-    if not correct_set or not q.answer_choice:
-        return 0
-    choices = q.answer_choice
-
-    # Normalise user answer to list of selected texts
-    if isinstance(user_answer, list):
-        letters = user_answer
-    elif user_answer:
-        letters = [user_answer]
-    else:
-        letters = []
-
-    user_texts = set()
-    for letter in letters:
-        idx = ord(letter) - ord('a') if letter and len(letter) == 1 else -1
-        if 0 <= idx < len(choices) and choices[idx]:
-            user_texts.add(choices[idx])
-
-    scoring = q.catalog.multi_answer_scoring if q.catalog else 'all_or_nothing'
-
-    if scoring == 'all_or_nothing':
-        return 1 if user_texts == correct_set else 0
-    else:  # partial
-        correct_selected = len(user_texts & correct_set)
-        wrong_selected = len(user_texts - correct_set)
-        total_correct = len(correct_set)
-        raw = (correct_selected - wrong_selected) / total_correct
-        return max(0.0, round(raw, 4))
-
-
 def _save_exam_result(user, exam, question_ids, answers):
     q_map = {q.pk: q for q in Questions_Theory.objects.select_related('catalog').filter(pk__in=question_ids)}
     score = 0.0
@@ -496,9 +465,13 @@ def excercise(request):
     sample_theory = _published(Questions_Theory).order_by('?').first()
     sample_practical = _published(Questions_Practical).order_by('?').first()
     sample_group = _published_groups().order_by('?').first()
+    level_question_ids = list(_published(Questions_Theory).filter(
+        catalog__level__slug=current_la_filter(request)).values_list('pk', flat=True))
+    theory_progress = learning.summary(level_question_ids, learning.user_history(request.user))
 
     return render(request, "exercise.html", {
         'last_trainings': last_trainings,
+        'theory_progress': theory_progress,
         'sample_theory': sample_theory,
         'sample_practical': sample_practical,
         'sample_group': sample_group,
@@ -577,53 +550,68 @@ def work_training_start(request, work_id):
 
 # ── THEORIE-TRAINING ─────────────────────────────────────────────────────────
 
+TRAINING_MODES = ('random', 'hard', 'new')
+
+
 def training_config(request):
     la = current_la_filter(request)
-    catalogs = Questions_Catalogs.objects.select_related('level').filter(
+    catalogs = list(Questions_Catalogs.objects.select_related('level').filter(
         level__slug=la, is_draft=False, level__is_draft=False,
-    ).order_by('order', 'title')
+    ).order_by('order', 'title'))
 
     current_level = Levels.objects.filter(slug=la).first()
     default_count = current_level.default_training_count if current_level else 10
 
-    if request.method == 'POST':
-        catalog_ids = [int(x) for x in request.POST.getlist('catalogs') if x.isdigit()]
-        count_str = request.POST.get('count', str(default_count))
-        count = int(count_str) if count_str.isdigit() else default_count
-        count = max(1, min(count, 100))
+    # Lernstand: Fragen je Katalog und bisherige Versuche des Nutzers
+    ids_by_catalog = {c.pk: [] for c in catalogs}
+    for qid, catalog_id in _published(Questions_Theory).filter(
+            catalog__in=catalogs).values_list('pk', 'catalog_id'):
+        ids_by_catalog[catalog_id].append(qid)
+    history = learning.user_history(request.user)
+    for c in catalogs:
+        c.progress = learning.summary(ids_by_catalog[c.pk], history)
+    overall = learning.summary([qid for ids in ids_by_catalog.values() for qid in ids], history)
 
-        if not catalog_ids:
-            return render(request, 'exercise-theorie-training-start.html', {
-                'user': request.user,
-                'catalogs': catalogs,
-                'default_count': count,
-                'error': 'Bitte mindestens einen Katalog auswählen.',
-            })
-
-        # Nur Kataloge, die oben angeboten werden (keine Entwürfe per manipuliertem POST)
-        question_ids = list(
-            _published(Questions_Theory).filter(
-                catalog__in=catalogs.filter(pk__in=catalog_ids),
-            ).values_list('pk', flat=True)
-        )
-        if not question_ids:
-            return render(request, 'exercise-theorie-training-start.html', {
-                'user': request.user,
-                'catalogs': catalogs,
-                'default_count': count,
-                'error': 'Keine Fragen in den ausgewählten Katalogen.',
-            })
-
-        random.shuffle(question_ids)
-        question_ids = question_ids[:count]
-
-        _start_training(request, question_ids)
-        return redirect('training_run')
-
-    return render(request, 'exercise-theorie-training-start.html', {
+    context = {
         'catalogs': catalogs,
         'default_count': default_count,
-    })
+        'progress': overall,
+        'mode': 'random',
+        'track_progress': request.user.is_authenticated,
+    }
+
+    if request.method == 'POST':
+        catalog_ids = {int(x) for x in request.POST.getlist('catalogs') if x.isdigit()} & set(ids_by_catalog)
+        count_str = request.POST.get('count', str(default_count))
+        count = max(1, min(int(count_str) if count_str.isdigit() else default_count, 100))
+        mode = request.POST.get('mode', 'random')
+        if mode not in TRAINING_MODES or not request.user.is_authenticated:
+            mode = 'random'
+        context.update(default_count=count, mode=mode)
+
+        if not catalog_ids:
+            return render(request, 'exercise-theorie-training-start.html',
+                          {**context, 'error': 'Bitte mindestens einen Katalog auswählen.'})
+        # Nur angebotene (freigegebene) Kataloge – keine Entwürfe per manipuliertem POST
+        candidates = [qid for cid in catalog_ids for qid in ids_by_catalog[cid]]
+
+        if mode == 'hard':
+            question_ids = learning.pick_hard(candidates, history, count)
+            empty_error = 'Noch keine schwierigen Fragen: Übe zuerst ein paar Runden – danach erscheinen hier deine Schwachstellen.'
+        elif mode == 'new':
+            question_ids = learning.pick_new(candidates, history)
+            empty_error = 'Du hast in den gewählten Katalogen schon alle Fragen geübt.'
+        else:
+            question_ids = candidates
+            empty_error = 'Keine Fragen in den ausgewählten Katalogen.'
+        if not question_ids:
+            return render(request, 'exercise-theorie-training-start.html', {**context, 'error': empty_error})
+
+        random.shuffle(question_ids)
+        _start_training(request, question_ids[:count])
+        return redirect('training_run')
+
+    return render(request, 'exercise-theorie-training-start.html', context)
 
 
 def _start_training(request, question_ids):

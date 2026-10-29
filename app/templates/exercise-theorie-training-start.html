@@ -8,7 +8,7 @@
         <div>
             <p class="eyebrow">Theorie-Training</p>
             <h1 class="page-title mt-1">Theorie üben</h1>
-            <p class="page-subtitle">Wähle Kataloge und Anzahl der Fragen für dein Training</p>
+            <p class="page-subtitle">Wähle Kataloge, Übungsart und Anzahl der Fragen</p>
         </div>
         <a class="btn btn-secondary" href="{% url 'theory_lookup' %}">{% include "icons/book-open.html" with cls="size-4" %} Fragen nachschlagen</a>
     </div>
@@ -20,7 +20,42 @@
     </div>
     {% endif %}
 
-    <form method="post" action="{% url 'training_config' %}">
+    {# Lernerfolg: Mittel der Beherrschung aller Fragen (letzte 3 Versuche je Frage, siehe app/learning.py) #}
+    {% if track_progress %}
+    <section class="card card-body mb-4">
+        <div class="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+            <div>
+                <p class="text-sm font-semibold text-ink-2">Dein Lernerfolg{% if current_level %} · {{ current_level.name }}{% endif %}</p>
+                <p class="mt-1 text-4xl font-bold tracking-tight text-ink tabular-nums">{{ progress.score }}<span class="text-2xl text-ink-3"> %</span></p>
+            </div>
+            <p class="max-w-sm text-xs text-ink-3">Berechnet aus deinen letzten drei Antworten je Frage. Noch nicht geübte Fragen zählen mit 0 %.</p>
+        </div>
+        {% include "_learning_bar.html" with summary=progress height="h-3" %}
+        <ul class="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">
+            {% for seg in progress.segments %}
+            <li class="flex items-center gap-1.5">
+                <span class="size-3 rounded-full {% if seg.key == 'mastered' %}bg-green-500{% elif seg.key == 'learning' %}bg-amber-400{% elif seg.key == 'weak' %}bg-red-500{% else %}bg-line{% endif %}" aria-hidden="true"></span>
+                <span class="text-ink-2">{{ seg.label }}</span>
+                <span class="font-semibold text-ink tabular-nums">{{ seg.count }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% else %}
+    <div class="alert alert-info mb-4">
+        {% include "icons/information-circle.html" with cls="size-5 shrink-0" %}
+        <span><a class="link" href="{% url 'login' %}?next={{ request.path|urlencode }}">Melde dich an</a>, um deinen Lernerfolg zu sehen und gezielt schwierige oder neue Fragen zu üben.</span>
+    </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'training_config' %}"
+          x-data="{
+              stats: JSON.parse(document.getElementById('catalog-stats').textContent),
+              selected: [],
+              mode: '{{ mode }}',
+              init() { this.selected = [...this.$root.querySelectorAll('input[name=catalogs]:checked')].map((el) => el.value); },
+              sum(key) { return this.selected.reduce((total, id) => total + (this.stats[id] ? this.stats[id][key] : 0), 0); },
+          }">
         {% csrf_token %}
         <div class="grid gap-4 md:grid-cols-3">
             <section class="card md:col-span-2">
@@ -31,14 +66,19 @@
                     {% for catalog in catalogs %}
                     <label class="list-row min-h-14 cursor-pointer" for="catalog-{{ catalog.pk }}">
                         <input class="form-switch" role="switch" type="checkbox"
-                               name="catalogs" value="{{ catalog.pk }}"
+                               name="catalogs" value="{{ catalog.pk }}" x-model="selected"
                                id="catalog-{{ catalog.pk }}" checked>
-                        <span class="min-w-0 flex-1 text-sm font-semibold">{% if catalog.short_title %}<span class="mr-1 text-xs font-semibold text-ink-3">{{ catalog.short_title }}</span>{% endif %}{{ catalog.title }}</span>
-                        {% if catalog.level %}
-                        <span class="badge {{ catalog.level.badge_bg_class|default:'badge-primary' }} {{ catalog.level.badge_text_class }}">{{ catalog.level.name }}</span>
-                        {% else %}
-                        <span class="badge badge-neutral">–</span>
-                        {% endif %}
+                        <span class="min-w-0 flex-1">
+                            <span class="block text-sm font-semibold">{% if catalog.short_title %}<span class="mr-1 text-xs font-semibold text-ink-3">{{ catalog.short_title }}</span>{% endif %}{{ catalog.title }}</span>
+                            {% if track_progress and catalog.progress.total %}
+                            <span class="mt-1.5 flex items-center gap-2">
+                                <span class="flex-1">{% include "_learning_bar.html" with summary=catalog.progress height="h-1.5" compact=True %}</span>
+                                <span class="shrink-0 text-xs text-ink-3 tabular-nums">{{ catalog.progress.score }} %{% if catalog.progress.counts.new %} · {{ catalog.progress.counts.new }} neu{% endif %}</span>
+                            </span>
+                            {% elif not catalog.progress.total %}
+                            <span class="mt-0.5 block text-xs text-ink-3">Noch keine Fragen</span>
+                            {% endif %}
+                        </span>
                     </label>
                     {% empty %}
                     <p class="empty-state">Noch keine Kataloge vorhanden. Bitte zuerst Kataloge anlegen.</p>
@@ -48,19 +88,46 @@
 
             <section class="card flex flex-col">
                 <div class="card-header">
-                    <h2 class="section-title">Anzahl Fragen</h2>
+                    <h2 class="section-title">Übungsart</h2>
                 </div>
-                <div class="flex flex-1 flex-col justify-center gap-4 p-4 sm:p-6">
-                    <div class="flex items-center gap-3">
-                        <span class="flex h-11 min-w-14 items-center justify-center rounded-xl bg-accent px-3 text-lg font-bold text-white tabular-nums" id="count-display">{{ default_count|default:10 }}</span>
-                        <input class="form-control h-11 flex-1" type="range" name="count" id="count-slider"
-                               min="1" max="50" step="1" value="{{ default_count|default:10 }}"
-                               aria-label="Anzahl Fragen"
-                               oninput="document.getElementById('count-display').textContent=this.value">
+                <fieldset class="space-y-2 p-4">
+                    <legend class="sr-only">Übungsart</legend>
+                    <label class="answer-option cursor-pointer has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-accent/25">
+                        <input class="sr-only" type="radio" name="mode" value="random" x-model="mode">
+                        <span class="min-w-0 flex-1">
+                            <span class="block text-sm font-semibold text-ink">Gemischt</span>
+                            <span class="block text-xs text-ink-2">Zufällige Fragen aus den gewählten Katalogen</span>
+                        </span>
+                    </label>
+                    <label class="answer-option {% if track_progress %}cursor-pointer{% else %}cursor-not-allowed opacity-50{% endif %} has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-accent/25">
+                        <input class="sr-only" type="radio" name="mode" value="hard" x-model="mode" {% if not track_progress %}disabled{% endif %}>
+                        <span class="min-w-0 flex-1">
+                            <span class="block text-sm font-semibold text-ink">Schwierige Fragen</span>
+                            <span class="block text-xs text-ink-2">{% if track_progress %}<span class="font-semibold tabular-nums" x-text="sum('hard')">{{ progress.hard }}</span> eigene Schwachstellen, ergänzt um oft falsch beantwortete Fragen{% else %}Nach der Anmeldung verfügbar{% endif %}</span>
+                        </span>
+                    </label>
+                    <label class="answer-option {% if track_progress %}cursor-pointer{% else %}cursor-not-allowed opacity-50{% endif %} has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-accent/25">
+                        <input class="sr-only" type="radio" name="mode" value="new" x-model="mode" {% if not track_progress %}disabled{% endif %}>
+                        <span class="min-w-0 flex-1">
+                            <span class="block text-sm font-semibold text-ink">Noch nicht geübt</span>
+                            <span class="block text-xs text-ink-2">{% if track_progress %}<span class="font-semibold tabular-nums" x-text="sum('new')">{{ progress.counts.new }}</span> Fragen, die du noch nie beantwortet hast{% else %}Nach der Anmeldung verfügbar{% endif %}</span>
+                        </span>
+                    </label>
+                </fieldset>
+                <div class="mt-auto flex flex-col gap-4 border-t border-line p-4 sm:p-6">
+                    <div>
+                        <p class="mb-2 text-sm font-semibold text-ink">Anzahl Fragen</p>
+                        <div class="flex items-center gap-3">
+                            <span class="flex h-11 min-w-14 items-center justify-center rounded-xl bg-accent px-3 text-lg font-bold text-white tabular-nums" id="count-display">{{ default_count|default:10 }}</span>
+                            <input class="form-control h-11 flex-1" type="range" name="count" id="count-slider"
+                                   min="1" max="50" step="1" value="{{ default_count|default:10 }}"
+                                   aria-label="Anzahl Fragen"
+                                   oninput="document.getElementById('count-display').textContent=this.value">
+                        </div>
+                        {% if current_level %}
+                        <p class="form-text">Standard für {{ current_level.name }}: {{ current_level.default_training_count }} Fragen</p>
+                        {% endif %}
                     </div>
-                    {% if current_level %}
-                    <p class="form-text mt-0">Standard für {{ current_level.name }}: {{ current_level.default_training_count }} Fragen</p>
-                    {% endif %}
                     <button type="submit" class="btn btn-primary btn-lg w-full" {% if not catalogs %}disabled{% endif %}>
                         {% include "icons/play.html" with cls="size-5" %} Start
                     </button>
@@ -69,4 +136,9 @@
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+{# Je Katalog: Anzahl neuer und schwieriger Fragen (für die Live-Summen der Übungsarten) #}
+<script id="catalog-stats" type="application/json">{ {% for c in catalogs %}"{{ c.pk }}": {"new": {{ c.progress.counts.new }}, "hard": {{ c.progress.hard }}}{% if not forloop.last %}, {% endif %}{% endfor %} }</script>
 {% endblock %}

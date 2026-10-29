@@ -58,6 +58,16 @@
                 </div>
             </div>
             <div class="flex-1 p-4">
+                {% if theory_progress.total %}
+                <div class="mb-3">
+                    <div class="flex items-baseline justify-between gap-2">
+                        <span class="text-sm text-ink-2">Lernerfolg</span>
+                        <span class="text-lg font-bold text-ink tabular-nums">{{ theory_progress.score }} %</span>
+                    </div>
+                    {% include "_learning_bar.html" with summary=theory_progress height="h-2" compact=True %}
+                    <p class="mt-1.5 text-xs text-ink-3">{{ theory_progress.counts.mastered }} gefestigt · {{ theory_progress.hard }} schwierig · {{ theory_progress.counts.new }} neu</p>
+                </div>
+                {% endif %}
                 {% if sample_theory %}
                 <div class="rounded-xl bg-surface-2 p-3">
                     {% if sample_theory.number %}<span class="badge badge-neutral mb-1.5">{{ sample_theory.number }}</span>{% endif %}
