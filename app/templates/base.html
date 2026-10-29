@@ -127,7 +127,10 @@
                         <a href="{% url 'admin_index' %}" class="dropdown-item">{% include "icons/cog-6-tooth.html" with cls="size-4" %} Admin-Bereich</a>
                         {% endif %}
                         <div class="dropdown-divider"></div>
-                        <a href="{% url 'logout' %}" class="dropdown-item text-red-600 dark:text-red-400">{% include "icons/arrow-right-start-on-rectangle.html" with cls="size-4" %} Abmelden</a>
+                        <form method="post" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-item w-full text-red-600 dark:text-red-400">{% include "icons/arrow-right-start-on-rectangle.html" with cls="size-4" %} Abmelden</button>
+                        </form>
                     </div>
                 </div>
                 {% else %}

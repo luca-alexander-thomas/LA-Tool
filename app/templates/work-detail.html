@@ -31,7 +31,7 @@
                 <h2 class="section-title">Theorie Fragen</h2>
             </div>
             <div class="flex-1 space-y-2 p-4">
-                {% for q in work.theory_questions.all %}
+                {% for q in theory_questions %}
                 <div class="rounded-xl border border-line">
                     <button type="button" class="flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-surface-2"
                             aria-expanded="false" aria-controls="tq-{{ q.pk }}" onclick="toggleQ('tq-{{ q.pk }}', this)">
@@ -45,7 +45,7 @@
                         <p class="mb-2 font-semibold text-ink">{{ q.question }}</p>
                         {% for choice in q.answer_choice %}
                         {% if choice %}
-                        {% if choice == q.answer_text %}
+                        {% if choice in q.correct_answers %}
                         <p class="flex gap-1.5 font-semibold text-green-700 dark:text-green-400">{% include "icons/check-circle.html" with cls="size-5 shrink-0" %}<span>{{ choice }}</span></p>
                         {% else %}
                         <p class="flex gap-1.5 text-red-700 dark:text-red-400">{% include "icons/x-circle.html" with cls="size-5 shrink-0" %}<span>{{ choice }}</span></p>
@@ -58,7 +58,7 @@
                 <p class="empty-state">Keine Theoriefragen zugewiesen.</p>
                 {% endfor %}
             </div>
-            {% if work.theory_questions.exists %}
+            {% if theory_questions %}
             <div class="card-footer justify-center">
                 <a class="btn btn-soft w-full sm:w-auto" href="{% url 'work_training_start' work.pk %}">{% include "icons/play.html" with cls="size-4" %} Üben</a>
             </div>
@@ -81,13 +81,13 @@
 
         <!-- Praxis + Gruppen -->
         <div class="space-y-4">
-            {% if work.practical_exercises.exists %}
+            {% if practical_exercises %}
             <section class="card">
                 <div class="card-header">
                     <h2 class="section-title">Praxis Aufgaben</h2>
                 </div>
                 <div class="space-y-2 p-4">
-                    {% for p in work.practical_exercises.all %}
+                    {% for p in practical_exercises %}
                     <a href="{% url 'practical_detail' p.pk %}" class="list-row text-sm">
                         <span class="min-w-0 flex-1">{% if p.number %}<span class="mr-1 font-semibold text-ink-3">{{ p.number }}</span>{% endif %}{{ p.question|truncatechars:50 }}</span>
                         {% include "icons/chevron-right.html" with cls="size-5 shrink-0 text-ink-3" %}
@@ -97,13 +97,13 @@
             </section>
             {% endif %}
 
-            {% if work.group_exercises.exists %}
+            {% if group_exercises %}
             <section class="card">
                 <div class="card-header">
                     <h2 class="section-title">Gruppenaufgaben</h2>
                 </div>
                 <div class="space-y-2 p-4">
-                    {% for g in work.group_exercises.all %}
+                    {% for g in group_exercises %}
                     <a href="{% url 'group_detail' g.pk %}" class="list-row text-sm">
                         <span class="min-w-0 flex-1">{{ g.question|truncatechars:50 }}</span>
                         {% include "icons/chevron-right.html" with cls="size-5 shrink-0 text-ink-3" %}
@@ -113,7 +113,7 @@
             </section>
             {% endif %}
 
-            {% if not work.practical_exercises.exists and not work.group_exercises.exists %}
+            {% if not practical_exercises and not group_exercises %}
             <p class="empty-state">Keine Praxis-/Gruppenaufgaben zugewiesen.</p>
             {% endif %}
         </div>

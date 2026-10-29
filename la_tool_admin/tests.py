@@ -179,7 +179,7 @@ class PushTests(TestCase):
 
     def test_subscribe_stores_and_unsubscribe_removes(self):
         self.login(self.user)
-        body = {'endpoint': 'https://push.example/abc', 'keys': {'p256dh': 'key', 'auth': 'secret'}}
+        body = {'endpoint': 'https://fcm.googleapis.com/fcm/send/abc', 'keys': {'p256dh': 'key', 'auth': 'secret'}}
         response = self.client.post(reverse('push_subscribe'), json.dumps(body), content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertTrue(PushSubscription.objects.filter(user=self.user, endpoint=body['endpoint']).exists())
@@ -193,8 +193,8 @@ class PushTests(TestCase):
 
     @patch('la_tool_admin.push.webpush')
     def test_send_push_removes_expired_subscriptions(self, webpush):
-        self.subscribe(self.user, 'https://push.example/ok')
-        gone = self.subscribe(self.user, 'https://push.example/gone')
+        self.subscribe(self.user, 'https://fcm.googleapis.com/fcm/send/ok')
+        gone = self.subscribe(self.user, 'https://fcm.googleapis.com/fcm/send/gone')
 
         def fake(subscription_info, **kwargs):
             if subscription_info['endpoint'] == gone.endpoint:
@@ -209,7 +209,7 @@ class PushTests(TestCase):
     @override_settings(VAPID_PRIVATE_KEY='')
     @patch('la_tool_admin.push.webpush')
     def test_send_push_without_keys_sends_nothing(self, webpush):
-        self.subscribe(self.user, 'https://push.example/ok')
+        self.subscribe(self.user, 'https://fcm.googleapis.com/fcm/send/ok')
         self.assertEqual(send_push([self.user], 'T', 'B'), 0)
         webpush.assert_not_called()
 
@@ -221,25 +221,25 @@ class PushTests(TestCase):
 
     @patch('la_tool_admin.push.webpush')
     def test_admin_message_to_group_reaches_only_members(self, webpush):
-        self.subscribe(self.user, 'https://push.example/member')
-        self.subscribe(self.other, 'https://push.example/other')
+        self.subscribe(self.user, 'https://fcm.googleapis.com/fcm/send/member')
+        self.subscribe(self.other, 'https://fcm.googleapis.com/fcm/send/other')
         self.login(self.sender)
         response = self.client.post(reverse('admin_push_message'), {
             'title': 'Dienst fällt aus', 'body': 'Heute kein Dienst.', 'target': 'work', 'groups': [self.group.pk],
         }, follow=True)
         self.assertContains(response, 'Push-Benachrichtigung an 1 Gerät gesendet')
         endpoints = [c.kwargs['subscription_info']['endpoint'] for c in webpush.call_args_list]
-        self.assertEqual(endpoints, ['https://push.example/member'])
+        self.assertEqual(endpoints, ['https://fcm.googleapis.com/fcm/send/member'])
 
     @patch('la_tool_admin.push.webpush')
     def test_admin_push_test_reaches_only_own_devices(self, webpush):
-        self.subscribe(self.sender, 'https://push.example/admin')
-        self.subscribe(self.user, 'https://push.example/member')
+        self.subscribe(self.sender, 'https://fcm.googleapis.com/fcm/send/admin')
+        self.subscribe(self.user, 'https://fcm.googleapis.com/fcm/send/member')
         self.login(self.sender)
         response = self.client.post(reverse('admin_push_test'), follow=True)
         self.assertContains(response, 'Push-Benachrichtigung an 1 Gerät gesendet')
         endpoints = [c.kwargs['subscription_info']['endpoint'] for c in webpush.call_args_list]
-        self.assertEqual(endpoints, ['https://push.example/admin'])
+        self.assertEqual(endpoints, ['https://fcm.googleapis.com/fcm/send/admin'])
 
     @patch('la_tool_admin.push.webpush')
     def test_admin_push_test_without_own_subscription(self, webpush):
@@ -250,7 +250,7 @@ class PushTests(TestCase):
 
     @patch('la_tool_admin.push.webpush')
     def test_admin_push_test_reports_failure(self, webpush):
-        self.subscribe(self.sender, 'https://push.example/admin')
+        self.subscribe(self.sender, 'https://fcm.googleapis.com/fcm/send/admin')
         webpush.side_effect = WebPushException('fehler', response=SimpleNamespace(status_code=500))
         self.login(self.sender)
         response = self.client.post(reverse('admin_push_test'), follow=True)

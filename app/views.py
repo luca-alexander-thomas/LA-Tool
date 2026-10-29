@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import auth
 from django.contrib.auth.views import redirect_to_login
@@ -54,7 +55,7 @@ def index(request):
         user=user, state='published'
     ).order_by('-meta_time')[:3]
 
-    next_work = Work.objects.filter(date__gte=timezone.now()).order_by('date').first()
+    next_work = _visible_works(user).filter(date__gte=timezone.now()).order_by('date').first()
 
     return render(request, "home.html", {
         'user': user,
@@ -175,6 +176,7 @@ def profile(request):
     })
 
 
+@require_POST
 def logout(request):
     auth.logout(request)
     return redirect('home')
@@ -491,9 +493,9 @@ def excercise(request):
     last_trainings = TrainingResultData.objects.filter(
         user=request.user
     ).order_by('-meta_time')[:3]
-    sample_theory = Questions_Theory.objects.order_by('?').first()
-    sample_practical = Questions_Practical.objects.order_by('?').first()
-    sample_group = Questions_GroupExercise.objects.order_by('?').first()
+    sample_theory = _published(Questions_Theory).order_by('?').first()
+    sample_practical = _published(Questions_Practical).order_by('?').first()
+    sample_group = _published(Questions_GroupExercise).order_by('?').first()
 
     return render(request, "exercise.html", {
         'last_trainings': last_trainings,
@@ -552,14 +554,20 @@ def work_detail(request, work_id):
     if not request.user.is_authenticated:
         return redirect_to_login(request.get_full_path())
     work = get_object_or_404(_visible_works(request.user), pk=work_id)
-    return render(request, 'work-detail.html', {'work': work})
+    # Nur freigegebene Aufgaben zeigen (Entwürfe enthielten sonst Lösungen und tote Links)
+    return render(request, 'work-detail.html', {
+        'work': work,
+        'theory_questions': work.theory_questions.filter(pk__in=_published(Questions_Theory)).select_related('catalog'),
+        'practical_exercises': work.practical_exercises.filter(pk__in=_published(Questions_Practical)).select_related('catalog'),
+        'group_exercises': work.group_exercises.filter(pk__in=_published(Questions_GroupExercise)).select_related('catalog'),
+    })
 
 
 def work_training_start(request, work_id):
     if not request.user.is_authenticated:
         return redirect_to_login(request.get_full_path())
     work = get_object_or_404(_visible_works(request.user), pk=work_id)
-    question_ids = list(work.theory_questions.values_list('pk', flat=True))
+    question_ids = list(work.theory_questions.filter(pk__in=_published(Questions_Theory)).values_list('pk', flat=True))
     if not question_ids:
         return redirect('work_detail', work_id=work_id)
     random.shuffle(question_ids)
@@ -592,9 +600,10 @@ def training_config(request):
                 'error': 'Bitte mindestens einen Katalog auswählen.',
             })
 
+        # Nur Kataloge, die oben angeboten werden (keine Entwürfe per manipuliertem POST)
         question_ids = list(
-            Questions_Theory.objects.filter(
-                catalog_id__in=catalog_ids, is_draft=False,
+            _published(Questions_Theory).filter(
+                catalog__in=catalogs.filter(pk__in=catalog_ids),
             ).values_list('pk', flat=True)
         )
         if not question_ids:
@@ -821,5 +830,4 @@ def group_detail(request, q_id):
 def set_la_filter(request, level):
     if Levels.objects.filter(slug=level, is_draft=False).exists():
         request.session['la_filter'] = level
-    referer = request.META.get('HTTP_REFERER', '/')
-    return redirect(referer)
+    return redirect(login_func.safe_next_url(request, request.META.get('HTTP_REFERER')) or 'home')

@@ -224,3 +224,38 @@ class IconShrinkTests(TestCase):
         a.refresh_from_db()
         a.save()
         self.assertTrue(os.path.exists(os.path.join(path, 'geteilt.png')))
+
+
+class HardeningTests(TestCase):
+    """Absicherungen aus dem Code-Review."""
+
+    def setUp(self):
+        self.user = User.objects.create_user('jugend', password='pw')
+        self.client.force_login(self.user)
+
+    def test_logout_requires_post(self):
+        self.assertEqual(self.client.get(reverse('logout')).status_code, 405)
+        self.client.post(reverse('logout'))
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_push_only_to_known_push_services(self):
+        body = {'endpoint': 'https://10.0.0.5/intern', 'keys': {'p256dh': 'k', 'auth': 'a'}}
+        response = self.client.post(reverse('push_subscribe'), json.dumps(body), content_type='application/json')
+        self.assertEqual(response.status_code, 400)
+        body['endpoint'] = 'https://web.push.apple.com/abc'
+        response = self.client.post(reverse('push_subscribe'), json.dumps(body), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+
+    def test_la_filter_does_not_redirect_to_other_sites(self):
+        response = self.client.get(reverse('set_la_filter', args=['x']), HTTP_REFERER='https://evil.example/')
+        self.assertRedirects(response, reverse('home'), fetch_redirect_response=False)
+
+    def test_training_ignores_draft_catalogs(self):
+        level = Levels.objects.create(name='Teststufe', slug='teststufe', order=99)
+        draft = Questions_Catalogs.objects.create(title='Geheim', short_title='G', level=level, is_draft=True)
+        Questions_Theory.objects.create(question='Geheim?', catalog=draft, answer_text='Ja', answer_choice=['Ja', 'Nein'])
+        session = self.client.session
+        session['la_filter'] = 'teststufe'
+        session.save()
+        self.client.post(reverse('training_config'), {'catalogs': [draft.pk], 'count': 5})
+        self.assertNotIn('training_question_ids', self.client.session)

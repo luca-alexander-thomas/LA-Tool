@@ -14,7 +14,6 @@ class LevelForm(forms.ModelForm):
             'badge_bg_class', 'badge_text_class',
             'default_training_count', 'default_training_pass_pct',
             'default_exam_count', 'default_exam_pass_pct',
-            'is_draft',
         ]
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'z.B. LA-Bronze'}),

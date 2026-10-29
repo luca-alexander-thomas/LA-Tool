@@ -1,4 +1,5 @@
 {% extends "admin_base.html" %}
+{% load static %}
 
 {% block page_title %}Datei bereits vorhanden{% endblock %}
 
@@ -78,11 +79,12 @@
     </form>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
+{# pdf.js lokal (kein CDN); 3.11.174 nur mit isEvalSupported:false (CVE-2024-4367) #}
+<script src="{% static 'vendor/pdfjs/pdf.min.js' %}"></script>
 <script>
 (function () {
     pdfjsLib.GlobalWorkerOptions.workerSrc =
-        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        '{% static "vendor/pdfjs/pdf.worker.min.js" %}';
 
     const VIEWERS = [
         { key: 'a', url: '{{ existing_url|escapejs }}' },
@@ -125,7 +127,7 @@
             btnNext.disabled = page >= pdf.numPages;
         }
 
-        pdfjsLib.getDocument(url).promise.then(doc => {
+        pdfjsLib.getDocument({ url: url, isEvalSupported: false }).promise.then(doc => {
             pdf = doc;
             render(1);
         }).catch(() => { errMsg.classList.remove('hidden'); });
