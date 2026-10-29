@@ -2,7 +2,8 @@
 //
 // Strategie:
 //  - Statische Dateien (CSS, JS, Bilder): aus dem Cache, im Hintergrund aktualisieren
-//  - Seiten (HTML): immer vom Server, ohne Netz die Offline-Seite
+//  - Seiten (HTML): immer vom Server, ohne Netz die Offline-Seite. Navigation Preload lädt die Seite
+//    schon, während der Service Worker startet.
 //  - Seiten werden bewusst NICHT gecacht: sie enthalten persönliche Daten und Prüfungen.
 const CACHE = 'la-tool-{{ version }}';
 const OFFLINE_URL = '{{ offline_url|escapejs }}';
@@ -18,6 +19,7 @@ self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys()
             .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+            .then(() => self.registration.navigationPreload && self.registration.navigationPreload.enable())
             .then(() => self.clients.claim())
     );
 });
@@ -30,7 +32,13 @@ self.addEventListener('fetch', (event) => {
     if (url.origin !== self.location.origin) return;
 
     if (request.mode === 'navigate') {
-        event.respondWith(fetch(request).catch(() => caches.match(OFFLINE_URL)));
+        event.respondWith((async () => {
+            try {
+                return (await event.preloadResponse) || (await fetch(request));
+            } catch (e) {
+                return caches.match(OFFLINE_URL);
+            }
+        })());
         return;
     }
 

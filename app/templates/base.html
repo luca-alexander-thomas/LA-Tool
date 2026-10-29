@@ -186,6 +186,24 @@
             });
         }
     </script>
+    {# Links beim Überfahren/Antippen vorladen (Chromium). Nur Seiten ohne Nebenwirkungen beim Aufruf. #}
+    <script type="speculationrules">
+    {
+        "prefetch": [{
+            "where": {"and": [
+                {"href_matches": "/*"},
+                {"not": {"href_matches": "/admin/*"}},
+                {"not": {"href_matches": "/logout/"}},
+                {"not": {"href_matches": "/la-filter/*"}},
+                {"not": {"href_matches": "/dienste/*/ueben/"}},
+                {"not": {"href_matches": "/microsoft-login/*"}},
+                {"not": {"href_matches": "/media/*"}},
+                {"not": {"selector_matches": "[data-no-prefetch], [download], [target=_blank]"}}
+            ]},
+            "eagerness": "moderate"
+        }]
+    }
+    </script>
     {% block extra_scripts %}{% endblock %}
 </body>
 
