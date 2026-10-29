@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.db.models.signals import pre_delete
+from django.db.models.signals import post_delete, post_save, pre_delete
 from django.dispatch import receiver
 from django.core.validators import FileExtensionValidator
 
@@ -33,6 +33,29 @@ class Levels(models.Model):
 
     def __str__(self):
         return self.name
+
+
+PUBLISHED_LEVELS_CACHE_KEY = 'published_levels'
+
+
+def published_levels():
+    """Freigegebene Stufen (für Navigation/LA-Filter), kurz gecacht.
+
+    Der Cache ist pro Gunicorn-Worker (LocMem): Speichern leert ihn im eigenen Worker sofort,
+    andere Worker sehen Änderungen spätestens nach 60 Sekunden.
+    """
+    from django.core.cache import cache
+    return cache.get_or_set(
+        PUBLISHED_LEVELS_CACHE_KEY,
+        lambda: list(Levels.objects.filter(is_draft=False).order_by('order')),
+        60,
+    )
+
+
+@receiver([post_save, post_delete], sender=Levels)
+def _clear_levels_cache(sender, **kwargs):
+    from django.core.cache import cache
+    cache.delete(PUBLISHED_LEVELS_CACHE_KEY)
 
 
 class TrainingResultData(models.Model):

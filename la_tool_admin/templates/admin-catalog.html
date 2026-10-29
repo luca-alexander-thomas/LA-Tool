@@ -35,13 +35,7 @@
                 <p class="mt-0.5 text-sm text-ink-2">
                     {% if catalog.level %}{{ catalog.level.name }}{% else %}–{% endif %}
                     &nbsp;·&nbsp;
-                    {% with c=counts|dictsort:"0" %}
-                        {% for pk, cnt in counts.items %}
-                            {% if pk == catalog.pk %}
-                                {{ cnt.theory }} Theorie · {{ cnt.practical }} Praxis · {{ cnt.group }} Gruppe
-                            {% endif %}
-                        {% endfor %}
-                    {% endwith %}
+                    {{ catalog.n_theory }} Theorie · {{ catalog.n_practical }} Praxis · {{ catalog.n_group }} Gruppe
                 </p>
             </div>
         </div>

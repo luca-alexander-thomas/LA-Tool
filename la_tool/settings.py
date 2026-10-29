@@ -118,6 +118,9 @@ elif env.DATABASE['Type'] == 'mysql':
         'USER': env.DATABASE['mysql']['USER'],
         'PASSWORD': env.DATABASE['mysql']['PASSWORD'],
         'NAME': env.DATABASE['mysql']['DATABASE'],
+        # Verbindung pro Worker wiederverwenden statt bei jedem Request neu aufzubauen
+        'CONN_MAX_AGE': 60,
+        'CONN_HEALTH_CHECKS': True,
     }
 
 

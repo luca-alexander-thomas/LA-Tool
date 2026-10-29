@@ -8,7 +8,7 @@ from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from functools import wraps
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Exists, OuterRef, Q
+from django.db.models import Count, Exists, OuterRef, Q
 from app.models import (
     Questions_Catalogs, Questions_Theory, Questions_Practical,
     Questions_GroupExercise, Exams, ExamResultData, Work, SiteSettings, Levels,
@@ -494,18 +494,19 @@ def admin_draft_toggle(request, model, pk):
 
 @admin_required
 def admin_catalog_list(request):
-    catalogs = Questions_Catalogs.objects.select_related('level').all().order_by('level__order', 'order', 'title')
-    counts = {}
+    catalogs = list(Questions_Catalogs.objects.select_related('level').order_by('level__order', 'order', 'title'))
+    # Je Fragenart eine gruppierte Zählung statt drei Queries pro Katalog
+    counts = {
+        attr: dict(model.objects.order_by().values_list('catalog').annotate(n=Count('pk')))
+        for attr, model in (('n_theory', Questions_Theory), ('n_practical', Questions_Practical),
+                            ('n_group', Questions_GroupExercise))
+    }
     for c in catalogs:
-        counts[c.pk] = {
-            'theory': Questions_Theory.objects.filter(catalog=c).count(),
-            'practical': Questions_Practical.objects.filter(catalog=c).count(),
-            'group': Questions_GroupExercise.objects.filter(catalog=c).count(),
-        }
+        for attr, by_catalog in counts.items():
+            setattr(c, attr, by_catalog.get(c.pk, 0))
     return render(request, 'admin-catalog.html', {
         'user': request.user,
         'catalogs': catalogs,
-        'counts': counts,
     })
 
 

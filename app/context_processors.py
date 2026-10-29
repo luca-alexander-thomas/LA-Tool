@@ -1,4 +1,4 @@
-from app.models import Levels
+from app.models import published_levels
 
 
 def _user_has_admin_access(user):
@@ -50,8 +50,17 @@ def current_la_filter(request):
 
 
 def la_filter(request):
+    # View und Context-Processor rufen das beide auf: einmal pro Request rechnen
+    cached = getattr(request, '_la_filter_context', None)
+    if cached is not None:
+        return cached
+    request._la_filter_context = context = _la_filter(request)
+    return context
+
+
+def _la_filter(request):
     # Nur freigegebene Stufen sind wähl- und sichtbar; eine Entwurfs-Stufe in der Session wird ersetzt
-    all_levels = list(Levels.objects.filter(is_draft=False).order_by('order'))
+    all_levels = published_levels()
     valid_slugs = {l.slug for l in all_levels}
 
     # Fehlerseiten können ohne Session/Auth-Middleware gerendert werden
