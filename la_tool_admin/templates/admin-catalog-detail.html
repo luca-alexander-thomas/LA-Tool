@@ -51,13 +51,7 @@
                     <option value="partial" {% if catalog.multi_answer_scoring == 'partial' %}selected{% endif %}>Teilpunkte</option>
                 </select>
             </div>
-            {% if perms.app.manage_catalogs %}
-            <div class="lg:col-span-6">
-                <label class="form-label" for="cat-icon">Icon</label>
-                <input type="file" id="cat-icon" name="icon" class="form-control">
-            </div>
-            {% endif %}
-            <div class="flex items-end lg:col-span-6">
+            <div class="flex items-end lg:col-span-12">
                 <div class="form-check pb-2.5">
                     {{ form.is_draft }}
                     <label class="form-check-label" for="{{ form.is_draft.id_for_label }}">{{ form.is_draft.label }}</label>

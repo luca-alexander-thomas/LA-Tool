@@ -19,17 +19,12 @@
     {% for catalog in catalogs %}
     <div class="card flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
         <div class="flex min-w-0 flex-1 items-center gap-4">
-            {% if catalog.icon %}
-                <img src="{{ catalog.icon.url }}" width="60" height="60" alt="" class="size-15 shrink-0 rounded-xl object-contain">
-            {% else %}
-                <div class="flex size-15 shrink-0 items-center justify-center rounded-xl bg-surface-2">
-                    <span class="text-[10px] text-ink-3">kein Icon</span>
-                </div>
-            {% endif %}
+            <div class="flex size-15 shrink-0 items-center justify-center rounded-xl bg-surface-2 px-1 text-center text-sm leading-tight font-bold text-ink-2 break-words" aria-hidden="true">
+                {{ catalog.short_title|default:"–" }}
+            </div>
             <div class="min-w-0">
                 <div class="flex flex-wrap items-center gap-2">
-                    {% if catalog.short_title %}<span class="badge badge-neutral">{{ catalog.short_title }}</span>{% endif %}
-                    <h2 class="section-title">{{ catalog.title }}</h2>
+                    <h2 class="section-title">{% if catalog.short_title %}<span class="sr-only">{{ catalog.short_title }} – </span>{% endif %}{{ catalog.title }}</h2>
                     {% if catalog.is_draft %}<span class="badge badge-warning">Entwurf</span>{% endif %}
                 </div>
                 <p class="mt-0.5 text-sm text-ink-2">

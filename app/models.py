@@ -119,8 +119,6 @@ class Questions_Catalogs(models.Model):
     short_title = models.CharField(max_length=20)
     order = models.PositiveIntegerField(default=0)
     level = models.ForeignKey(Levels, on_delete=models.SET_NULL, null=True, blank=True)
-    icon = models.ImageField(
-        upload_to='ICONs/', blank=True, null=True)
     multi_answer_scoring = models.CharField(
         max_length=20, choices=SCORING_CHOICES, default=SCORING_ALL_OR_NOTHING,
     )
@@ -133,10 +131,6 @@ class Questions_Catalogs(models.Model):
         permissions = [
             ('manage_catalogs', 'Kataloge verwalten'),
         ]
-
-    def save(self, *args, **kwargs):
-        shrink_icon(self.icon, lambda name: Questions_Catalogs.objects.filter(icon=name).exclude(pk=self.pk).exists())
-        super().save(*args, **kwargs)
 
     def __str__(self):
         if self.short_title:

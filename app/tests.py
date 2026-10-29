@@ -202,25 +202,25 @@ class IconShrinkTests(TestCase):
         self.assertEqual(level.icon.name, name)
 
     def test_existing_file_replaced_and_old_one_removed(self):
-        catalog = Questions_Catalogs.objects.create(title='K', short_title='K')
-        path = os.path.join(self.media, 'ICONs')
+        level = Levels.objects.create(name='K', slug='k-test', order=51)
+        path = os.path.join(self.media, 'levels')
         os.makedirs(path)
         with open(os.path.join(path, 'alt.png'), 'wb') as f:
             f.write(self.upload().read())
-        Questions_Catalogs.objects.filter(pk=catalog.pk).update(icon='ICONs/alt.png')
-        catalog.refresh_from_db()
-        catalog.save()
-        self.assertEqual(catalog.icon.name, 'ICONs/alt.webp')
+        Levels.objects.filter(pk=level.pk).update(icon='levels/alt.png')
+        level.refresh_from_db()
+        level.save()
+        self.assertEqual(level.icon.name, 'levels/alt.webp')
         self.assertFalse(os.path.exists(os.path.join(path, 'alt.png')))
 
     def test_shared_old_file_is_kept(self):
-        path = os.path.join(self.media, 'ICONs')
+        path = os.path.join(self.media, 'levels')
         os.makedirs(path)
         with open(os.path.join(path, 'geteilt.png'), 'wb') as f:
             f.write(self.upload().read())
-        a = Questions_Catalogs.objects.create(title='A', short_title='A')
-        Questions_Catalogs.objects.create(title='B', short_title='B')
-        Questions_Catalogs.objects.update(icon='ICONs/geteilt.png')
+        a = Levels.objects.create(name='A', slug='a-test', order=52)
+        Levels.objects.create(name='B', slug='b-test', order=53)
+        Levels.objects.filter(slug__in=['a-test', 'b-test']).update(icon='levels/geteilt.png')
         a.refresh_from_db()
         a.save()
         self.assertTrue(os.path.exists(os.path.join(path, 'geteilt.png')))

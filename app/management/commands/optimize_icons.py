@@ -1,16 +1,16 @@
-"""Bestehende Stufen- und Katalog-Icons verkleinern und als WebP ablegen (neue Uploads passiert das automatisch)."""
+"""Bestehende Stufen-Icons verkleinern und als WebP ablegen (neue Uploads passiert das automatisch)."""
 from django.core.management.base import BaseCommand
 
 from app.images import shrink_icon
-from app.models import Levels, Questions_Catalogs
+from app.models import Levels
 
 
 class Command(BaseCommand):
-    help = 'Verkleinert vorhandene Stufen- und Katalog-Icons (max. 160 px, WebP).'
+    help = 'Verkleinert vorhandene Stufen-Icons (max. 160 px, WebP).'
 
     def handle(self, *args, **options):
         changed = 0
-        for model in (Levels, Questions_Catalogs):
+        for model in (Levels,):
             for obj in model.objects.exclude(icon='').exclude(icon__isnull=True):
                 old = obj.icon.name
                 # save() verkleinert über shrink_icon; die alte Datei wird gelöscht, wenn sie sonst niemand nutzt
