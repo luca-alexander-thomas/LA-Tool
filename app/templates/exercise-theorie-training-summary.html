@@ -22,13 +22,13 @@
                     {% include "icons/check-circle.html" with cls="size-5 shrink-0" %}
                     <strong>Bestanden!</strong>
                 </div>
-                <p class="mt-4 text-3xl font-bold tracking-tight text-green-700 tabular-nums dark:text-green-400">{{ score }} von {{ total }}</p>
+                <p class="mt-4 text-3xl font-bold tracking-tight text-green-700 tabular-nums dark:text-green-400">{{ score|floatformat:"-1" }} von {{ total }}</p>
             {% else %}
                 <div class="alert alert-danger justify-center">
                     {% include "icons/x-circle.html" with cls="size-5 shrink-0" %}
                     <strong>Nicht bestanden</strong>
                 </div>
-                <p class="mt-4 text-3xl font-bold tracking-tight text-red-700 tabular-nums dark:text-red-400">{{ score }} von {{ total }}</p>
+                <p class="mt-4 text-3xl font-bold tracking-tight text-red-700 tabular-nums dark:text-red-400">{{ score|floatformat:"-1" }} von {{ total }}</p>
             {% endif %}
             <p class="mt-1 text-sm text-ink-2">{{ pct }}% richtig</p>
             <p class="mt-0.5 text-xs text-ink-3">Bestehensgrenze: {{ pass_threshold }}%</p>

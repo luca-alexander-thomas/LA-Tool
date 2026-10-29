@@ -2,7 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import auth
 from django.contrib.auth.views import redirect_to_login
 from django.db.models import Q
+import json
 import random
+import secrets
 import time
 from datetime import date
 from django.utils import timezone
@@ -505,9 +507,7 @@ def work_training_start(request, work_id):
     if not question_ids:
         return redirect('work_detail', work_id=work_id)
     random.shuffle(question_ids)
-    request.session['training_question_ids'] = question_ids
-    request.session['training_answers'] = {}
-    request.session['training_current'] = 0
+    _start_training(request, question_ids)
     return redirect('training_run')
 
 
@@ -552,10 +552,7 @@ def training_config(request):
         random.shuffle(question_ids)
         question_ids = question_ids[:count]
 
-        request.session['training_question_ids'] = question_ids
-        request.session['training_answers'] = {}
-        request.session['training_current'] = 0
-
+        _start_training(request, question_ids)
         return redirect('training_run')
 
     return render(request, 'exercise-theorie-training-start.html', {
@@ -564,81 +561,95 @@ def training_config(request):
     })
 
 
+def _start_training(request, question_ids):
+    request.session['training_question_ids'] = question_ids
+    # Neue Kennung je Durchgang: der Browser speichert den Zwischenstand darunter
+    request.session['training_run_id'] = secrets.token_hex(8)
+
+
+def _labeled_choices(q):
+    """[(Buchstabe, Text)] aller nicht-leeren Antwortmöglichkeiten; der Buchstabe steht für die Position."""
+    return [(chr(ord('a') + i), t) for i, t in enumerate(q.answer_choice or []) if t]
+
+
+def _selected_texts(q, letters):
+    """Antworttexte zu den gewählten Buchstaben (unbekannte Buchstaben werden ignoriert)."""
+    choices = q.answer_choice or []
+    texts = []
+    for letter in letters:
+        idx = ord(letter) - ord('a') if isinstance(letter, str) and len(letter) == 1 else -1
+        if 0 <= idx < len(choices) and choices[idx]:
+            texts.append(choices[idx])
+    return texts
+
+
+def _question_payload(q):
+    """Frage für den Browser – bewusst ohne Lösung."""
+    label = ' · '.join(x for x in (q.catalog.short_title if q.catalog else '', q.number or '') if x)
+    return {
+        'id': q.pk,
+        'label': label,
+        'question': q.question,
+        'help': q.help_reference or '',
+        'choices': _labeled_choices(q),
+    }
+
+
+def _answers_from_post(request, questions):
+    """Antworten aus dem JSON-Feld 'answers': nur bekannte Fragen und gültige Buchstaben."""
+    try:
+        raw = json.loads(request.POST.get('answers') or '{}')
+    except ValueError:
+        raw = {}
+    if not isinstance(raw, dict):
+        raw = {}
+    answers = {}
+    for q in questions:
+        given = raw.get(str(q.pk)) or []
+        valid = {letter for letter, _ in _labeled_choices(q)}
+        answers[str(q.pk)] = sorted({x for x in given if isinstance(x, str) and x in valid}) if isinstance(given, list) else []
+    return answers
+
+
+def _ordered_questions(question_ids):
+    q_map = {q.pk: q for q in Questions_Theory.objects.select_related('catalog').filter(pk__in=question_ids)}
+    return [q_map[pk] for pk in question_ids if pk in q_map]
+
+
 def training_run(request):
+    """Ganzer Durchgang in einer Seite: Blättern läuft im Browser, nur die Abgabe geht an den Server."""
     question_ids = request.session.get('training_question_ids')
     if not question_ids:
         return redirect('training_config')
-
-    current = request.session.get('training_current', 0)
-    answers = request.session.get('training_answers', {})
-    total = len(question_ids)
-
-    q_id = question_ids[current]
-    question = get_object_or_404(Questions_Theory, pk=q_id)
+    questions = _ordered_questions(question_ids)
+    if not questions:
+        return redirect('training_config')
 
     if request.method == 'POST':
-        direction = request.POST.get('direction', 'forward')
-        answers[str(q_id)] = sorted(request.POST.getlist('answer'))  # empty list = no answer
-        request.session['training_answers'] = answers
+        answers = _answers_from_post(request, questions)
+        result = _save_training_result(request.user, [q.pk for q in questions], answers)
+        for key in ('training_question_ids', 'training_run_id'):
+            request.session.pop(key, None)
+        if result.user_id:
+            return redirect('training_result', result_id=result.pk)
+        return redirect('training_config')
 
-        if direction == 'back':
-            prev_index = max(0, current - 1)
-            request.session['training_current'] = prev_index
-            return redirect('training_run')
-
-        next_index = current + 1
-        if next_index >= total:
-            result = _save_training_result(request.user, question_ids, answers)
-            for key in ('training_question_ids', 'training_answers', 'training_current'):
-                request.session.pop(key, None)
-            if result and result.pk:
-                return redirect('training_result', result_id=result.pk)
-            return redirect('training_config')
-
-        request.session['training_current'] = next_index
-        return redirect('training_run')
-
-    choices_raw = question.answer_choice or []
-    while len(choices_raw) < 4:
-        choices_raw.append('')
-    labeled_choices = [(l, t) for l, t in zip('abcd', choices_raw) if t]
-    existing_answers = answers.get(str(q_id), [])
-    progress_pct = round((current / total) * 100) if total > 0 else 0
-
+    run_id = request.session.get('training_run_id') or secrets.token_hex(8)
+    request.session['training_run_id'] = run_id
     return render(request, 'exercise-theorie-training.html', {
-        'question': question,
-        'labeled_choices': labeled_choices,
-        'existing_answers': existing_answers,
-        'question_number': current + 1,
-        'question_total': total,
-        'progress_pct': progress_pct,
-        'can_go_back': current > 0,
+        'questions': [_question_payload(q) for q in questions],
+        'run_id': run_id,
     })
 
 
 def _save_training_result(user, question_ids, answers):
     q_map = {q.pk: q for q in Questions_Theory.objects.select_related('catalog').filter(pk__in=question_ids)}
-    score = 0
-    for q_id in question_ids:
-        q = q_map.get(q_id)
-        if not q:
-            continue
-        choices = q.answer_choice or []
-        user_answer = answers.get(str(q_id), '')
-        letters = user_answer if isinstance(user_answer, list) else ([user_answer] if user_answer else [])
-        selected = set()
-        for letter in letters:
-            if letter in 'abcd':
-                idx = 'abcd'.index(letter)
-                if idx < len(choices):
-                    selected.add(choices[idx])
-        if selected == set(q.correct_answers):
-            score += 1
+    score = sum(_score_question(q, answers.get(str(q.pk), [])) for q in q_map.values())
     return TrainingResultData.objects.create(
         name=f'Theorie-Training {date.today().strftime("%d.%m.%Y")}',
         questions=question_ids,
         answers=answers,
-        meta_reference={'score': score, 'total': len(question_ids)},
+        meta_reference={'score': round(score, 2), 'total': len(question_ids)},
         user=user if user.is_authenticated else None,
     )
 
@@ -658,29 +669,19 @@ def training_result(request, result_id):
         q = q_map.get(q_id)
         if not q:
             continue
-        choices = q.answer_choice or []
-        while len(choices) < 4:
-            choices.append('')
-        labeled = [(l, t) for l, t in zip('abcd', choices) if t]
         user_answer = answers.get(str(q_id), '')
-
         user_letters = user_answer if isinstance(user_answer, list) else ([user_answer] if user_answer else [])
-        user_texts = []
-        for letter in user_letters:
-            if letter in 'abcd':
-                idx = 'abcd'.index(letter)
-                if idx < len(choices):
-                    user_texts.append(choices[idx])
+        user_texts = _selected_texts(q, user_letters)
         correct_texts = q.correct_answers
-        is_correct = set(user_texts) == set(correct_texts)
 
         questions_data.append({
             'question': q,
-            'labeled_choices': labeled,
+            'labeled_choices': _labeled_choices(q),
             'user_letters': user_letters,
             'user_texts': user_texts,
             'correct_texts': correct_texts,
-            'is_correct': is_correct,
+            'is_correct': set(user_texts) == set(correct_texts),
+            'is_multi_answer': q.is_multi_answer,
         })
 
     total = meta.get('total', len(questions_data))

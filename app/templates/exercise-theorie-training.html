@@ -1,67 +1,63 @@
 {% extends "base.html" %}
 
-{% block page_title %}Theorie-Training · Frage {{ question_number }}{% endblock %}
+{% block page_title %}Theorie-Training{% endblock %}
 
 {% block site_content %}
-<div class="page-narrow">
-    <form method="post" action="{% url 'training_run' %}" id="training-form">
+{# Alle Fragen des Durchgangs liegen im Browser; erst „Abschließen“ schickt die Antworten an den Server. #}
+<div class="page-narrow"
+     x-data="questionRun({ questions: JSON.parse(document.getElementById('training-data').textContent), storageKey: 'training:{{ run_id }}', storagePrefix: 'training:' })">
+    <form method="post" action="{% url 'training_run' %}" x-ref="form" @submit.prevent="next()">
         {% csrf_token %}
-        <input type="hidden" name="direction" id="direction-input" value="forward">
+        <input type="hidden" name="answers" x-ref="answers">
 
         {# Fortschritt #}
         <div class="mb-6 flex items-center gap-3">
-            <span class="text-sm font-semibold text-ink-2 tabular-nums">{{ question_number }} / {{ question_total }}</span>
-            <div class="progress flex-1" role="progressbar" aria-valuenow="{{ progress_pct }}" aria-valuemin="0" aria-valuemax="100" aria-label="Fortschritt">
-                <div class="progress-bar bg-green-600" style="width: {{ progress_pct }}%"></div>
+            <span class="text-sm font-semibold text-ink-2 tabular-nums"><span x-text="index + 1">1</span> / <span x-text="total">{{ questions|length }}</span></span>
+            <div class="progress flex-1" role="progressbar" :aria-valuenow="progress" aria-valuemin="0" aria-valuemax="100" aria-label="Fortschritt">
+                <div class="progress-bar bg-green-600" :style="`width: ${progress}%`"></div>
             </div>
-            <span class="text-xs text-ink-3 tabular-nums">{{ progress_pct }}%</span>
+            <span class="text-xs text-ink-3 tabular-nums" x-text="`${progress}%`"></span>
         </div>
 
         {# Frage #}
-        <div class="mb-6" x-data="{ hint: false }">
+        <div class="mb-6">
             <div class="flex items-start gap-3">
                 <div class="min-w-0 flex-1">
-                    {% if question.number or question.catalog.short_title %}<p class="eyebrow mb-1">{{ question.catalog.short_title }}{% if question.number and question.catalog.short_title %} · {% endif %}{{ question.number|default:"" }}</p>{% endif %}
-                    <h1 class="text-xl font-bold tracking-tight text-ink sm:text-2xl">{{ question.question }}</h1>
+                    <p class="eyebrow mb-1" x-show="q.label" x-text="q.label"></p>
+                    <h1 class="text-xl font-bold tracking-tight text-ink outline-none sm:text-2xl" tabindex="-1" x-ref="heading" x-text="q.question"></h1>
                 </div>
-                {% if question.help_reference %}
-                <button type="button" class="btn btn-ghost btn-icon size-11 shrink-0 text-amber-500 hover:text-amber-600"
+                <button type="button" x-show="q.help" class="btn btn-ghost btn-icon size-11 shrink-0 text-amber-500 hover:text-amber-600"
                         @click="hint = !hint" :aria-expanded="hint" aria-label="Hinweis anzeigen" title="Hinweis">
                     {% include "icons/question-mark-circle.html" with cls="size-7" %}
                 </button>
-                {% endif %}
             </div>
-            {% if question.help_reference %}
-            <div x-show="hint" x-cloak x-transition class="alert alert-warning mt-3">
+            <div x-show="hint && q.help" x-cloak x-transition class="alert alert-warning mt-3">
                 {% include "icons/light-bulb.html" with cls="size-5 shrink-0" %}
-                <div><strong class="block">Hinweis</strong>{{ question.help_reference }}</div>
+                <div><strong class="block">Hinweis</strong><span x-text="q.help"></span></div>
             </div>
-            {% endif %}
         </div>
 
         {# Antworten #}
         <p class="mb-2 text-xs font-medium text-ink-3">Mehrere Antworten möglich</p>
         <div class="space-y-2.5">
-            {% for letter, text in labeled_choices %}
-            <label class="answer-option has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-accent/25" for="choice-{{ letter }}">
-                <input class="sr-only" type="checkbox" name="answer"
-                       id="choice-{{ letter }}" value="{{ letter }}"
-                       {% if letter in existing_answers %}checked{% endif %}>
-                <span class="answer-letter">{{ letter|upper }}</span>
-                <span class="min-w-0 flex-1 text-sm text-ink sm:text-base">{{ text }}</span>
-            </label>
-            {% endfor %}
+            <template x-for="c in q.choices" :key="`${q.id}-${c[0]}`">
+                <label class="answer-option has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-accent/25" :for="`choice-${c[0]}`">
+                    <input class="sr-only" type="checkbox" :id="`choice-${c[0]}`" :value="c[0]"
+                           x-model="answers[q.id]" @change="persist()">
+                    <span class="answer-letter" x-text="c[0].toUpperCase()"></span>
+                    <span class="min-w-0 flex-1 text-sm text-ink sm:text-base" x-text="c[1]"></span>
+                </label>
+            </template>
         </div>
 
         {# Navigation #}
         <div class="mt-8 flex gap-3">
-            {% if can_go_back %}
-            <button type="button" class="btn btn-secondary btn-lg flex-1" onclick="goBack()">
+            <button type="button" x-show="index > 0" x-cloak class="btn btn-secondary btn-lg flex-1" @click="back()">
                 {% include "icons/arrow-left.html" with cls="size-5" %} Zurück
             </button>
-            {% endif %}
-            <button type="submit" class="btn btn-primary btn-lg flex-1">
-                {% if question_number == question_total %}Abschließen {% include "icons/check.html" with cls="size-5" %}{% else %}Weiter {% include "icons/arrow-right.html" with cls="size-5" %}{% endif %}
+            <button type="submit" class="btn btn-primary btn-lg flex-1" :disabled="submitting">
+                <span x-show="!isLast" class="inline-flex items-center gap-2">Weiter {% include "icons/arrow-right.html" with cls="size-5" %}</span>
+                <span x-show="isLast" x-cloak class="inline-flex items-center gap-2">Abschließen {% include "icons/check.html" with cls="size-5" %}</span>
             </button>
         </div>
     </form>
@@ -69,10 +65,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-function goBack() {
-    document.getElementById('direction-input').value = 'back';
-    document.getElementById('training-form').submit();
-}
-</script>
+{{ questions|json_script:"training-data" }}
 {% endblock %}

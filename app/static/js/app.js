@@ -118,7 +118,91 @@
                 }
             },
         }));
+
+        // Fragen-Durchgang (Theorie-Training, Prüfung): Blättern läuft im Browser, abgegeben wird per Formular.
+        // cfg: questions [{id, label, question, help, choices: [[buchstabe, text]]}],
+        //      storageKey (Zwischenstand, eindeutig je Durchgang), storagePrefix, persistent (localStorage statt sessionStorage)
+        Alpine.data('questionRun', (cfg) => ({
+            questions: cfg.questions,
+            index: 0,
+            answers: {},
+            hint: false,
+            submitting: false,
+            init() {
+                const store = runStore(cfg.persistent);
+                store.prune(cfg.storagePrefix, cfg.storageKey);
+                const saved = store.read(cfg.storageKey) || {};
+                const savedAnswers = saved.answers || {};
+                this.questions.forEach((q) => {
+                    const prev = savedAnswers[q.id];
+                    this.answers[q.id] = Array.isArray(prev) ? prev.filter((x) => q.choices.some((c) => c[0] === x)) : [];
+                });
+                this.index = Math.min(Math.max(parseInt(saved.index, 10) || 0, 0), this.questions.length - 1);
+                this.store = store;
+                this.$watch('index', () => {
+                    this.hint = false;
+                    this.persist();
+                    this.$nextTick(() => {
+                        window.scrollTo(0, 0);
+                        if (this.$refs.heading) this.$refs.heading.focus({ preventScroll: true });
+                    });
+                });
+            },
+            get q() { return this.questions[this.index]; },
+            get total() { return this.questions.length; },
+            get isLast() { return this.index === this.questions.length - 1; },
+            get progress() { return Math.round((this.index / this.questions.length) * 100); },
+            get answeredCount() { return this.questions.filter((q) => this.answers[q.id].length).length; },
+            persist() {
+                this.store.write(cfg.storageKey, { index: this.index, answers: this.answers });
+            },
+            back() {
+                if (this.index > 0) this.index--;
+            },
+            next() {
+                if (this.isLast) this.submit();
+                else this.index++;
+            },
+            submit() {
+                if (this.submitting) return;
+                this.submitting = true;
+                this.persist();
+                this.$refs.answers.value = JSON.stringify(this.answers);
+                this.$refs.form.submit();
+            },
+        }));
     });
+
+    // Zwischenstand eines Fragen-Durchgangs im Browser (Fehler beim Speicher werden ignoriert)
+    function runStore(persistent) {
+        let area = null;
+        try {
+            area = persistent ? window.localStorage : window.sessionStorage;
+        } catch (e) {}
+        return {
+            read(key) {
+                try {
+                    return JSON.parse(area.getItem(key));
+                } catch (e) {
+                    return null;
+                }
+            },
+            write(key, value) {
+                try {
+                    area.setItem(key, JSON.stringify(value));
+                } catch (e) {}
+            },
+            // Alte Durchgänge gleicher Art entfernen
+            prune(prefix, keep) {
+                try {
+                    for (let i = area.length - 1; i >= 0; i--) {
+                        const key = area.key(i);
+                        if (key && key.startsWith(prefix) && key !== keep) area.removeItem(key);
+                    }
+                } catch (e) {}
+            },
+        };
+    }
 
     function urlBase64ToUint8Array(base64) {
         const padded = (base64 + '='.repeat((4 - (base64.length % 4)) % 4)).replace(/-/g, '+').replace(/_/g, '/');
