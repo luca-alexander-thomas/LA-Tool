@@ -17,18 +17,13 @@
             {# Info & Selbsteinschätzung #}
             <section class="card card-body">
                 <div class="flex flex-wrap items-center justify-center gap-2">
-                    {% if question.catalog %}{% if question.catalog.short_title %}<span class="badge badge-neutral">{{ question.catalog.short_title }}</span>{% endif %}<span class="font-semibold text-ink">{{ question.catalog.title }}</span>{% endif %}
                     {% if question.number %}<span class="badge badge-neutral">{{ question.number }}</span>{% endif %}
-                </div>
-                {% if question.catalog %}
-                <div class="mt-2 flex justify-center">
-                    {% if question.catalog.level %}
-                    <span class="badge {{ question.catalog.level.badge_bg_class|default:'badge-primary' }} {{ question.catalog.level.badge_text_class }}">{{ question.catalog.level.name }}</span>
+                    {% if question.level %}
+                    <span class="badge {{ question.level.badge_bg_class|default:'badge-primary' }} {{ question.level.badge_text_class }}">{{ question.level.name }}</span>
                     {% else %}
-                    <span class="badge badge-neutral">–</span>
+                    <span class="badge badge-neutral">Alle Stufen</span>
                     {% endif %}
                 </div>
-                {% endif %}
                 <div class="mt-5 flex flex-col items-center">
                     {% if assessment and assessment.score is not None %}
                         {% if assessment.score >= 75 %}

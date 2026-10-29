@@ -44,7 +44,8 @@
         <div class="container-app flex h-16 items-center gap-2 sm:gap-3">
             <a href="{% url 'home' %}" class="mr-2 flex shrink-0 items-center gap-2.5">
                 <img src="{% static 'img/thw-jugend-ge-logo.webp' %}" alt="THW-Jugend Gelsenkirchen" class="h-9 w-auto" width="64" height="36">
-                <span class="hidden leading-tight sm:block">
+                {# Zwischen md und lg braucht die Hauptnavigation den Platz #}
+                <span class="hidden leading-tight sm:block md:hidden lg:block">
                     <span class="block text-sm font-bold tracking-tight text-ink">LA-Tool</span>
                     <span class="block text-[0.6875rem] text-ink-3">THW-Jugend GE</span>
                 </span>
@@ -55,7 +56,7 @@
                 <a href="{% url 'home' %}" class="nav-link {% if nav_section == 'home' %}nav-link-active{% endif %}">Start</a>
                 <a href="{% url 'training_config' %}" class="nav-link {% if nav_section == 'theory' %}nav-link-active{% endif %}">Theorie</a>
                 <a href="{% url 'practical_list' %}" class="nav-link {% if nav_section == 'practical' %}nav-link-active{% endif %}">Praxis</a>
-                <a href="{% url 'group_list' %}" class="nav-link {% if nav_section == 'group' %}nav-link-active{% endif %}">Gruppen</a>
+                <a href="{% url 'group_list' %}" class="nav-link {% if nav_section == 'group' %}nav-link-active{% endif %}">Gruppenaufgaben</a>
                 <a href="{% url 'work' %}" class="nav-link {% if nav_section == 'work' %}nav-link-active{% endif %}">Dienste</a>
                 <a href="{% url 'exam_list' %}" class="nav-link {% if nav_section == 'exam' %}nav-link-active{% endif %}">Prüfungen</a>
             </nav>

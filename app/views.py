@@ -495,7 +495,7 @@ def excercise(request):
     ).order_by('-meta_time')[:3]
     sample_theory = _published(Questions_Theory).order_by('?').first()
     sample_practical = _published(Questions_Practical).order_by('?').first()
-    sample_group = _published(Questions_GroupExercise).order_by('?').first()
+    sample_group = _published_groups().order_by('?').first()
 
     return render(request, "exercise.html", {
         'last_trainings': last_trainings,
@@ -559,7 +559,7 @@ def work_detail(request, work_id):
         'work': work,
         'theory_questions': work.theory_questions.filter(pk__in=_published(Questions_Theory)).select_related('catalog'),
         'practical_exercises': work.practical_exercises.filter(pk__in=_published(Questions_Practical)).select_related('catalog'),
-        'group_exercises': work.group_exercises.filter(pk__in=_published(Questions_GroupExercise)).select_related('catalog'),
+        'group_exercises': work.group_exercises.filter(pk__in=_published_groups()),
     })
 
 
@@ -723,6 +723,12 @@ def _published(model):
     return model.objects.filter(is_draft=False, catalog__is_draft=False, catalog__level__is_draft=False)
 
 
+def _published_groups():
+    """Freigegebene Gruppenaufgaben (eigenständig, ohne Katalog): Aufgabe und ggf. Stufe nicht im Entwurf."""
+    return Questions_GroupExercise.objects.filter(is_draft=False).filter(
+        Q(level__isnull=True) | Q(level__is_draft=False))
+
+
 def _by_catalog(items, catalog_of=lambda item: item.catalog):
     """[(Katalog, [Einträge])] in der Sortierreihenfolge der Kataloge; Einträge behalten ihre Reihenfolge."""
     groups = {}
@@ -813,11 +819,9 @@ def practical_detail(request, q_id):
 
 def group_list(request):
     complexity = current_la_filter(request)
-    qs = Questions_GroupExercise.objects.select_related('catalog').filter(
-        catalog__level__slug=complexity,
-        is_draft=False,
-        catalog__is_draft=False,
-        catalog__level__is_draft=False,
+    # Aufgaben der gewählten Stufe und Aufgaben für alle Stufen
+    qs = _published_groups().select_related('level').filter(
+        Q(level__slug=complexity) | Q(level__isnull=True),
     ).order_by('number', 'pk')
 
     assessments = {}
@@ -834,7 +838,7 @@ def group_list(request):
 
 
 def group_detail(request, q_id):
-    question = get_object_or_404(_published(Questions_GroupExercise), pk=q_id)
+    question = get_object_or_404(_published_groups().select_related('level'), pk=q_id)
     assessment = None
     if request.user.is_authenticated:
         assessment = GroupExerciseSelfAssessment.objects.filter(user=request.user, question=question).first()

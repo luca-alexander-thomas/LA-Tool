@@ -25,10 +25,11 @@ urlpatterns = [
     path('catalog/<int:catalog_id>/practical/<int:q_id>/', views.admin_practical_edit, name='admin_practical_edit'),
     path('catalog/<int:catalog_id>/practical/<int:q_id>/delete/', views.admin_practical_delete, name='admin_practical_delete'),
 
-    # Gruppenaufgaben
-    path('catalog/<int:catalog_id>/group/create/', views.admin_group_create, name='admin_group_create'),
-    path('catalog/<int:catalog_id>/group/<int:q_id>/', views.admin_group_edit, name='admin_group_edit'),
-    path('catalog/<int:catalog_id>/group/<int:q_id>/delete/', views.admin_group_delete, name='admin_group_delete'),
+    # Gruppenaufgaben (eigenständig, nicht an Kataloge gebunden)
+    path('gruppenaufgaben/', views.admin_group_list, name='admin_group_list'),
+    path('gruppenaufgaben/neu/', views.admin_group_create, name='admin_group_create'),
+    path('gruppenaufgaben/<int:q_id>/', views.admin_group_edit, name='admin_group_edit'),
+    path('gruppenaufgaben/<int:q_id>/delete/', views.admin_group_delete, name='admin_group_delete'),
 
     # Nutzerverwaltung
     path('users/', views.admin_users, name='admin_users'),

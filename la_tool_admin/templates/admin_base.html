@@ -14,6 +14,7 @@ Admin-Seiten füllen {% block admin_content %}.
         <a href="{% url 'admin_index' %}" class="nav-link shrink-0 {% if nav_section == 'admin_home' %}nav-link-active{% endif %}">Übersicht</a>
         {% if perms.app.manage_users %}<a href="{% url 'admin_users' %}" class="nav-link shrink-0 {% if nav_section == 'admin_users' %}nav-link-active{% endif %}">Benutzer</a>{% endif %}
         <a href="{% url 'admin_catalog' %}" class="nav-link shrink-0 {% if nav_section == 'admin_catalog' %}nav-link-active{% endif %}">Kataloge</a>
+        {% if perms.app.manage_group_exercises %}<a href="{% url 'admin_group_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_group' %}nav-link-active{% endif %}">Gruppenaufgaben</a>{% endif %}
         {% if perms.app.manage_theory %}<a href="{% url 'admin_import_questions' %}" class="nav-link shrink-0 {% if nav_section == 'admin_import' %}nav-link-active{% endif %}">Import</a>{% endif %}
         <a href="{% url 'admin_exam_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_exam' %}nav-link-active{% endif %}">Prüfungen</a>
         <a href="{% url 'admin_work_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_work' %}nav-link-active{% endif %}">Dienste</a>
@@ -32,6 +33,7 @@ Admin-Seiten füllen {% block admin_content %}.
 
             <p class="sidebar-heading">Inhalte</p>
             <a href="{% url 'admin_catalog' %}" class="sidebar-link {% if nav_section == 'admin_catalog' %}sidebar-link-active{% endif %}">{% include "icons/rectangle-stack.html" %} Kataloge</a>
+            {% if perms.app.manage_group_exercises %}<a href="{% url 'admin_group_list' %}" class="sidebar-link {% if nav_section == 'admin_group' %}sidebar-link-active{% endif %}">{% include "icons/user-group.html" %} Gruppenaufgaben</a>{% endif %}
             {% if perms.app.manage_theory %}<a href="{% url 'admin_import_questions' %}" class="sidebar-link {% if nav_section == 'admin_import' %}sidebar-link-active{% endif %}">{% include "icons/arrow-up-tray.html" %} Fragen-Import</a>{% endif %}
             <a href="{% url 'admin_exam_list' %}" class="sidebar-link {% if nav_section == 'admin_exam' %}sidebar-link-active{% endif %}">{% include "icons/clipboard-document-check.html" %} Prüfungen</a>
             <a href="{% url 'admin_work_list' %}" class="sidebar-link {% if nav_section == 'admin_work' %}sidebar-link-active{% endif %}">{% include "icons/calendar-days.html" %} Dienste</a>

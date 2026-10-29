@@ -4,7 +4,7 @@
 
 {% block admin_content %}
 <div class="max-w-2xl">
-    <a href="{% url 'admin_catalog_detail' catalog.pk %}?tab=group" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} {% if catalog.short_title %}{{ catalog.short_title }} · {% endif %}{{ catalog.title }}</a>
+    <a href="{% url 'admin_group_list' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Gruppenaufgaben</a>
     <div class="page-header">
         <div>
             <p class="eyebrow">Gruppenaufgabe</p>
@@ -28,6 +28,13 @@
             </div>
 
             <div>
+                <label class="form-label" for="{{ form.level.id_for_label }}">{{ form.level.label }}</label>
+                {{ form.level }}
+                <p class="form-text">{{ form.level.help_text }}</p>
+                {% if form.level.errors %}<div class="form-error">{{ form.level.errors }}</div>{% endif %}
+            </div>
+
+            <div>
                 {% if question and question.file %}
                 <div class="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-line bg-surface-2 px-3 py-2 text-sm">
                     <span class="text-ink-2">Aktuell:</span>
@@ -47,9 +54,14 @@
                 {{ form.help_reference }}
                 {% if form.help_reference.errors %}<div class="form-error">{{ form.help_reference.errors }}</div>{% endif %}
             </div>
+
+            <div class="form-check">
+                {{ form.is_draft }}
+                <label class="form-check-label" for="{{ form.is_draft.id_for_label }}">{{ form.is_draft.label }}</label>
+            </div>
         </div>
         <div class="card-footer">
-            <a href="{% url 'admin_catalog_detail' catalog.pk %}?tab=group" class="btn btn-secondary">Abbrechen</a>
+            <a href="{% url 'admin_group_list' %}" class="btn btn-secondary">Abbrechen</a>
             <button type="submit" class="btn btn-primary">{% include "icons/check.html" %} Speichern</button>
         </div>
     </form>

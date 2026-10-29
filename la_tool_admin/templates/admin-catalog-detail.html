@@ -74,16 +74,13 @@
     {% endif %}
 </section>
 
-{# Tabs: Theorie / Praxis / Gruppenaufgaben (serverseitig über ?tab=) #}
+{# Tabs: Theorie / Praxis (serverseitig über ?tab=); Gruppenaufgaben sind eigenständig #}
 <nav class="tabs mb-4 overflow-x-auto" role="tablist" aria-label="Fragentypen">
     <a class="tab inline-flex items-center justify-center gap-2 whitespace-nowrap {% if active_tab == 'theory' %}tab-active{% endif %}" href="?tab=theory" role="tab" aria-selected="{% if active_tab == 'theory' %}true{% else %}false{% endif %}">
         Theorie <span class="badge badge-neutral">{{ theory_questions|length }}</span>
     </a>
     <a class="tab inline-flex items-center justify-center gap-2 whitespace-nowrap {% if active_tab == 'practical' %}tab-active{% endif %}" href="?tab=practical" role="tab" aria-selected="{% if active_tab == 'practical' %}true{% else %}false{% endif %}">
         Praxis <span class="badge badge-neutral">{{ practical_questions|length }}</span>
-    </a>
-    <a class="tab inline-flex items-center justify-center gap-2 whitespace-nowrap {% if active_tab == 'group' %}tab-active{% endif %}" href="?tab=group" role="tab" aria-selected="{% if active_tab == 'group' %}true{% else %}false{% endif %}">
-        Gruppenaufgaben <span class="badge badge-neutral">{{ group_questions|length }}</span>
     </a>
 </nav>
 
@@ -166,40 +163,4 @@
 {% endif %}
 {% endif %}
 
-{# TAB: Gruppenaufgaben #}
-{% if active_tab == 'group' %}
-{% if perms.app.manage_group_exercises %}
-<div class="mb-4 flex justify-end">
-    <a href="{% url 'admin_group_create' catalog.pk %}" class="btn btn-sm btn-primary">{% include "icons/plus.html" with cls="size-4" %} Neue Gruppenaufgabe</a>
-</div>
-{% endif %}
-{% if group_questions %}
-    <div class="space-y-2">
-    {% for q in group_questions %}
-    <div class="card flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
-        <div class="min-w-0">
-            <p>
-                <span class="mr-2 text-xs text-ink-3 tabular-nums">{{ q.number }}</span>
-                <strong class="font-semibold">{{ q.question|truncatechars:120 }}</strong>
-            </p>
-            {% if q.file %}
-                <a href="{{ q.file.url }}" target="_blank" class="link mt-1 inline-flex items-center gap-1 text-sm">{% include "icons/document-text.html" with cls="size-4" %} PDF ansehen</a>
-            {% endif %}
-        </div>
-        {% if perms.app.manage_group_exercises %}
-        <div class="flex shrink-0 gap-2">
-            <a href="{% url 'admin_group_edit' catalog.pk q.pk %}" class="btn btn-sm btn-soft">{% include "icons/pencil-square.html" with cls="size-4" %} Bearbeiten</a>
-            <form method="post" action="{% url 'admin_group_delete' catalog.pk q.pk %}" onsubmit="return confirm('Aufgabe löschen?');">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-sm btn-danger-soft">{% include "icons/trash.html" with cls="size-4" %} Löschen</button>
-            </form>
-        </div>
-        {% endif %}
-    </div>
-    {% endfor %}
-    </div>
-{% else %}
-    <p class="empty-state">Noch keine Gruppenaufgaben vorhanden.</p>
-{% endif %}
-{% endif %}
 {% endblock %}

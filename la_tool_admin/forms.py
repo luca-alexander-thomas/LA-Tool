@@ -167,17 +167,26 @@ class GroupExerciseForm(forms.ModelForm):
 
     class Meta:
         model = Questions_GroupExercise
-        fields = ['number', 'question', 'file', 'help_reference']
+        fields = ['number', 'question', 'level', 'file', 'help_reference', 'is_draft']
         widgets = {
             'number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'z.B. G1'}),
             'question': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Aufgabentitel'}),
             'help_reference': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Hinweise (optional)'}),
+            'level': forms.Select(attrs={'class': 'form-select'}),
+            'is_draft': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
         labels = {
             'number': 'Nummer',
             'question': 'Aufgabe',
             'help_reference': 'Hinweise',
+            'level': 'LA-Stufe',
+            'is_draft': 'Entwurf (für User unsichtbar)',
         }
+        help_texts = {'level': 'Leer lassen, wenn die Aufgabe für alle Stufen gilt.'}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['level'].empty_label = 'Alle Stufen'
 
 
 class WorkForm(forms.ModelForm):

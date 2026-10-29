@@ -201,10 +201,16 @@ class Questions_Practical(models.Model):
 
 
 class Questions_GroupExercise(models.Model):
+    """Gruppenaufgabe – eigenständig, nicht Teil eines Lernabschnitts (Katalogs)."""
     number = models.CharField(max_length=20)
     question = models.TextField()
+    # LA-Stufe, für die die Aufgabe gilt; leer = für alle Stufen
+    level = models.ForeignKey(Levels, on_delete=models.SET_NULL, null=True, blank=True,
+                              related_name='group_exercises')
+    # Veraltet: früher hingen Gruppenaufgaben an Katalogen. Wird beim migrate auf `level` übertragen und
+    # geleert (app.apps.detach_group_exercises); kann in einem späteren Release entfernt werden.
     catalog = models.ForeignKey(
-        Questions_Catalogs, on_delete=models.CASCADE, null=True, blank=True)
+        Questions_Catalogs, on_delete=models.SET_NULL, null=True, blank=True, editable=False)
     file = models.FileField(
         upload_to='Aufgaben-Gruppe/', blank=True, null=True,
         validators=[_PDF_IMAGE_VALIDATOR])
@@ -214,6 +220,7 @@ class Questions_GroupExercise(models.Model):
     is_draft = models.BooleanField(default=False)
 
     class Meta:
+        ordering = ['number', 'pk']
         permissions = [
             ('manage_group_exercises', 'Gruppenaufgaben verwalten'),
         ]

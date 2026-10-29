@@ -1,0 +1,58 @@
+{% extends "admin_base.html" %}
+
+{% block page_title %}Gruppenaufgaben · Admin{% endblock %}
+
+{% block admin_content %}
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Inhalte</p>
+        <h1 class="page-title mt-1">Gruppenaufgaben</h1>
+        <p class="page-subtitle">Eigenständige Aufgaben für die Gruppe, nicht Teil eines Katalogs. {{ total }} Aufgabe{{ total|pluralize:"n" }}.</p>
+    </div>
+    <a href="{% url 'admin_group_create' %}" class="btn btn-primary">{% include "icons/plus.html" with cls="size-4" %} Neue Gruppenaufgabe</a>
+</div>
+
+{% for level, exercises in sections %}
+<section class="mb-6">
+    <h2 class="mb-2 flex items-center gap-2 text-base font-semibold text-ink">
+        {% if level %}
+        <span class="badge {{ level.badge_bg_class|default:'badge-primary' }} {{ level.badge_text_class }}">{{ level.name }}</span>
+        {% if level.is_draft %}<span class="badge badge-warning">Stufe im Entwurf</span>{% endif %}
+        {% else %}
+        <span class="badge badge-neutral">Alle Stufen</span>
+        {% endif %}
+    </h2>
+    <div class="space-y-2">
+        {% for q in exercises %}
+        <div class="card flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
+            <div class="min-w-0">
+                <p class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs text-ink-3 tabular-nums">{{ q.number }}</span>
+                    <strong class="font-semibold">{{ q.question|truncatechars:120 }}</strong>
+                    {% if q.is_draft %}<span class="badge badge-warning">Entwurf</span>{% endif %}
+                </p>
+                {% if q.file %}
+                <a href="{{ q.file.url }}" target="_blank" rel="noopener" class="link mt-1 inline-flex items-center gap-1 text-sm">{% include "icons/document-text.html" with cls="size-4" %} PDF ansehen</a>
+                {% endif %}
+            </div>
+            <div class="flex shrink-0 flex-wrap gap-2">
+                <form method="post" action="{% url 'admin_draft_toggle' 'group' q.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm {% if q.is_draft %}btn-soft{% else %}btn-secondary{% endif %}">
+                        {% if q.is_draft %}{% include "icons/eye.html" with cls="size-4" %} Freigeben{% else %}{% include "icons/eye-slash.html" with cls="size-4" %} Als Entwurf{% endif %}
+                    </button>
+                </form>
+                <a href="{% url 'admin_group_edit' q.pk %}" class="btn btn-sm btn-soft">{% include "icons/pencil-square.html" with cls="size-4" %} Bearbeiten</a>
+                <form method="post" action="{% url 'admin_group_delete' q.pk %}" onsubmit="return confirm('Aufgabe löschen?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-danger-soft">{% include "icons/trash.html" with cls="size-4" %} Löschen</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% empty %}
+<p class="empty-state">Noch keine Gruppenaufgaben vorhanden.</p>
+{% endfor %}
+{% endblock %}

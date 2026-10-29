@@ -467,7 +467,7 @@ def admin_draft_toggle(request, model, pk):
         'catalog': 'admin_catalog',
         'theory': 'admin_catalog',
         'practical': 'admin_catalog',
-        'group': 'admin_catalog',
+        'group': 'admin_group_list',
         'work': 'admin_work_list',
     }
     ModelClass = model_map.get(model)
@@ -487,8 +487,7 @@ def admin_catalog_list(request):
     # Je Fragenart eine gruppierte Zählung statt drei Queries pro Katalog
     counts = {
         attr: dict(model.objects.order_by().values_list('catalog').annotate(n=Count('pk')))
-        for attr, model in (('n_theory', Questions_Theory), ('n_practical', Questions_Practical),
-                            ('n_group', Questions_GroupExercise))
+        for attr, model in (('n_theory', Questions_Theory), ('n_practical', Questions_Practical))
     }
     for c in catalogs:
         for attr, by_catalog in counts.items():
@@ -518,14 +517,12 @@ def admin_catalog_detail(request, catalog_id):
     form = CatalogForm(instance=catalog)
     theory_qs = Questions_Theory.objects.filter(catalog=catalog).order_by('number', 'pk')
     practical_qs = Questions_Practical.objects.filter(catalog=catalog).order_by('number', 'pk')
-    group_qs = Questions_GroupExercise.objects.filter(catalog=catalog).order_by('number', 'pk')
     return render(request, 'admin-catalog-detail.html', {
         'user': request.user,
         'catalog': catalog,
         'form': form,
         'theory_questions': theory_qs,
         'practical_questions': practical_qs,
-        'group_questions': group_qs,
         'active_tab': request.GET.get('tab', 'theory'),
     })
 
@@ -1009,11 +1006,21 @@ def admin_practical_delete(request, catalog_id, q_id):
 # ── GRUPPENAUFGABEN ───────────────────────────────────────────────────────────
 
 @admin_permission_required('app.manage_group_exercises')
-def admin_group_create(request, catalog_id):
+def admin_group_list(request):
+    """Gruppenaufgaben – eigenständig, nach LA-Stufe gruppiert (ohne Stufe = für alle Stufen)."""
+    exercises = list(Questions_GroupExercise.objects.select_related('level').order_by('number', 'pk'))
+    by_level = {}
+    for exercise in exercises:
+        by_level.setdefault(exercise.level, []).append(exercise)
+    sections = sorted(by_level.items(), key=lambda pair: (pair[0] is not None, pair[0].order if pair[0] else 0))
+    return render(request, 'admin-group-exercises.html', {'sections': sections, 'total': len(exercises)})
+
+
+@admin_permission_required('app.manage_group_exercises')
+def admin_group_create(request):
     import uuid as _uuid
     from django.core.files.storage import default_storage
     from django.core.files.base import ContentFile
-    catalog = get_object_or_404(Questions_Catalogs, pk=catalog_id)
     if request.method == 'POST':
         form = GroupExerciseForm(request.POST, request.FILES)
         if form.is_valid():
@@ -1026,36 +1033,35 @@ def admin_group_create(request, catalog_id):
                     safe_name = os.path.basename(uploaded.name)
                     temp_path = f'tmp/{_uuid.uuid4().hex}/{safe_name}'
                     default_storage.save(temp_path, ContentFile(uploaded.read()))
+                    level = form.cleaned_data.get('level')
                     request.session['pending_file_upload'] = {
                         'model': 'group',
-                        'catalog_id': catalog_id,
+                        'catalog_id': None,
                         'temp_path': temp_path,
                         'existing_path': existing.file.name,
                         'form_data': {
                             'number': form.cleaned_data.get('number', ''),
                             'question': form.cleaned_data.get('question', ''),
                             'help_reference': form.cleaned_data.get('help_reference', ''),
+                            'is_draft': form.cleaned_data.get('is_draft', False),
+                            'level_id': level.pk if level else None,
                         },
                     }
                     return redirect('admin_file_confirm')
-            obj = form.save(commit=False)
-            obj.catalog = catalog
-            obj.save()
-            return redirect('admin_catalog_detail', catalog_id=catalog_id)
+            form.save()
+            return redirect('admin_group_list')
     else:
-        form = GroupExerciseForm()
+        form = GroupExerciseForm(initial={'level': Levels.objects.filter(slug=request.session.get('la_filter')).first()})
     return render(request, 'admin-question-group.html', {
         'user': request.user,
         'form': form,
-        'catalog': catalog,
         'title': 'Neue Gruppenaufgabe',
     })
 
 
 @admin_permission_required('app.manage_group_exercises')
-def admin_group_edit(request, catalog_id, q_id):
-    catalog = get_object_or_404(Questions_Catalogs, pk=catalog_id)
-    question = get_object_or_404(Questions_GroupExercise, pk=q_id, catalog=catalog)
+def admin_group_edit(request, q_id):
+    question = get_object_or_404(Questions_GroupExercise, pk=q_id)
     if request.method == 'POST':
         form = GroupExerciseForm(request.POST, request.FILES, instance=question)
         if not request.FILES.get('file'):
@@ -1063,24 +1069,23 @@ def admin_group_edit(request, catalog_id, q_id):
             del form.fields['file']
         if form.is_valid():
             form.save()
-            return redirect('admin_catalog_detail', catalog_id=catalog_id)
+            return redirect('admin_group_list')
     else:
         form = GroupExerciseForm(instance=question)
     return render(request, 'admin-question-group.html', {
         'user': request.user,
         'form': form,
-        'catalog': catalog,
         'question': question,
         'title': 'Gruppenaufgabe bearbeiten',
     })
 
 
 @admin_permission_required('app.manage_group_exercises')
-def admin_group_delete(request, catalog_id, q_id):
-    question = get_object_or_404(Questions_GroupExercise, pk=q_id, catalog_id=catalog_id)
+def admin_group_delete(request, q_id):
+    question = get_object_or_404(Questions_GroupExercise, pk=q_id)
     if request.method == 'POST':
         question.delete()
-    return redirect('admin_catalog_detail', catalog_id=catalog_id)
+    return redirect('admin_group_list')
 
 
 # ── DATEI-BESTÄTIGUNG BEI DUPLIKATEN ─────────────────────────────────────────
@@ -1108,12 +1113,10 @@ def admin_file_confirm(request):
         choice = request.POST.get('choice')
         request.session.pop('pending_file_upload', None)
 
-        catalog = get_object_or_404(Questions_Catalogs, pk=catalog_id)
-
         if model == 'practical':
-            obj = Questions_Practical(catalog=catalog, **form_data)
+            obj = Questions_Practical(catalog=get_object_or_404(Questions_Catalogs, pk=catalog_id), **form_data)
         else:
-            obj = Questions_GroupExercise(catalog=catalog, **form_data)
+            obj = Questions_GroupExercise(**form_data)  # eigenständig, form_data enthält level_id
 
         if choice == 'existing':
             # Reuse the already-stored file; discard temp
@@ -1146,7 +1149,9 @@ def admin_file_confirm(request):
                 default_storage.delete(temp_path)
 
         obj.save()
-        return redirect('admin_catalog_detail', catalog_id=catalog_id)
+        if model == 'practical':
+            return redirect('admin_catalog_detail', catalog_id=catalog_id)
+        return redirect('admin_group_list')
 
     # GET: render confirmation page with previews
     temp_url = default_storage.url(temp_path)
@@ -1155,7 +1160,7 @@ def admin_file_confirm(request):
     back_url = (
         reverse('admin_practical_create', kwargs={'catalog_id': catalog_id})
         if model == 'practical'
-        else reverse('admin_group_create', kwargs={'catalog_id': catalog_id})
+        else reverse('admin_group_create')
     )
 
     return render(request, 'admin-file-confirm.html', {
@@ -1470,7 +1475,7 @@ def admin_work_edit(request, work_id):
         'questions_theory_set'
     ).order_by('level__order', 'order', 'title')
     all_practical = Questions_Practical.objects.select_related('catalog').order_by('catalog__level__order', 'pk')
-    all_group = Questions_GroupExercise.objects.select_related('catalog').order_by('catalog__level__order', 'pk')
+    all_group = Questions_GroupExercise.objects.select_related('level').order_by('level__order', 'number', 'pk')
 
     all_groups = Group.objects.order_by('name')
     if request.method == 'POST':

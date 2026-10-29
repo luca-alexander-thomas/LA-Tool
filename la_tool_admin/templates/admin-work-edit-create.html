@@ -104,7 +104,7 @@
                            name="group_ids" value="{{ g.pk }}" id="gp-{{ g.pk }}"
                            {% if g.pk in sel_group_ids %}checked{% endif %}>
                     <label class="form-check-label" for="gp-{{ g.pk }}">
-                        {% if g.catalog %}{% if g.catalog.short_title %}<span class="badge badge-neutral mr-1">{{ g.catalog.short_title }}</span>{% endif %}{% if g.catalog.level %}<span class="badge {{ g.catalog.level.badge_bg_class|default:'badge-primary' }} {{ g.catalog.level.badge_text_class }} mr-1">{{ g.catalog.level.name }}</span>{% else %}<span class="badge badge-neutral mr-1">–</span>{% endif %}{% endif %}
+                        {% if g.level %}<span class="badge {{ g.level.badge_bg_class|default:'badge-primary' }} {{ g.level.badge_text_class }} mr-1">{{ g.level.name }}</span>{% else %}<span class="badge badge-neutral mr-1">Alle Stufen</span>{% endif %}
                         {% if g.number %}<span class="mr-1 text-ink-3">{{ g.number }}</span>{% endif %}{{ g.question|truncatechars:60 }}
                     </label>
                 </div>

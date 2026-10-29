@@ -299,3 +299,48 @@ class LookupAndPracticalListTests(TestCase):
         Questions_Practical.objects.create(question='P-A', catalog=a, number='2')
         sections = self.client.get(reverse('practical_list')).context['sections']
         self.assertEqual([c.title for c, _ in sections], ['Aaa', 'Bbb'])
+
+
+class GroupExerciseTests(TestCase):
+    """Gruppenaufgaben sind eigenständig: an eine Stufe (oder alle Stufen) gebunden, nicht an Kataloge."""
+
+    def setUp(self):
+        from .models import Questions_GroupExercise
+        self.G = Questions_GroupExercise
+        self.user = User.objects.create_user('jugend')
+        self.client.force_login(self.user)
+        self.level = Levels.objects.create(name='Teststufe', slug='teststufe', order=99)
+        self.other = Levels.objects.create(name='Andere', slug='andere', order=98)
+        session = self.client.session
+        session['la_filter'] = 'teststufe'
+        session.save()
+
+    def test_list_shows_level_and_all_level_exercises(self):
+        self.G.objects.create(number='1', question='Eigene Stufe', level=self.level)
+        self.G.objects.create(number='2', question='Alle Stufen')
+        self.G.objects.create(number='3', question='Andere Stufe', level=self.other)
+        self.G.objects.create(number='4', question='Entwurf', level=self.level, is_draft=True)
+        rows = self.client.get(reverse('group_list')).context['questions_with_score']
+        self.assertEqual([q.question for q, _ in rows], ['Eigene Stufe', 'Alle Stufen'])
+
+    def test_deleting_old_catalog_keeps_exercise(self):
+        catalog = Questions_Catalogs.objects.create(title='Alt', short_title='A', level=self.level)
+        exercise = self.G.objects.create(number='1', question='Alt', catalog=catalog)
+        from .apps import detach_group_exercises
+        detach_group_exercises(sender=None)
+        exercise.refresh_from_db()
+        self.assertEqual((exercise.catalog_id, exercise.level_id), (None, self.level.pk))
+        catalog.delete()
+        self.assertTrue(self.G.objects.filter(pk=exercise.pk).exists())
+
+    def test_admin_create_without_catalog(self):
+        from django.contrib.auth.models import Permission
+        self.user.user_permissions.add(*Permission.objects.filter(
+            content_type__app_label='app', codename__in=['access_admin', 'manage_group_exercises']))
+        response = self.client.post(reverse('admin_group_create'), {
+            'number': 'G1', 'question': 'Brücke bauen', 'level': '', 'help_reference': '',
+        })
+        self.assertRedirects(response, reverse('admin_group_list'))
+        exercise = self.G.objects.get()
+        self.assertIsNone(exercise.level)
+        self.assertEqual(self.client.get(reverse('admin_group_list')).status_code, 200)

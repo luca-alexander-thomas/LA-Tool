@@ -21,7 +21,7 @@ _NAV_SECTIONS = {
     'admin_catalog_detail': 'admin_catalog', 'admin_catalog_update': 'admin_catalog',
     'admin_theory_create': 'admin_catalog', 'admin_theory_edit': 'admin_catalog',
     'admin_practical_create': 'admin_catalog', 'admin_practical_edit': 'admin_catalog',
-    'admin_group_create': 'admin_catalog', 'admin_group_edit': 'admin_catalog',
+    'admin_group_list': 'admin_group', 'admin_group_create': 'admin_group', 'admin_group_edit': 'admin_group',
     'admin_file_confirm': 'admin_catalog',
     'admin_import_questions': 'admin_import',
     'admin_exam_list': 'admin_exam', 'admin_exam_create': 'admin_exam', 'admin_exam_edit': 'admin_exam',
