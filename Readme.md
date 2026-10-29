@@ -127,6 +127,22 @@ python manage.py sync_divera_users
 
 Als Timer analog zu oben, z.B. `OnCalendar=*-*-* 03:17:00` mit `ExecStart=… manage.py sync_divera_users`.
 
+## Lernen: Wiederholung, Erinnerungen, Lernaufträge
+
+- **Heute lernen** stellt eine Runde ohne Einstellungen zusammen: zuerst fällige Wiederholungen, dann neue Fragen Katalog für Katalog; Fragen offener Lernaufträge gehen vor. Wiederholt wird nach Lernkartei (richtig: nach 1, 3, 7, 14, 30 Tagen; falsch: sofort wieder), siehe `app/learning.py`.
+- **Mein Lernstand** (`/uebungen/theorie/lernstand/`) zeigt Verlauf, Tage in Folge, Kataloge und alle Fragen mit Status; die Ampel „Bereit fürs LA“ vergleicht den Lernerfolg mit der Prüfungs-Bestehensgrenze der Stufe.
+- Fragen lassen sich **merken** (eigene Übungsart) und **als fehlerhaft melden** (Admin → Meldungen, Recht „Theoriefragen verwalten“).
+- **Lernstand** der Jugendlichen (Admin → Lernstand) braucht das Recht „Lernstand einsehen“, **Lernaufträge** das Recht „Lernaufträge verwalten“. Die Jugendlichen sollten wissen, dass Ausbilder ihren Lernstand sehen.
+
+Wöchentliche Push-Erinnerung an fällige Wiederholungen (abschaltbar im Profil, je Person höchstens alle 6 Tage):
+
+```bash
+python manage.py send_learning_reminders --dry-run
+python manage.py send_learning_reminders
+```
+
+Als Timer analog zu oben, z.B. `OnCalendar=Sun *-*-* 17:53:00` mit `ExecStart=… manage.py send_learning_reminders`.
+
 # Mitwirken
 
 Im aktuellen Entwicklungsstadium können über GitHub Issues Feature Requests eingereicht werden.

@@ -1,0 +1,29 @@
+{% comment %}
+„Merken“ und „Fehler melden“ für eine Frage. Muss in einer Komponente mit questionActions liegen
+(questionRun oder questionActions, siehe app.js). Parameter: qid = JS-Ausdruck für die Fragen-ID
+(z. B. "q.id" im Durchgang oder die feste Zahl auf statischen Seiten).
+{% endcomment %}
+<div class="flex flex-wrap items-center gap-1">
+    <button type="button" class="btn btn-ghost btn-sm text-ink-2" @click="toggleSave({{ qid }})"
+            :aria-pressed="isSaved({{ qid }}).toString()" title="Frage merken, um sie gezielt zu üben">
+        <span x-show="!isSaved({{ qid }})" class="inline-flex items-center gap-1.5">{% include "icons/bookmark.html" with cls="size-4" %} Merken</span>
+        <span x-show="isSaved({{ qid }})" x-cloak class="inline-flex items-center gap-1.5 text-accent-ink">{% include "icons/bookmark.html" with cls="size-4" fill="currentColor" %} Gemerkt</span>
+    </button>
+    <button type="button" class="btn btn-ghost btn-sm text-ink-2" x-show="!report.sent[{{ qid }}]"
+            @click="report.openId === {{ qid }} ? closeReport() : openReport({{ qid }})" :aria-expanded="(report.openId === {{ qid }}).toString()">
+        {% include "icons/flag.html" with cls="size-4" %} Fehler melden
+    </button>
+    <span x-show="report.sent[{{ qid }}]" x-cloak class="inline-flex items-center gap-1 px-2 text-xs text-ink-3" role="status">
+        {% include "icons/check.html" with cls="size-4" %} Danke, gemeldet
+    </span>
+</div>
+<div x-show="report.openId === {{ qid }}" x-cloak class="mt-2 space-y-2 rounded-xl border border-line bg-surface-2 p-3">
+    <label class="text-sm font-medium text-ink" :for="`report-text-${ {{ qid }} }`">Was stimmt an dieser Frage nicht?</label>
+    <textarea class="form-control" rows="3" maxlength="1000" :id="`report-text-${ {{ qid }} }`" x-model="report.text"
+              placeholder="z. B. Antwort B ist laut Handbuch auch richtig"></textarea>
+    <p class="form-error" x-show="report.error" x-text="report.error" role="alert"></p>
+    <div class="flex gap-2">
+        <button type="button" class="btn btn-primary btn-sm" @click="sendReport({{ qid }})" :disabled="report.busy || !report.text.trim()">Senden</button>
+        <button type="button" class="btn btn-secondary btn-sm" @click="closeReport()">Abbrechen</button>
+    </div>
+</div>

@@ -1,0 +1,99 @@
+{% extends "admin_base.html" %}
+
+{% block page_title %}Lernstand {{ learner.get_full_name|default:learner.username }} · Admin{% endblock %}
+
+{% block admin_content %}
+<a href="{% url 'admin_learning' %}?stufe={{ level.slug }}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Lernstand</a>
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Lernstand{% if level %} · {{ level.name }}{% endif %}</p>
+        <h1 class="page-title mt-1">{{ learner.get_full_name|default:learner.username }}</h1>
+    </div>
+    <form method="get">
+        <label class="sr-only" for="f-stufe">LA-Stufe</label>
+        <select id="f-stufe" name="stufe" class="form-select" onchange="this.form.requestSubmit()">
+            {% for l in levels %}<option value="{{ l.slug }}" {% if l == level %}selected{% endif %}>{{ l.name }}</option>{% endfor %}
+        </select>
+    </form>
+</div>
+
+{% if row %}
+<div class="grid items-start gap-4 lg:grid-cols-3">
+    <div class="space-y-4">
+        <section class="card card-body">
+            <p class="stat-label">Lernerfolg</p>
+            <p class="stat-value text-ink tabular-nums">{{ row.progress.score }} %</p>
+            {% include "_learning_bar.html" with summary=row.progress height="h-2" %}
+            <p class="mt-2 text-xs text-ink-3">{{ row.progress.counts.mastered }} gefestigt · {{ row.progress.counts.learning }} in Arbeit · {{ row.progress.counts.weak }} unsicher · {{ row.progress.counts.new }} neu · {{ row.due }} fällig</p>
+            {% if row.readiness %}
+            <div class="mt-3 border-t border-line pt-3">{% include "_readiness.html" with readiness=row.readiness current_level=level link=False %}</div>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <div class="card-header"><h2 class="section-title">Kataloge</h2></div>
+            <ul class="divide-y divide-line">
+                {% for c, p in catalogs %}
+                <li class="px-4 py-3">
+                    <div class="flex items-baseline justify-between gap-2 text-sm">
+                        <span class="font-medium text-ink">{% if c.short_title %}<span class="mr-1 text-xs text-ink-3">{{ c.short_title }}</span>{% endif %}{{ c.title }}</span>
+                        <span class="font-semibold tabular-nums">{{ p.score }} %</span>
+                    </div>
+                    {% include "_learning_bar.html" with summary=p height="h-1.5" compact=True %}
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        {% if assignments %}
+        <section class="card">
+            <div class="card-header"><h2 class="section-title">Lernaufträge</h2></div>
+            <ul class="divide-y divide-line">
+                {% for s in assignments %}
+                <li class="flex items-center justify-between gap-2 px-4 py-3 text-sm">
+                    <span class="min-w-0">{{ s.assignment.title }}{% if s.deadline %} <span class="text-xs text-ink-3">bis {{ s.deadline|date:"d.m." }}</span>{% endif %}</span>
+                    {% if s.done %}<span class="badge badge-success">Erfüllt</span>{% else %}<span class="badge badge-neutral tabular-nums">{{ s.progress.score }} / {{ s.assignment.target_pct }} %</span>{% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+        {% endif %}
+    </div>
+
+    <div class="space-y-4 lg:col-span-2">
+        <section class="card">
+            <div class="card-header"><h2 class="section-title">Schwächste Fragen</h2></div>
+            <ul class="divide-y divide-line">
+                {% for w in weak_questions %}
+                <li class="flex items-start gap-3 px-4 py-3">
+                    <span class="badge {% if w.mastery < 50 %}badge-danger{% else %}badge-warning{% endif %} shrink-0 tabular-nums">{{ w.mastery }} %</span>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm text-ink">{% if w.question.catalog.short_title %}<span class="mr-1 text-xs text-ink-3">{{ w.question.catalog.short_title }}{% if w.question.number %} {{ w.question.number }}{% endif %}</span>{% endif %}{{ w.question.question }}</p>
+                        <p class="text-xs text-ink-3">{{ w.tries }}× beantwortet</p>
+                    </div>
+                </li>
+                {% empty %}
+                <li class="empty-state">Keine unsicheren Fragen in dieser Stufe.</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section class="card">
+            <div class="card-header"><h2 class="section-title">Letzte Trainings</h2></div>
+            <ul class="divide-y divide-line">
+                {% for t in trainings %}
+                <li class="flex items-center justify-between gap-2 px-4 py-2.5 text-sm">
+                    <span>{{ t.meta_time|date:"d.m.Y H:i" }}</span>
+                    {% if t.meta_reference %}<span class="badge badge-neutral tabular-nums">{{ t.meta_reference.score }}/{{ t.meta_reference.total }}</span>{% endif %}
+                </li>
+                {% empty %}
+                <li class="empty-state">Noch keine Trainings.</li>
+                {% endfor %}
+            </ul>
+        </section>
+    </div>
+</div>
+{% else %}
+<p class="empty-state">Keine freigegebene Stufe vorhanden.</p>
+{% endif %}
+{% endblock %}

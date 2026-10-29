@@ -1,0 +1,32 @@
+{# Karte „Heute lernen“: eine Runde ohne Einstellungen. Parameter: today (views._today_plan), readiness (learning.readiness) #}
+<section class="card overflow-hidden">
+    <div class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:p-6">
+        <span class="icon-tile hidden size-14 sm:flex">{% include "icons/academic-cap.html" with cls="size-7" %}</span>
+        <div class="min-w-0 flex-1">
+            <p class="eyebrow">Heute lernen{% if current_level %} · {{ current_level.name }}{% endif %}</p>
+            {% if today.done %}
+            <h2 class="mt-1 text-xl font-bold tracking-tight text-ink">Für heute ist alles erledigt</h2>
+            <p class="mt-1 text-sm text-ink-2">Keine Wiederholung fällig und alle Fragen schon geübt. Übe frei weiter oder schau morgen wieder vorbei.</p>
+            {% else %}
+            <h2 class="mt-1 text-xl font-bold tracking-tight text-ink">{{ today.count }} Frage{{ today.count|pluralize:"n" }} · ca. {% widthratio today.count 2 1 as minutes %}{% if minutes == "0" %}1{% else %}{{ minutes }}{% endif %} Min.</h2>
+            <p class="mt-1 text-sm text-ink-2">
+                <span class="font-semibold tabular-nums text-ink">{{ today.due }}</span> zur Wiederholung fällig ·
+                <span class="font-semibold tabular-nums text-ink">{{ today.new }}</span> noch nicht geübt
+            </p>
+            {% endif %}
+        </div>
+        {% if today.done %}
+        <a href="{% url 'training_config' %}" class="btn btn-secondary btn-lg w-full sm:w-auto">Frei üben {% include "icons/arrow-right.html" with cls="size-5" %}</a>
+        {% else %}
+        <form method="post" action="{% url 'training_today' %}" class="w-full sm:w-auto">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary btn-lg w-full">{% include "icons/play.html" with cls="size-5" %} Los geht’s</button>
+        </form>
+        {% endif %}
+    </div>
+    {% if readiness %}
+    <div class="border-t border-line px-5 py-3 sm:px-6">
+        {% include "_readiness.html" %}
+    </div>
+    {% endif %}
+</section>

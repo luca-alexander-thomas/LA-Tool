@@ -249,6 +249,73 @@ class GroupExerciseSelfAssessment(models.Model):
         return f'{self.user} — {self.question}: {self.score}'
 
 
+class QuestionBookmark(models.Model):
+    """Von einem Nutzer gemerkte Theoriefrage (eigene Übungsart „Gemerkte Fragen“)."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='question_bookmarks')
+    question = models.ForeignKey(Questions_Theory, on_delete=models.CASCADE, related_name='bookmarks')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['user', 'question'], name='unique_question_bookmark')]
+
+
+class QuestionReport(models.Model):
+    """Hinweis eines Nutzers auf einen Fehler in einer Theoriefrage; erledigt, sobald resolved_at gesetzt ist."""
+    question = models.ForeignKey(Questions_Theory, on_delete=models.CASCADE, related_name='reports')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='question_reports')
+    message = models.TextField(max_length=1000)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class LearningAssignment(models.Model):
+    """Lernauftrag: Kataloge einer Stufe bis zu einer Frist auf einen Ziel-Lernerfolg bringen.
+
+    Zuweisung wie bei Prüfungen; ohne Gruppen und Personen gilt der Auftrag für alle.
+    Frist: due_date, sonst der Tag des verknüpften Dienstes.
+    """
+    title = models.CharField(max_length=100)
+    description = models.TextField(blank=True, default='')
+    level = models.ForeignKey(Levels, on_delete=models.CASCADE, related_name='assignments')
+    # Leer = alle Kataloge der Stufe
+    catalogs = models.ManyToManyField(Questions_Catalogs, blank=True, related_name='assignments')
+    target_pct = models.PositiveIntegerField(default=80)
+    due_date = models.DateField(null=True, blank=True)
+    work = models.ForeignKey('Work', on_delete=models.SET_NULL, null=True, blank=True, related_name='assignments')
+    assigned_users = models.ManyToManyField(User, blank=True, related_name='learning_assignments')
+    assigned_groups = models.ManyToManyField('auth.Group', blank=True, related_name='learning_assignments')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['due_date', 'pk']
+
+    @property
+    def deadline(self):
+        if self.due_date:
+            return self.due_date
+        if self.work_id:
+            from django.utils import timezone
+            return timezone.localdate(self.work.date)
+        return None
+
+    def recipients(self):
+        """Aktive Nutzer, für die der Auftrag gilt."""
+        users = User.objects.filter(is_active=True)
+        if self.assigned_users.exists() or self.assigned_groups.exists():
+            users = users.filter(
+                models.Q(pk__in=self.assigned_users.values('pk')) | models.Q(groups__in=self.assigned_groups.all())
+            ).distinct()
+        return users
+
+    def __str__(self):
+        return self.title
+
+
 @receiver(pre_delete, sender=Questions_Practical)
 def delete_practical_file(sender, instance, **kwargs):
     if not instance.file:
@@ -353,6 +420,8 @@ class SiteSettings(models.Model):
             ('manage_users', 'Nutzer verwalten'),
             ('manage_groups', 'Gruppen und Berechtigungen verwalten'),
             ('send_notifications', 'Benachrichtigungen senden'),
+            ('view_learning_progress', 'Lernstand einsehen'),
+            ('manage_assignments', 'Lernaufträge verwalten'),
         ]
 
     @classmethod

@@ -1,0 +1,16 @@
+{# Ein Lernauftrag in der Admin-Liste. Parameter: e = {assignment, recipients, done, past} #}
+<a href="{% url 'admin_assignment_detail' e.assignment.pk %}" class="list-row">
+    <div class="min-w-0 flex-1">
+        <p class="flex flex-wrap items-center gap-2 text-sm font-semibold">
+            {{ e.assignment.title }}
+            <span class="badge {{ e.assignment.level.badge_bg_class|default:'badge-neutral' }} {{ e.assignment.level.badge_text_class }}">{{ e.assignment.level.name }}</span>
+        </p>
+        <p class="text-xs text-ink-3">
+            Ziel {{ e.assignment.target_pct }} %
+            · {% if e.assignment.catalogs.all %}{% for c in e.assignment.catalogs.all %}{{ c.short_title|default:c.title }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}alle Kataloge{% endif %}
+            {% if e.assignment.deadline %} · bis {{ e.assignment.deadline|date:"d.m.Y" }}{% else %} · ohne Frist{% endif %}
+        </p>
+    </div>
+    <span class="badge {% if e.recipients and e.done == e.recipients %}badge-success{% else %}badge-neutral{% endif %} shrink-0 tabular-nums" title="Erfüllt / Empfänger">{{ e.done }} / {{ e.recipients }} erfüllt</span>
+    {% include "icons/chevron-right.html" with cls="size-4 shrink-0 text-ink-3" %}
+</a>

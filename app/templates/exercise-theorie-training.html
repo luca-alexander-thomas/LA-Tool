@@ -5,7 +5,11 @@
 {% block site_content %}
 {# Alle Fragen des Durchgangs liegen im Browser; erst „Abschließen“ schickt die Antworten an den Server. #}
 <div class="page-narrow"
-     x-data="questionRun({ questions: JSON.parse(document.getElementById('training-data').textContent), storageKey: 'training:{{ run_id }}', storagePrefix: 'training:' })">
+     x-data="questionRun({
+         questions: JSON.parse(document.getElementById('training-data').textContent),
+         storageKey: 'training:{{ run_id }}', storagePrefix: 'training:',
+         {% if user.is_authenticated %}urls: { bookmark: '{% url 'question_bookmark' 0 %}', report: '{% url 'question_report' 0 %}' },{% endif %}
+     })">
     <form method="post" action="{% url 'training_run' %}" x-ref="form" @submit.prevent="next()">
         {% csrf_token %}
         <input type="hidden" name="answers" x-ref="answers">
@@ -61,6 +65,11 @@
             </button>
         </div>
     </form>
+    {% if user.is_authenticated %}
+    <div class="mt-6 border-t border-line pt-3">
+        {% include "_question_tools.html" with qid="q.id" %}
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
 

@@ -1,0 +1,32 @@
+{% extends "admin_base.html" %}
+
+{% block page_title %}Lernaufträge · Admin{% endblock %}
+
+{% block admin_content %}
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Ausbildung</p>
+        <h1 class="page-title mt-1">Lernaufträge</h1>
+        <p class="page-subtitle">Kataloge bis zu einer Frist auf einen Ziel-Lernerfolg bringen, z. B. als Vorbereitung auf einen Dienst.</p>
+    </div>
+    <a href="{% url 'admin_assignment_create' %}" class="btn btn-primary">{% include "icons/plus.html" with cls="size-4" %} Neuer Lernauftrag</a>
+</div>
+
+<section class="mb-6">
+    <h2 class="section-title mb-2">Aktuell</h2>
+    <div class="space-y-2">
+        {% for e in current %}{% include "_admin_assignment_row.html" %}{% empty %}<p class="empty-state">Keine aktuellen Lernaufträge.</p>{% endfor %}
+    </div>
+</section>
+
+{% if past %}
+<details class="group">
+    <summary class="mb-2 flex cursor-pointer list-none items-center gap-2 text-base font-semibold text-ink [&::-webkit-details-marker]:hidden">
+        {% include "icons/chevron-right.html" with cls="size-5 text-ink-3 transition-transform group-open:rotate-90" %} Abgelaufen <span class="text-sm font-normal text-ink-3">({{ past|length }})</span>
+    </summary>
+    <div class="space-y-2">
+        {% for e in past %}{% include "_admin_assignment_row.html" %}{% endfor %}
+    </div>
+</details>
+{% endif %}
+{% endblock %}

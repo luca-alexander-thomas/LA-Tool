@@ -12,6 +12,13 @@
         </div>
     </div>
 
+    {% if today %}
+    <div class="mb-4 space-y-4">
+        {% include "_today_card.html" %}
+        {% include "_assignments.html" %}
+    </div>
+    {% endif %}
+
     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
 
         {# Zuletzt #}
@@ -66,6 +73,7 @@
                     </div>
                     {% include "_learning_bar.html" with summary=theory_progress height="h-2" compact=True %}
                     <p class="mt-1.5 text-xs text-ink-3">{{ theory_progress.counts.mastered }} gefestigt · {{ theory_progress.hard }} schwierig · {{ theory_progress.counts.new }} neu</p>
+                    <a class="link mt-1 inline-block text-xs" href="{% url 'learning_stats' %}">Mein Lernstand {% include "icons/arrow-right.html" with cls="inline size-3" %}</a>
                 </div>
                 {% endif %}
                 {% if sample_theory %}

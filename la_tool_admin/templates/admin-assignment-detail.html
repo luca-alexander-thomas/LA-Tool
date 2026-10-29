@@ -1,0 +1,53 @@
+{% extends "admin_base.html" %}
+
+{% block page_title %}{{ assignment.title }} · Admin{% endblock %}
+
+{% block admin_content %}
+<a href="{% url 'admin_assignment_list' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Lernaufträge</a>
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Lernauftrag · {{ assignment.level.name }}</p>
+        <h1 class="page-title mt-1">{{ assignment.title }}</h1>
+        <p class="page-subtitle">
+            Ziel {{ assignment.target_pct }} % Lernerfolg in
+            {% for c in assignment.catalogs.all %}{{ c.short_title|default:c.title }}{% if not forloop.last %}, {% endif %}{% empty %}allen Katalogen{% endfor %}
+            · {% if assignment.deadline %}bis {{ assignment.deadline|date:"d.m.Y" }}{% else %}ohne Frist{% endif %}
+            {% if assignment.work %} · für „{{ assignment.work.title }}“{% endif %}
+        </p>
+    </div>
+    <div class="flex gap-2">
+        <a href="{% url 'admin_assignment_edit' assignment.pk %}" class="btn btn-secondary">{% include "icons/pencil-square.html" with cls="size-4" %} Bearbeiten</a>
+        <form method="post" action="{% url 'admin_assignment_delete' assignment.pk %}" onsubmit="return confirm('Lernauftrag wirklich löschen?')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger-soft">{% include "icons/trash.html" with cls="size-4" %} Löschen</button>
+        </form>
+    </div>
+</div>
+
+{% if assignment.description %}<p class="card card-body mb-4 text-sm whitespace-pre-line text-ink-2">{{ assignment.description }}</p>{% endif %}
+
+<section class="card">
+    <div class="card-header">
+        <h2 class="section-title">Fortschritt</h2>
+        <span class="badge {% if progress and done_count == progress|length %}badge-success{% else %}badge-neutral{% endif %} tabular-nums">{{ done_count }} / {{ progress|length }} erfüllt</span>
+    </div>
+    <ul class="divide-y divide-line">
+        {% for learner, s in progress %}
+        <li class="flex flex-wrap items-center gap-3 px-4 py-3">
+            <span class="min-w-40 flex-1 text-sm font-medium">
+                {% if can_view_details %}<a class="link" href="{% url 'admin_learning_user' learner.pk %}?stufe={{ assignment.level.slug }}">{{ learner.get_full_name|default:learner.username }}</a>{% else %}{{ learner.get_full_name|default:learner.username }}{% endif %}
+            </span>
+            <div class="flex min-w-48 flex-1 items-center gap-2">
+                <div class="progress h-2 flex-1" role="progressbar" aria-valuenow="{{ s.progress.score }}" aria-valuemin="0" aria-valuemax="100" aria-label="Lernerfolg">
+                    <div class="progress-bar {% if s.done %}bg-green-600{% endif %}" style="width: {{ s.progress.score }}%"></div>
+                </div>
+                <span class="w-12 text-right text-xs font-semibold tabular-nums">{{ s.progress.score }} %</span>
+            </div>
+            <span class="flex w-40 justify-end">{% if s.done %}<span class="badge badge-success">Erfüllt</span>{% elif s.progress.counts.new == s.progress.total %}<span class="badge badge-neutral">Noch nicht begonnen</span>{% else %}<span class="badge badge-warning">Läuft</span>{% endif %}</span>
+        </li>
+        {% empty %}
+        <li class="empty-state">Keine Empfänger.</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endblock %}

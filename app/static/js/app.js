@@ -119,12 +119,18 @@
             },
         }));
 
+        // Merken und Melden von Fragen auf Seiten mit mehreren Fragen (Auswertung, Nachschlagen).
+        // cfg: urls {bookmark, report} mit Platzhalter-ID 0, saved {id: true} für bereits gemerkte Fragen
+        Alpine.data('questionActions', (cfg) => questionActionsData(cfg));
+
         // Fragen-Durchgang (Theorie-Training, Prüfung): Blättern läuft im Browser, abgegeben wird per Formular.
         // cfg: questions [{id, label, question, help, choices: [[buchstabe, text]]}],
         //      storageKey (Zwischenstand, eindeutig je Durchgang), storagePrefix, persistent (localStorage statt sessionStorage)
         //      optional: initialAnswers (Stand vom Server), autosave (Antworten beim Blättern an den Server schicken),
         //      remaining (Sekunden bis zur automatischen Abgabe)
         Alpine.data('questionRun', (cfg) => ({
+            // Merken/Melden nur im Training (cfg.urls gesetzt)
+            ...questionActions(cfg.urls || {}),
             questions: cfg.questions,
             index: 0,
             answers: {},
@@ -139,6 +145,9 @@
                 this.questions.forEach((q) => {
                     const prev = savedAnswers[q.id];
                     this.answers[q.id] = Array.isArray(prev) ? prev.filter((x) => q.choices.some((c) => c[0] === x)) : [];
+                });
+                this.questions.forEach((q) => {
+                    if (q.saved) this.saved[q.id] = true;
                 });
                 this.index = Math.min(Math.max(parseInt(saved.index, 10) || 0, 0), this.questions.length - 1);
                 this.store = store;
@@ -156,6 +165,7 @@
                 }
                 this.$watch('index', () => {
                     this.hint = false;
+                    this.closeReport();
                     this.persist();
                     this.sync();
                     this.$nextTick(() => {
@@ -224,6 +234,74 @@
             },
         }));
     });
+
+    // POST mit JSON an die eigene Seite; CSRF-Token aus einem beliebigen Formular der Seite
+    // (base.html enthält für angemeldete Nutzer immer das Abmelde-Formular)
+    async function postJSON(url, body) {
+        const token = document.querySelector('[name=csrfmiddlewaretoken]');
+        const res = await fetch(url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': token ? token.value : '' },
+            body: JSON.stringify(body || {}),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Das hat nicht geklappt. Bitte später erneut versuchen.');
+        return data;
+    }
+
+    // Gemeinsamer Teil für „Merken“ und „Fehler melden“ (in questionRun und questionActions eingemischt).
+    // urls: {bookmark, report}, jeweils mit der Platzhalter-ID 0
+    function questionActions(urls) {
+        return {
+            saved: {},
+            report: { openId: null, text: '', error: '', busy: false, sent: {} },
+            actionUrl(kind, id) {
+                return urls[kind].replace('/0/', `/${id}/`);
+            },
+            isSaved(id) {
+                return !!this.saved[id];
+            },
+            async toggleSave(id) {
+                const want = !this.saved[id];
+                this.saved[id] = want; // sofort anzeigen, bei Fehler zurücknehmen
+                try {
+                    this.saved[id] = (await postJSON(this.actionUrl('bookmark', id), { saved: want })).saved;
+                } catch (e) {
+                    this.saved[id] = !want;
+                    window.alert(e.message);
+                }
+            },
+            openReport(id) {
+                this.report.openId = id;
+                this.report.text = '';
+                this.report.error = '';
+            },
+            closeReport() {
+                this.report.openId = null;
+            },
+            async sendReport(id) {
+                if (this.report.busy || !this.report.text.trim()) return;
+                this.report.busy = true;
+                this.report.error = '';
+                try {
+                    await postJSON(this.actionUrl('report', id), { message: this.report.text });
+                    this.report.sent[id] = true;
+                    this.report.openId = null;
+                } catch (e) {
+                    this.report.error = e.message;
+                } finally {
+                    this.report.busy = false;
+                }
+            },
+        };
+    }
+
+    // Zustand für Merken/Melden als einfaches Objekt: auch in eigene x-data-Objekte einmischbar
+    function questionActionsData(cfg) {
+        return { ...questionActions(cfg.urls), saved: { ...(cfg.saved || {}) } };
+    }
+    window.questionActionsData = questionActionsData;
 
     // Zwischenstand eines Fragen-Durchgangs im Browser (Fehler beim Speicher werden ignoriert)
     function runStore(persistent) {

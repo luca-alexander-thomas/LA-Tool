@@ -44,6 +44,19 @@ urlpatterns = [
     path('exam/<int:exam_id>/results/<int:result_id>/', views.admin_exam_result_user, name='admin_exam_result_user'),
     path('exam/<int:exam_id>/results/<int:result_id>/release/', views.admin_exam_result_release, name='admin_exam_result_release'),
 
+    # Meldungen zu Fragen
+    path('meldungen/', views.admin_report_list, name='admin_report_list'),
+    path('meldungen/<int:report_id>/erledigt/', views.admin_report_resolve, name='admin_report_resolve'),
+
+    # Lernstand und Lernaufträge
+    path('lernstand/', views.admin_learning, name='admin_learning'),
+    path('lernstand/<int:user_id>/', views.admin_learning_user, name='admin_learning_user'),
+    path('lernauftraege/', views.admin_assignment_list, name='admin_assignment_list'),
+    path('lernauftraege/neu/', views.admin_assignment_create, name='admin_assignment_create'),
+    path('lernauftraege/<int:assignment_id>/', views.admin_assignment_detail, name='admin_assignment_detail'),
+    path('lernauftraege/<int:assignment_id>/bearbeiten/', views.admin_assignment_edit, name='admin_assignment_edit'),
+    path('lernauftraege/<int:assignment_id>/loeschen/', views.admin_assignment_delete, name='admin_assignment_delete'),
+
     # Benachrichtigungen
     path('benachrichtigungen/', views.admin_push_message, name='admin_push_message'),
     path('benachrichtigungen/test/', views.admin_push_test, name='admin_push_test'),

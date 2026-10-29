@@ -1,0 +1,109 @@
+{% extends "admin_base.html" %}
+
+{% block page_title %}Lernstand · Admin{% endblock %}
+
+{% block admin_content %}
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Ausbildung</p>
+        <h1 class="page-title mt-1">Lernstand</h1>
+        <p class="page-subtitle">Lernerfolg im Theorie-Training je Person und Katalog. Hilft bei der Planung der Dienste.</p>
+    </div>
+</div>
+
+<form method="get" class="card card-body mb-4 grid gap-3 sm:grid-cols-3" role="search">
+    <div>
+        <label class="form-label" for="f-stufe">LA-Stufe</label>
+        <select id="f-stufe" name="stufe" class="form-select" onchange="this.form.requestSubmit()">
+            {% for l in levels %}<option value="{{ l.slug }}" {% if l == level %}selected{% endif %}>{{ l.name }}</option>{% endfor %}
+        </select>
+    </div>
+    <div>
+        <label class="form-label" for="f-gruppe">Gruppe</label>
+        <select id="f-gruppe" name="gruppe" class="form-select" onchange="this.form.requestSubmit()">
+            <option value="">Alle aktiven Konten</option>
+            {% for g in groups %}<option value="{{ g.pk }}" {% if g == group %}selected{% endif %}>{{ g.name }}</option>{% endfor %}
+        </select>
+    </div>
+    <div class="flex items-end">
+        <label class="form-check mb-2">
+            <input type="checkbox" class="form-check-input" name="alle" value="1" {% if show_all %}checked{% endif %} onchange="this.form.requestSubmit()">
+            <span class="form-check-label">Auch Personen ohne Übung zeigen</span>
+        </label>
+    </div>
+</form>
+
+<div class="grid items-start gap-4 xl:grid-cols-3">
+    <section class="card xl:col-span-2">
+        <div class="card-header">
+            <h2 class="section-title">Personen <span class="text-sm font-normal text-ink-3">({{ rows|length }})</span></h2>
+            <ul class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-3" aria-label="Legende">
+                <li class="flex items-center gap-1"><span class="size-2.5 rounded-sm bg-green-500"></span> ab 80 %</li>
+                <li class="flex items-center gap-1"><span class="size-2.5 rounded-sm bg-amber-400"></span> 50–79 %</li>
+                <li class="flex items-center gap-1"><span class="size-2.5 rounded-sm bg-red-500"></span> unter 50 %</li>
+            </ul>
+        </div>
+        {% if rows %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="text-left text-xs text-ink-3">
+                    <tr class="border-b border-line">
+                        <th class="px-4 py-2 font-semibold">Name</th>
+                        <th class="px-2 py-2 text-right font-semibold">Gesamt</th>
+                        {% for c in catalogs %}<th class="px-2 py-2 text-center font-semibold" title="{{ c.title }}">{{ c.short_title|default:c.title|truncatechars:8 }}</th>{% endfor %}
+                        <th class="px-2 py-2 font-semibold">Bereit</th>
+                        <th class="px-4 py-2 font-semibold">Zuletzt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in rows %}
+                    <tr class="border-b border-line/60 last:border-0 hover:bg-surface-2">
+                        <td class="px-4 py-2">
+                            <a class="link font-medium" href="{% url 'admin_learning_user' r.user.pk %}?stufe={{ level.slug }}">{{ r.user.get_full_name|default:r.user.username }}</a>
+                            {% if r.due %}<span class="block text-xs text-ink-3">{{ r.due }} fällig</span>{% endif %}
+                        </td>
+                        <td class="px-2 py-2 text-right font-semibold tabular-nums">{{ r.progress.score }} %</td>
+                        {% for p in r.catalogs %}
+                        <td class="px-1 py-1.5 text-center">
+                            {% if p.counts.new == p.total %}
+                            <span class="text-xs text-ink-3" title="Noch nicht geübt">–</span>
+                            {% else %}
+                            <span class="inline-flex min-w-11 justify-center rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums {% if p.score >= 80 %}bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-300{% elif p.score >= 50 %}bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300{% else %}bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-300{% endif %}">{{ p.score }} %</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                        <td class="px-2 py-2">
+                            {% if r.readiness %}<span class="inline-flex items-center gap-1.5 text-xs whitespace-nowrap"><span class="size-2.5 rounded-full {% if r.readiness.state == 'green' %}bg-green-500{% elif r.readiness.state == 'yellow' %}bg-amber-400{% else %}bg-red-500{% endif %}"></span>{{ r.readiness.label }}</span>{% endif %}
+                        </td>
+                        <td class="px-4 py-2 text-xs whitespace-nowrap text-ink-3">{{ r.last|date:"d.m.Y"|default:"–" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="empty-state">{% if level %}Noch niemand hat in dieser Stufe geübt.{% else %}Keine freigegebene Stufe vorhanden.{% endif %}</p>
+        {% endif %}
+        {% if hidden %}
+        <div class="card-footer justify-start text-xs text-ink-3">{{ hidden }} Person{{ hidden|pluralize:"en" }} ohne Übung in dieser Stufe ausgeblendet.</div>
+        {% endif %}
+    </section>
+
+    <section class="card">
+        <div class="card-header"><h2 class="section-title">Schwierigste Fragen</h2></div>
+        <ol class="divide-y divide-line">
+            {% for h in hard_questions %}
+            <li class="flex items-start gap-3 px-4 py-3">
+                <span class="badge badge-danger shrink-0 tabular-nums" title="Anteil falscher Antworten">{{ h.error_pct }} %</span>
+                <div class="min-w-0 flex-1">
+                    <p class="text-sm text-ink">{% if h.question.catalog.short_title %}<span class="mr-1 text-xs text-ink-3">{{ h.question.catalog.short_title }}{% if h.question.number %} {{ h.question.number }}{% endif %}</span>{% endif %}{{ h.question.question }}</p>
+                    <p class="text-xs text-ink-3">{{ h.answers }} Antworten</p>
+                </div>
+            </li>
+            {% empty %}
+            <li class="empty-state">Noch zu wenige Antworten (mindestens 3 je Frage).</li>
+            {% endfor %}
+        </ol>
+    </section>
+</div>
+{% endblock %}

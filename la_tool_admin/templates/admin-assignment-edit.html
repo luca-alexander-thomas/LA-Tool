@@ -1,0 +1,97 @@
+{% extends "admin_base.html" %}
+
+{% block page_title %}{{ title }} · Admin{% endblock %}
+
+{% block admin_content %}
+<a href="{% if assignment %}{% url 'admin_assignment_detail' assignment.pk %}{% else %}{% url 'admin_assignment_list' %}{% endif %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Zurück</a>
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Lernaufträge</p>
+        <h1 class="page-title mt-1">{{ title }}</h1>
+    </div>
+</div>
+
+{# Kataloge werden nach der gewählten Stufe gefiltert (Alpine); gespeichert werden nur Kataloge dieser Stufe. #}
+<form method="post" x-data="{ level: '{{ form.level.value|default:'' }}' }">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger mb-4">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <section class="card">
+            <div class="card-header"><h2 class="section-title">Auftrag</h2></div>
+            <div class="card-body space-y-4">
+                {% for field in form %}
+                <div>
+                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {% if field.name == 'level' %}
+                    <select name="level" id="{{ field.id_for_label }}" class="form-select" x-model="level" required>
+                        <option value="">Bitte wählen</option>
+                        {% for value, label in field.field.choices %}{% if value %}<option value="{{ value }}" {% if field.value|stringformat:'s' == value|stringformat:'s' %}selected{% endif %}>{{ label }}</option>{% endif %}{% endfor %}
+                    </select>
+                    {% else %}
+                    {{ field }}
+                    {% endif %}
+                    {% if field.help_text %}<p class="form-text">{{ field.help_text }}</p>{% endif %}
+                    {% if field.errors %}<div class="form-error">{{ field.errors }}</div>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-header"><h2 class="section-title">Kataloge</h2></div>
+            <div class="card-body space-y-1">
+                <p class="form-text mb-2">Keine Auswahl = alle Kataloge der Stufe.</p>
+                <p class="text-sm text-ink-3" x-show="!level">Bitte zuerst eine Stufe wählen.</p>
+                {% for c in catalogs %}
+                <label class="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-surface-2" x-show="level === '{{ c.level_id }}'" x-cloak>
+                    <input type="checkbox" name="catalog_ids" value="{{ c.pk }}" class="form-check-input mt-0" {% if c.pk in selected_catalog_ids %}checked{% endif %}>
+                    <span class="text-sm">{% if c.short_title %}<span class="mr-1 text-xs font-semibold text-ink-3">{{ c.short_title }}</span>{% endif %}{{ c.title }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="card md:col-span-2 xl:col-span-1">
+            <div class="card-header"><h2 class="section-title">Für wen?</h2></div>
+            <div class="card-body space-y-4">
+                <p class="form-text">Keine Auswahl = alle aktiven Konten.</p>
+                {% if all_groups %}
+                <div>
+                    <p class="mb-2 text-sm font-medium text-ink-2">Gruppen</p>
+                    <div class="max-h-36 space-y-1 overflow-y-auto">
+                        {% for g in all_groups %}
+                        <label class="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-surface-2">
+                            <input type="checkbox" name="group_ids" value="{{ g.pk }}" class="form-check-input mt-0" {% if g.pk in selected_group_ids %}checked{% endif %}>
+                            <span class="text-sm">{{ g.name }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                <div>
+                    <p class="mb-2 text-sm font-medium text-ink-2">Einzelne Personen</p>
+                    <div class="max-h-56 space-y-1 overflow-y-auto">
+                        {% for u in all_users %}
+                        <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-line px-2.5 py-2 hover:bg-surface-2">
+                            <input type="checkbox" name="user_ids" value="{{ u.pk }}" class="form-check-input mt-0" {% if u.pk in selected_user_ids %}checked{% endif %}>
+                            <span class="text-sm">{{ u.get_full_name|default:u.username }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="mt-6 flex flex-wrap items-center justify-end gap-3">
+        {% if not assignment and push_enabled %}
+        <label class="form-check mr-auto">
+            <input class="form-check-input" type="checkbox" name="notify_push" value="1">
+            <span class="form-check-label">Push-Benachrichtigung an alle Empfänger</span>
+        </label>
+        {% endif %}
+        <a href="{% if assignment %}{% url 'admin_assignment_detail' assignment.pk %}{% else %}{% url 'admin_assignment_list' %}{% endif %}" class="btn btn-secondary">Abbrechen</a>
+        <button class="btn btn-primary" type="submit">{% include "icons/check.html" with cls="size-4" %} Speichern</button>
+    </div>
+</form>
+{% endblock %}

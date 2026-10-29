@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import Group
 from django.core.validators import FileExtensionValidator
-from app.models import Questions_Catalogs, Questions_Theory, Questions_Practical, Questions_GroupExercise, Exams, Work, Levels
+from app.models import Questions_Catalogs, Questions_Theory, Questions_Practical, Questions_GroupExercise, Exams, Work, Levels, LearningAssignment
 
 _PDF_IMAGE_VALIDATOR = FileExtensionValidator(allowed_extensions=['pdf', 'png', 'jpg', 'jpeg'])
 
@@ -310,3 +310,50 @@ class PushMessageForm(forms.Form):
         widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
         help_text='Keine Gruppe gewählt = alle Nutzer mit aktivierten Benachrichtigungen.',
     )
+
+
+class LearningAssignmentForm(forms.ModelForm):
+    """Lernauftrag; Kataloge, Personen und Gruppen wählt das Template als Checkboxen (wie bei Prüfungen)."""
+
+    class Meta:
+        model = LearningAssignment
+        fields = ['title', 'description', 'level', 'target_pct', 'due_date', 'work']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'z.B. Bronze-Theorie bis zum Übungsdienst'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Hinweis für die Jugendlichen (optional)'}),
+            'level': forms.Select(attrs={'class': 'form-select'}),
+            'target_pct': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 100}),
+            'due_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}, format='%Y-%m-%d'),
+            'work': forms.Select(attrs={'class': 'form-select'}),
+        }
+        labels = {
+            'title': 'Titel',
+            'description': 'Beschreibung',
+            'level': 'LA-Stufe',
+            'target_pct': 'Ziel-Lernerfolg (%)',
+            'due_date': 'Frist',
+            'work': 'Dienst',
+        }
+        help_texts = {
+            'due_date': 'Leer lassen, wenn der Tag des gewählten Dienstes die Frist sein soll.',
+            'work': 'Optional: Der Auftrag bereitet auf diesen Dienst vor.',
+            'target_pct': 'Erfüllt, sobald der Lernerfolg in den gewählten Katalogen diesen Wert erreicht.',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from datetime import timedelta
+        from django.utils import timezone
+        self.fields['level'].queryset = Levels.objects.filter(is_draft=False).order_by('order')
+        # Nur kommende Dienste (und den bereits gewählten) anbieten
+        works = Work.objects.filter(is_draft=False, date__gte=timezone.now() - timedelta(days=1))
+        if self.instance.work_id:
+            works = works | Work.objects.filter(pk=self.instance.work_id)
+        self.fields['work'].queryset = works.order_by('date')
+        self.fields['work'].label_from_instance = lambda w: f'{timezone.localtime(w.date):%d.%m.%Y} – {w.title}'
+
+    def clean_target_pct(self):
+        value = self.cleaned_data['target_pct']
+        if not 1 <= value <= 100:
+            raise forms.ValidationError('Bitte einen Wert zwischen 1 und 100 eingeben.')
+        return value

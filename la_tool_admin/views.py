@@ -9,12 +9,16 @@ from django.core.exceptions import PermissionDenied
 from functools import wraps
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Count, Exists, OuterRef, Q
+from django.utils import timezone
+from app import learning
 from app.models import (
     Questions_Catalogs, Questions_Theory, Questions_Practical,
     Questions_GroupExercise, Exams, ExamResultData, Work, SiteSettings, Levels,
+    QuestionReport, LearningAssignment, TrainingResultData,
 )
+from app.views import assignment_status
 from app.login_function import post_login_setup, safe_next_url
-from .forms import CatalogForm, TheoryQuestionForm, PracticalForm, GroupExerciseForm, ExamForm, WorkForm, WorkCreateForm, ImportQuestionForm, LevelForm, PushMessageForm
+from .forms import CatalogForm, TheoryQuestionForm, PracticalForm, GroupExerciseForm, ExamForm, WorkForm, WorkCreateForm, ImportQuestionForm, LevelForm, PushMessageForm, LearningAssignmentForm
 from .models import PinnedGroup, Profile, PushSubscription
 from .utils import pin_group, unpin_group
 from .push import push_configured, send_push
@@ -49,6 +53,8 @@ APP_PERMISSIONS = [
     ('manage_users', 'Nutzer verwalten'),
     ('manage_groups', 'Gruppen und Berechtigungen verwalten'),
     ('send_notifications', 'Benachrichtigungen senden'),
+    ('view_learning_progress', 'Lernstand einsehen'),
+    ('manage_assignments', 'Lernaufträge verwalten'),
 ]
 
 
@@ -141,6 +147,7 @@ def index(request):
         "total_users": total_users,
         "active_exams": active_exams,
         "upcoming_works": upcoming_works,
+        "open_reports": QuestionReport.objects.filter(resolved_at__isnull=True).count(),
     })
 
 
@@ -1796,3 +1803,239 @@ def admin_autogroup_delete(request, group_id):
             group.delete()
         return redirect('admin_autogroup_list')
     return redirect('admin_autogroup_edit', group_id=group_id)
+
+# ── Meldungen zu Fragen ───────────────────────────────────────────────────────
+
+@admin_permission_required('app.manage_theory')
+def admin_report_list(request):
+    status = request.GET.get('status', 'offen')
+    reports = QuestionReport.objects.select_related('question__catalog', 'user', 'resolved_by')
+    if status == 'offen':
+        reports = reports.filter(resolved_at__isnull=True)
+    elif status == 'erledigt':
+        reports = reports.filter(resolved_at__isnull=False)
+    return render(request, 'admin-reports.html', {
+        'reports': reports[:200],
+        'status': status,
+        'open_count': QuestionReport.objects.filter(resolved_at__isnull=True).count(),
+    })
+
+
+@admin_permission_required('app.manage_theory')
+def admin_report_resolve(request, report_id):
+    if request.method == 'POST':
+        report = get_object_or_404(QuestionReport, pk=report_id)
+        if request.POST.get('action') == 'reopen':
+            report.resolved_at, report.resolved_by = None, None
+        else:
+            report.resolved_at, report.resolved_by = timezone.now(), request.user
+        report.save(update_fields=['resolved_at', 'resolved_by'])
+    return redirect(safe_next_url(request, request.POST.get('next')) or 'admin_report_list')
+
+
+# ── Lernstand der Jugendlichen ────────────────────────────────────────────────
+
+def _learning_scope(request):
+    """Stufe (GET stufe) und ihre Kataloge mit Fragen für die Lernstand-Seiten."""
+    levels = list(Levels.objects.filter(is_draft=False).order_by('order'))
+    level = next((l for l in levels if l.slug == request.GET.get('stufe')), levels[0] if levels else None)
+    catalogs = list(Questions_Catalogs.objects.filter(level=level, is_draft=False).order_by('order', 'title')) if level else []
+    ids_by_catalog = learning.catalog_question_ids(catalogs)
+    for c in catalogs:
+        c.question_ids = ids_by_catalog[c.pk]
+    catalogs = [c for c in catalogs if c.question_ids]
+    question_ids = [qid for c in catalogs for qid in c.question_ids]
+    return levels, level, catalogs, question_ids
+
+
+def _learner_row(user, attempts, level, catalogs, question_ids):
+    history = learning.scores_only(attempts)
+    catalog_progress = [learning.summary(c.question_ids, history) for c in catalogs]
+    overall = learning.summary(question_ids, history)
+    wanted = set(question_ids)
+    times = [rows[-1][0] for qid, rows in attempts.items() if qid in wanted]
+    return {
+        'user': user,
+        'catalogs': catalog_progress,
+        'progress': overall,
+        'readiness': learning.readiness(overall, list(zip(catalogs, catalog_progress)), level.default_exam_pass_pct),
+        'last': max(times) if times else None,
+        'practiced': overall['counts']['new'] < overall['total'],
+        'due': len(learning.due_questions(question_ids, attempts)),
+    }
+
+
+@admin_permission_required('app.view_learning_progress')
+def admin_learning(request):
+    levels, level, catalogs, question_ids = _learning_scope(request)
+    groups = list(Group.objects.order_by('name'))
+    group = next((g for g in groups if str(g.pk) == request.GET.get('gruppe')), None)
+    show_all = request.GET.get('alle') == '1'
+
+    users = User.objects.filter(is_active=True)
+    if group:
+        users = users.filter(groups=group)
+    users = list(users.order_by('last_name', 'first_name', 'username'))
+    attempts = learning.attempts_by_user([u.pk for u in users])
+    rows = [_learner_row(u, attempts.get(u.pk, {}), level, catalogs, question_ids) for u in users] if level else []
+    hidden = 0
+    if not show_all:
+        hidden = sum(1 for r in rows if not r['practiced'])
+        rows = [r for r in rows if r['practiced']]
+
+    # Schwierigste Fragen der Auswahl: höchste Fehlerquote, nur mit genügend Antworten
+    wanted = set(question_ids)
+    scores = {}
+    for r in rows:
+        for qid, tries in attempts.get(r['user'].pk, {}).items():
+            if qid in wanted:
+                scores.setdefault(qid, []).extend(score for _, score in tries)
+    hard = sorted(
+        ((1 - sum(s) / len(s), len(s), qid) for qid, s in scores.items() if len(s) >= learning.GLOBAL_MIN_ATTEMPTS),
+        reverse=True,
+    )[:10]
+    q_map = Questions_Theory.objects.select_related('catalog').in_bulk([qid for _, _, qid in hard])
+    return render(request, 'admin-learning.html', {
+        'levels': levels,
+        'level': level,
+        'groups': groups,
+        'group': group,
+        'show_all': show_all,
+        'catalogs': catalogs,
+        'rows': rows,
+        'hidden': hidden,
+        'hard_questions': [{'question': q_map[qid], 'error_pct': round(rate * 100), 'answers': n}
+                           for rate, n, qid in hard if rate > 0],
+    })
+
+
+@admin_permission_required('app.view_learning_progress')
+def admin_learning_user(request, user_id):
+    learner = get_object_or_404(User, pk=user_id)
+    levels, level, catalogs, question_ids = _learning_scope(request)
+    attempts = learning.attempts_by_user([learner.pk]).get(learner.pk, {})
+    row = _learner_row(learner, attempts, level, catalogs, question_ids) if level else None
+    history = learning.scores_only(attempts)
+    weak = [qid for qid in question_ids if history.get(qid) and learning.mastery(history[qid]) < learning.MASTERED]
+    weak.sort(key=lambda qid: learning.mastery(history[qid]))
+    q_map = Questions_Theory.objects.select_related('catalog').in_bulk(weak[:20])
+    assignments = [assignment_status(a, history) for a in LearningAssignment.objects.select_related('level', 'work')
+                   .prefetch_related('catalogs') if a.recipients().filter(pk=learner.pk).exists()]
+    return render(request, 'admin-learning-user.html', {
+        'learner': learner,
+        'levels': levels,
+        'level': level,
+        'catalogs': list(zip(catalogs, row['catalogs'])) if row else [],
+        'row': row,
+        'weak_questions': [{'question': q_map[qid], 'mastery': round(learning.mastery(history[qid]) * 100),
+                            'tries': len(history[qid])} for qid in weak[:20]],
+        'trainings': TrainingResultData.objects.filter(user=learner).order_by('-meta_time')[:10],
+        'assignments': assignments,
+    })
+
+
+# ── Lernaufträge ──────────────────────────────────────────────────────────────
+
+def _assignment_progress(assignment):
+    """[(Nutzer, Status)] aller Empfänger eines Lernauftrags, unerfüllte und schwächste zuerst."""
+    users = list(assignment.recipients().order_by('last_name', 'first_name', 'username'))
+    attempts = learning.attempts_by_user([u.pk for u in users])
+    result = [(u, assignment_status(assignment, learning.scores_only(attempts.get(u.pk, {})))) for u in users]
+    return sorted(result, key=lambda pair: (pair[1]['done'], pair[1]['progress']['score']))
+
+
+@admin_permission_required('app.manage_assignments')
+def admin_assignment_list(request):
+    assignments = LearningAssignment.objects.select_related('level', 'work').prefetch_related('catalogs')
+    today = timezone.localdate()
+    entries = []
+    for a in assignments:
+        progress = _assignment_progress(a)
+        entries.append({
+            'assignment': a,
+            'recipients': len(progress),
+            'done': sum(1 for _, s in progress if s['done']),
+            'past': a.deadline is not None and a.deadline < today,
+        })
+    return render(request, 'admin-assignments.html', {
+        'current': [e for e in entries if not e['past']],
+        'past': [e for e in entries if e['past']],
+    })
+
+
+def _assignment_form_context(form, assignment=None):
+    return {
+        'form': form,
+        'assignment': assignment,
+        'catalogs': Questions_Catalogs.objects.filter(level__is_draft=False).select_related('level')
+                    .order_by('level__order', 'order', 'title'),
+        'all_users': User.objects.filter(is_active=True).order_by('last_name', 'first_name'),
+        'all_groups': Group.objects.order_by('name'),
+        'selected_catalog_ids': set(assignment.catalogs.values_list('pk', flat=True)) if assignment else set(),
+        'selected_user_ids': set(assignment.assigned_users.values_list('pk', flat=True)) if assignment else set(),
+        'selected_group_ids': set(assignment.assigned_groups.values_list('pk', flat=True)) if assignment else set(),
+    }
+
+
+def _save_assignment_relations(request, assignment):
+    def ids(name):
+        return [int(x) for x in request.POST.getlist(name) if x.isdigit()]
+    # Nur Kataloge der gewählten Stufe: nach einem Stufenwechsel bleiben keine fremden hängen
+    assignment.catalogs.set(Questions_Catalogs.objects.filter(pk__in=ids('catalog_ids'), level=assignment.level))
+    assignment.assigned_users.set(User.objects.filter(pk__in=ids('user_ids')))
+    assignment.assigned_groups.set(Group.objects.filter(pk__in=ids('group_ids')))
+
+
+@admin_permission_required('app.manage_assignments')
+def admin_assignment_create(request):
+    form = LearningAssignmentForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        assignment = form.save(commit=False)
+        assignment.created_by = request.user
+        assignment.save()
+        _save_assignment_relations(request, assignment)
+        if request.POST.get('notify_push'):
+            deadline = assignment.deadline
+            _report_push(request, send_push(
+                assignment.recipients(),
+                title='Neuer Lernauftrag',
+                body=f'„{assignment.title}“' + (f' bis {deadline:%d.%m.}' if deadline else ''),
+                url=reverse('excercise'),
+            ))
+        messages.success(request, 'Lernauftrag angelegt.')
+        return redirect('admin_assignment_detail', assignment_id=assignment.pk)
+    return render(request, 'admin-assignment-edit.html', {**_assignment_form_context(form), 'title': 'Neuer Lernauftrag'})
+
+
+@admin_permission_required('app.manage_assignments')
+def admin_assignment_edit(request, assignment_id):
+    assignment = get_object_or_404(LearningAssignment, pk=assignment_id)
+    form = LearningAssignmentForm(request.POST or None, instance=assignment)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        _save_assignment_relations(request, assignment)
+        messages.success(request, 'Lernauftrag gespeichert.')
+        return redirect('admin_assignment_detail', assignment_id=assignment.pk)
+    return render(request, 'admin-assignment-edit.html', {
+        **_assignment_form_context(form, assignment), 'title': 'Lernauftrag bearbeiten'})
+
+
+@admin_permission_required('app.manage_assignments')
+def admin_assignment_detail(request, assignment_id):
+    assignment = get_object_or_404(LearningAssignment.objects.select_related('level', 'work'), pk=assignment_id)
+    progress = _assignment_progress(assignment)
+    return render(request, 'admin-assignment-detail.html', {
+        'assignment': assignment,
+        'progress': progress,
+        'done_count': sum(1 for _, s in progress if s['done']),
+        'can_view_details': request.user.has_perm('app.view_learning_progress'),
+    })
+
+
+@admin_permission_required('app.manage_assignments')
+def admin_assignment_delete(request, assignment_id):
+    assignment = get_object_or_404(LearningAssignment, pk=assignment_id)
+    if request.method == 'POST':
+        assignment.delete()
+        messages.success(request, 'Lernauftrag gelöscht.')
+    return redirect('admin_assignment_list')

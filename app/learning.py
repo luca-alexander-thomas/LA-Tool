@@ -3,10 +3,16 @@
 Pro Frage zählen die letzten RECENT Versuche (1 = richtig, 0 = falsch, Teilpunkte anteilig):
   - Beherrschung  = Mittelwert dieser Versuche (nie geübt = 0)
   - Lernerfolg    = Mittel der Beherrschung über alle Fragen (in %)
+
+Wiederholung (Lernkartei): Jede richtig beantwortete Frage rückt eine Stufe auf und ist erst nach
+INTERVALS[Stufe] Tagen wieder fällig. Wer sie vorher erneut richtig beantwortet, bleibt auf der Stufe.
+Eine falsche (oder nur teilweise richtige) Antwort setzt die Frage auf Stufe 0: sofort wieder fällig.
 """
 from collections import defaultdict
+from datetime import timedelta
 
 from django.core.cache import cache
+from django.utils import timezone
 
 from .models import Questions_Theory, TrainingResultData
 from .scoring import score_question
@@ -17,6 +23,8 @@ WEAK = 0.5           # darunter „unsicher“
 GLOBAL_MIN_ATTEMPTS = 3
 GLOBAL_HARD_RATE = 0.3
 GLOBAL_CACHE_KEY = 'learning_global_error_rates'
+INTERVALS = (1, 3, 7, 14, 30)   # Tage bis zur nächsten Wiederholung je Stufe der Lernkartei
+READY_MARGIN = 20               # „fast bereit“: Lernerfolg höchstens so viele Prozentpunkte unter der Grenze
 
 STATUS_LABELS = {
     'mastered': 'Gefestigt',
@@ -26,25 +34,67 @@ STATUS_LABELS = {
 }
 
 
-def _history(results):
-    """{question_id: [Punkte je Versuch, chronologisch]} für die gegebenen Trainingsergebnisse."""
-    rows = list(results.order_by('meta_time', 'pk').values_list('questions', 'answers'))
-    ids = {qid for qids, _ in rows for qid in (qids or []) if isinstance(qid, int)}
+# Reihenfolge der Fragen einer Stufe: Katalog für Katalog, darin nach Nummer
+QUESTION_ORDER = ('catalog__order', 'catalog__title', 'catalog_id', 'number', 'pk')
+
+
+def published_theory():
+    """Freigegebene Theoriefragen: weder Frage noch Katalog oder Stufe im Entwurf."""
+    return Questions_Theory.objects.filter(is_draft=False, catalog__is_draft=False, catalog__level__is_draft=False)
+
+
+def catalog_question_ids(catalogs):
+    """{catalog_id: [freigegebene Fragen-IDs in QUESTION_ORDER]} für die übergebenen Kataloge."""
+    ids = {c.pk: [] for c in catalogs}
+    for qid, catalog_id in published_theory().filter(
+            catalog__in=catalogs).order_by(*QUESTION_ORDER).values_list('pk', 'catalog_id'):
+        ids[catalog_id].append(qid)
+    return ids
+
+
+def _attempts(results, by_user=False):
+    """{question_id: [(Zeitpunkt, Punkte), …] chronologisch} für die gegebenen Trainingsergebnisse.
+
+    by_user=True: {user_id: {question_id: …}} – für Übersichten über viele Nutzer mit einer Abfrage.
+    """
+    rows = list(results.order_by('meta_time', 'pk').values_list('user_id', 'meta_time', 'questions', 'answers'))
+    ids = {qid for _, _, qids, _ in rows for qid in (qids or []) if isinstance(qid, int)}
     questions = {q.pk: q for q in Questions_Theory.objects.select_related('catalog').filter(pk__in=ids)}
-    history = defaultdict(list)
-    for qids, answers in rows:
+    attempts = defaultdict(lambda: defaultdict(list))
+    for user_id, when, qids, answers in rows:
         answers = answers if isinstance(answers, dict) else {}
         for qid in qids or []:
             question = questions.get(qid)
             if question is not None:
-                history[qid].append(score_question(question, answers.get(str(qid), [])))
-    return dict(history)
+                score = score_question(question, answers.get(str(qid), []))
+                attempts[user_id if by_user else None][qid].append((when, score))
+    if by_user:
+        return {user_id: dict(rows) for user_id, rows in attempts.items()}
+    return dict(attempts[None])
+
+
+def attempts_by_user(user_ids):
+    return _attempts(TrainingResultData.objects.filter(user_id__in=user_ids), by_user=True)
+
+
+def scores_only(attempts):
+    """{question_id: [Punkte je Versuch]} aus _attempts/user_attempts."""
+    return {qid: [score for _, score in rows] for qid, rows in attempts.items()}
+
+
+def _history(results):
+    """{question_id: [Punkte je Versuch, chronologisch]} für die gegebenen Trainingsergebnisse."""
+    return scores_only(_attempts(results))
+
+
+def user_attempts(user):
+    if not getattr(user, 'is_authenticated', False):
+        return {}
+    return _attempts(TrainingResultData.objects.filter(user=user))
 
 
 def user_history(user):
-    if not getattr(user, 'is_authenticated', False):
-        return {}
-    return _history(TrainingResultData.objects.filter(user=user))
+    return scores_only(user_attempts(user))
 
 
 def mastery(scores):
@@ -123,3 +173,131 @@ def pick_hard(question_ids, history, count):
 def pick_new(question_ids, history):
     """Noch nie geübte Fragen."""
     return [qid for qid in question_ids if not history.get(qid)]
+
+
+# ── Wiederholung (Lernkartei) ─────────────────────────────────────────────────
+
+def schedule(rows):
+    """(Stufe, fällig am) einer Frage aus ihren Versuchen [(Zeitpunkt, Punkte)]; nie geübt = (0, None)."""
+    box, due = 0, None
+    for when, score in rows:
+        day = timezone.localdate(when)
+        if score < 1:
+            box, due = 0, day
+        elif due is None or day >= due:
+            box = min(box + 1, len(INTERVALS))
+            due = day + timedelta(days=INTERVALS[box - 1])
+    return box, due
+
+
+def due_questions(question_ids, attempts, today=None):
+    """Fällige Fragen (geübt, Wiederholung heute oder früher), am längsten überfällige zuerst."""
+    today = today or timezone.localdate()
+    due = []
+    for qid in question_ids:
+        rows = attempts.get(qid)
+        if rows:
+            box, day = schedule(rows)
+            if day <= today:
+                due.append((day, box, qid))
+    due.sort(key=lambda item: (item[0], item[1]))
+    return [qid for _, _, qid in due]
+
+
+def due_count_until(question_ids, attempts, until):
+    """Anzahl der Fragen, die bis einschließlich `until` fällig werden."""
+    return sum(1 for qid in question_ids if attempts.get(qid) and schedule(attempts[qid])[1] <= until)
+
+
+def pick_today(question_ids, attempts, count, priority_ids=(), today=None):
+    """Runde für „Heute lernen“: fällige Wiederholungen, dann neue Fragen (in der übergebenen Reihenfolge,
+    also Katalog für Katalog), zuletzt noch nicht gefestigte. Fragen aus priority_ids (Lernauftrag)
+    kommen innerhalb jeder Gruppe zuerst. Leer, wenn nichts fällig, nichts neu und alles gefestigt ist."""
+    priority = set(priority_ids)
+
+    def first(ids):
+        return sorted(ids, key=lambda qid: qid not in priority)  # stabil: Reihenfolge sonst unverändert
+
+    history = scores_only(attempts)
+    chosen = (first(due_questions(question_ids, attempts, today)) + first(pick_new(question_ids, history)))[:count]
+    if len(chosen) < count:
+        taken = set(chosen)
+        rest = [qid for qid in question_ids if qid not in taken and history.get(qid) and mastery(history[qid]) < MASTERED]
+        rest.sort(key=lambda qid: (mastery(history[qid]), attempts[qid][-1][0]))
+        chosen += first(rest)[:count - len(chosen)]
+    return chosen
+
+
+# ── Überblick ─────────────────────────────────────────────────────────────────
+
+READINESS_LABELS = {'green': 'Bereit fürs LA', 'yellow': 'Fast bereit', 'red': 'Noch nicht bereit'}
+
+
+def readiness(overall, catalog_summaries, pass_pct):
+    """Ampel „Bereit fürs LA?“ für eine Stufe; None, wenn es keine Fragen gibt.
+
+    Grün: Lernerfolg ≥ Bestehensgrenze und jeder Katalog mindestens zur Hälfte geübt.
+    Gelb: Lernerfolg höchstens READY_MARGIN Prozentpunkte darunter (oder Kataloge fehlen noch).
+    catalog_summaries: [(Katalog, summary)]
+    """
+    if not overall['total']:
+        return None
+    unpracticed = [c for c, s in catalog_summaries if s['total'] and s['counts']['new'] * 2 > s['total']]
+    score = overall['score']
+    if score >= pass_pct and not unpracticed:
+        state = 'green'
+    elif score >= pass_pct - READY_MARGIN:
+        state = 'yellow'
+    else:
+        state = 'red'
+    hints = []
+    if score < pass_pct:
+        hints.append(f'Lernerfolg {score} %, für die Prüfung sind {pass_pct} % nötig.')
+    if unpracticed:
+        hints.append('Noch kaum geübt: ' + ', '.join(c.short_title or c.title for c in unpracticed) + '.')
+    return {'state': state, 'label': READINESS_LABELS[state], 'hints': hints, 'pass_pct': pass_pct}
+
+
+def progress_timeline(question_ids, attempts, days=60, today=None):
+    """[(Tag, Lernerfolg in %)] für jeden Übungstag der letzten `days` Tage und heute.
+    Ältere Übungen fließen in den ersten Punkt ein."""
+    ids = set(question_ids)
+    if not ids:
+        return []
+    events = sorted((when, qid, score) for qid in ids for when, score in attempts.get(qid, []))
+    if not events:
+        return []
+    today = today or timezone.localdate()
+    start = today - timedelta(days=days - 1)
+    scores = defaultdict(list)
+    total_mastery = 0.0
+    points = {}
+    for when, qid, score in events:
+        before = mastery(scores[qid])
+        scores[qid].append(score)
+        total_mastery += mastery(scores[qid]) - before
+        points[max(timezone.localdate(when), start)] = round(total_mastery / len(ids) * 100)
+    points.setdefault(today, round(total_mastery / len(ids) * 100))
+    return sorted(points.items())
+
+
+def practice_streak(days_practiced, today=None):
+    """Tage in Folge mit Übung, bis heute (oder bis gestern, solange heute noch nicht geübt wurde)."""
+    today = today or timezone.localdate()
+    days = set(days_practiced)
+    day = today if today in days else today - timedelta(days=1)
+    streak = 0
+    while day in days:
+        streak += 1
+        day -= timedelta(days=1)
+    return streak
+
+
+def score_change(user, result, question_ids):
+    """(Lernerfolg vor, nach) einem Trainingsergebnis für die Fragenmenge; (None, None) ohne Fragen."""
+    if not question_ids:
+        return None, None
+    upto = TrainingResultData.objects.filter(user=user, meta_time__lte=result.meta_time)
+    after = summary(question_ids, _history(upto))['score']
+    before = summary(question_ids, _history(upto.exclude(pk=result.pk)))['score']
+    return before, after

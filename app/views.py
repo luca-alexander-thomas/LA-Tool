@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import auth
+from django.contrib import auth, messages
 from django.contrib.auth.views import redirect_to_login
 from django.db import IntegrityError, transaction
 from django.db.models import Q
@@ -9,7 +9,7 @@ import json
 import random
 import secrets
 import time
-from datetime import date
+from datetime import date, timedelta
 from django.utils import timezone
 from django.urls import reverse
 from . import login_function as login_func
@@ -17,12 +17,14 @@ from .context_processors import current_la_filter
 from . import learning
 from .scoring import score_question as _score_question
 from django.conf import settings
+from la_tool_admin.models import Profile
 from la_tool_admin.push import push_configured
 from .models import (
     Questions_Catalogs, Questions_Theory, TrainingResultData,
     Questions_Practical, Questions_GroupExercise,
     PracticalSelfAssessment, GroupExerciseSelfAssessment,
     Exams, ExamAttempt, ExamResultData, Work, SiteSettings, Levels,
+    QuestionBookmark, QuestionReport, LearningAssignment,
 )
 
 
@@ -155,6 +157,13 @@ def profile(request):
     if not request.user.is_authenticated:
         return redirect_to_login(request.get_full_path())
 
+    user_profile, _ = Profile.objects.get_or_create(user=request.user)
+    if request.method == 'POST' and request.POST.get('action') == 'learning_reminders':
+        user_profile.learning_reminders = request.POST.get('learning_reminders') == '1'
+        user_profile.save(update_fields=['learning_reminders'])
+        messages.success(request, 'Lern-Erinnerungen ' + ('eingeschaltet.' if user_profile.learning_reminders else 'ausgeschaltet.'))
+        return redirect('profile')
+
     training_results = TrainingResultData.objects.filter(
         user=request.user
     ).order_by('-meta_time')[:10]
@@ -175,6 +184,7 @@ def profile(request):
         "total_sessions": total_sessions,
         "avg_pct": avg_pct,
         "push_public_key": settings.VAPID_PUBLIC_KEY if push_configured() else '',
+        "learning_reminders": user_profile.learning_reminders,
     })
 
 
@@ -465,13 +475,14 @@ def excercise(request):
     sample_theory = _published(Questions_Theory).order_by('?').first()
     sample_practical = _published(Questions_Practical).order_by('?').first()
     sample_group = _published_groups().order_by('?').first()
-    level_question_ids = list(_published(Questions_Theory).filter(
-        catalog__level__slug=current_la_filter(request)).values_list('pk', flat=True))
-    theory_progress = learning.summary(level_question_ids, learning.user_history(request.user))
+    overview = _learning_overview(request)
 
     return render(request, "exercise.html", {
+        **_today_plan(overview),
         'last_trainings': last_trainings,
-        'theory_progress': theory_progress,
+        'theory_progress': overview['progress'],
+        'readiness': overview['readiness'],
+        'assignments': overview['assignments'],
         'sample_theory': sample_theory,
         'sample_practical': sample_practical,
         'sample_group': sample_group,
@@ -550,37 +561,107 @@ def work_training_start(request, work_id):
 
 # ── THEORIE-TRAINING ─────────────────────────────────────────────────────────
 
-TRAINING_MODES = ('random', 'hard', 'new')
+TRAINING_MODES = ('random', 'hard', 'new', 'saved')
+
+def _visible_assignments(user):
+    """Lernaufträge des Nutzers: direkt oder über eine Gruppe zugewiesen; ohne Zuweisung gelten sie für alle."""
+    if not user.is_authenticated:
+        return LearningAssignment.objects.none()
+    return LearningAssignment.objects.filter(level__is_draft=False).filter(
+        Q(assigned_users=user) | Q(assigned_groups__in=user.groups.all())
+        | Q(assigned_users__isnull=True, assigned_groups__isnull=True)
+    ).distinct()
+
+
+def _assignment_question_ids(assignment):
+    """Freigegebene Fragen eines Lernauftrags (gewählte Kataloge, sonst alle der Stufe)."""
+    qs = _published(Questions_Theory).filter(catalog__level=assignment.level)
+    catalog_ids = [c.pk for c in assignment.catalogs.all()]
+    if catalog_ids:
+        qs = qs.filter(catalog_id__in=catalog_ids)
+    return list(qs.order_by(*learning.QUESTION_ORDER).values_list('pk', flat=True))
+
+
+def assignment_status(assignment, history, today=None):
+    """Fortschritt eines Nutzers bei einem Lernauftrag (history: learning.user_history)."""
+    today = today or timezone.localdate()
+    ids = _assignment_question_ids(assignment)
+    progress = learning.summary(ids, history)
+    deadline = assignment.deadline
+    return {
+        'assignment': assignment,
+        'question_ids': ids,
+        'progress': progress,
+        'done': bool(ids) and progress['score'] >= assignment.target_pct,
+        'deadline': deadline,
+        'days_left': (deadline - today).days if deadline else None,
+    }
+
+
+def _open_assignments(user, history):
+    """Lernaufträge, deren Frist noch nicht vorbei ist (ohne Frist: immer), nächste Frist zuerst."""
+    today = timezone.localdate()
+    assignments = _visible_assignments(user).select_related('level', 'work').prefetch_related('catalogs')
+    open_ = [assignment_status(a, history, today) for a in assignments if a.deadline is None or a.deadline >= today]
+    return sorted(open_, key=lambda s: (s['deadline'] is None, s['deadline'] or today))
+
+
+def _learning_overview(request):
+    """Lernstand der aktiven Stufe: Kataloge mit Fortschritt, Ampel, fällige Fragen, offene Lernaufträge."""
+    user = request.user
+    level = Levels.objects.filter(slug=current_la_filter(request), is_draft=False).first()
+    catalogs = list(Questions_Catalogs.objects.filter(
+        level=level, is_draft=False).order_by('order', 'title')) if level else []
+    ids_by_catalog = learning.catalog_question_ids(catalogs)
+    question_ids = [qid for c in catalogs for qid in ids_by_catalog[c.pk]]
+
+    tracked = user.is_authenticated
+    attempts = learning.user_attempts(user)
+    history = learning.scores_only(attempts)
+    for c in catalogs:
+        c.question_ids = ids_by_catalog[c.pk]
+        c.progress = learning.summary(c.question_ids, history)
+    progress = learning.summary(question_ids, history)
+    return {
+        'current_level': level,
+        'catalogs': catalogs,
+        'question_ids': question_ids,
+        'attempts': attempts,
+        'history': history,
+        'progress': progress,
+        'track_progress': tracked,
+        'readiness': learning.readiness(progress, [(c, c.progress) for c in catalogs],
+                                        level.default_exam_pass_pct) if tracked and level else None,
+        'due_count': len(learning.due_questions(question_ids, attempts)) if tracked else 0,
+        'assignments': _open_assignments(user, history) if tracked else [],
+    }
+
+
+def _bookmarked_ids(user):
+    if not user.is_authenticated:
+        return set()
+    return set(QuestionBookmark.objects.filter(user=user).values_list('question_id', flat=True))
 
 
 def training_config(request):
-    la = current_la_filter(request)
-    catalogs = list(Questions_Catalogs.objects.select_related('level').filter(
-        level__slug=la, is_draft=False, level__is_draft=False,
-    ).order_by('order', 'title'))
-
-    current_level = Levels.objects.filter(slug=la).first()
-    default_count = current_level.default_training_count if current_level else 10
-
-    # Lernstand: Fragen je Katalog und bisherige Versuche des Nutzers
-    ids_by_catalog = {c.pk: [] for c in catalogs}
-    for qid, catalog_id in _published(Questions_Theory).filter(
-            catalog__in=catalogs).values_list('pk', 'catalog_id'):
-        ids_by_catalog[catalog_id].append(qid)
-    history = learning.user_history(request.user)
+    overview = _learning_overview(request)
+    catalogs = overview['catalogs']
+    level = overview['current_level']
+    default_count = level.default_training_count if level else 10
+    history = overview['history']
+    saved_ids = _bookmarked_ids(request.user)
     for c in catalogs:
-        c.progress = learning.summary(ids_by_catalog[c.pk], history)
-    overall = learning.summary([qid for ids in ids_by_catalog.values() for qid in ids], history)
+        c.saved_count = sum(1 for qid in c.question_ids if qid in saved_ids)
 
     context = {
-        'catalogs': catalogs,
+        **overview,
         'default_count': default_count,
-        'progress': overall,
         'mode': 'random',
-        'track_progress': request.user.is_authenticated,
+        'saved_count': len(saved_ids & set(overview['question_ids'])),
     }
 
     if request.method == 'POST':
+        ids_by_catalog = {c.pk: c.question_ids for c in catalogs}
         catalog_ids = {int(x) for x in request.POST.getlist('catalogs') if x.isdigit()} & set(ids_by_catalog)
         count_str = request.POST.get('count', str(default_count))
         count = max(1, min(int(count_str) if count_str.isdigit() else default_count, 100))
@@ -601,6 +682,9 @@ def training_config(request):
         elif mode == 'new':
             question_ids = learning.pick_new(candidates, history)
             empty_error = 'Du hast in den gewählten Katalogen schon alle Fragen geübt.'
+        elif mode == 'saved':
+            question_ids = [qid for qid in candidates if qid in saved_ids]
+            empty_error = 'In den gewählten Katalogen hast du noch keine Fragen gemerkt. Tippe beim Üben auf das Lesezeichen, um eine Frage zu merken.'
         else:
             question_ids = candidates
             empty_error = 'Keine Fragen in den ausgewählten Katalogen.'
@@ -612,6 +696,102 @@ def training_config(request):
         return redirect('training_run')
 
     return render(request, 'exercise-theorie-training-start.html', context)
+
+
+@require_POST
+def training_today(request):
+    """„Heute lernen“: eine Runde ohne Einstellungen (siehe learning.pick_today).
+
+    Optional beschränkt auf einen Katalog („Lesen, dann üben“) oder einen Lernauftrag. Ohne Beschränkung
+    gehen Fragen aus offenen Lernaufträgen der Stufe vor.
+    """
+    if not request.user.is_authenticated:
+        return redirect_to_login(reverse('training_config'))
+    overview = _learning_overview(request)
+    level = overview['current_level']
+    count = level.default_training_count if level else 10
+    question_ids = overview['question_ids']
+    priority = {qid for s in overview['assignments']
+                if not s['done'] and level and s['assignment'].level_id == level.pk for qid in s['question_ids']}
+
+    catalog_id = request.POST.get('catalog', '')
+    assignment_id = request.POST.get('assignment', '')
+    scoped = catalog_id.isdigit() or assignment_id.isdigit()
+    if catalog_id.isdigit():
+        catalog = next((c for c in overview['catalogs'] if c.pk == int(catalog_id)), None)
+        if catalog is None:
+            return redirect('theory_lookup')
+        question_ids = catalog.question_ids
+    elif assignment_id.isdigit():
+        assignment = get_object_or_404(_visible_assignments(request.user), pk=assignment_id)
+        question_ids = _assignment_question_ids(assignment)
+        count = assignment.level.default_training_count
+
+    chosen = learning.pick_today(question_ids, overview['attempts'], count, priority)
+    if not chosen and scoped:
+        chosen = random.sample(question_ids, min(count, len(question_ids)))  # alles gefestigt: trotzdem üben
+    if not chosen:
+        messages.success(request, 'Für heute ist alles erledigt: keine Wiederholung fällig und keine neuen Fragen. '
+                                  'Du kannst unten trotzdem frei üben.')
+        return redirect('training_config')
+    _start_training(request, chosen)
+    return redirect('training_run')
+
+
+@require_POST
+def training_retry(request, result_id):
+    """Die nicht (ganz) richtig beantworteten Fragen eines Trainings sofort erneut üben."""
+    if not request.user.is_authenticated:
+        return redirect_to_login(reverse('training_result', args=[result_id]))
+    result = get_object_or_404(TrainingResultData, pk=result_id, user=request.user)
+    answers = result.answers or {}
+    published = set(_published(Questions_Theory).filter(pk__in=result.questions or []).values_list('pk', flat=True))
+    wrong = [q.pk for q in _ordered_questions([qid for qid in result.questions or [] if qid in published])
+             if _score_question(q, answers.get(str(q.pk), [])) < 1]
+    if not wrong:
+        return redirect('training_result', result_id=result_id)
+    _start_training(request, wrong)
+    return redirect('training_run')
+
+
+def _json_body(request):
+    try:
+        data = json.loads(request.body or b'{}')
+    except ValueError:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+@require_POST
+def question_bookmark(request, q_id):
+    """Frage merken ({"saved": true}) oder vergessen ({"saved": false})."""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Bitte melde dich an.'}, status=403)
+    question = get_object_or_404(_published(Questions_Theory), pk=q_id)
+    if _json_body(request).get('saved'):
+        QuestionBookmark.objects.get_or_create(user=request.user, question=question)
+        return JsonResponse({'saved': True})
+    QuestionBookmark.objects.filter(user=request.user, question=question).delete()
+    return JsonResponse({'saved': False})
+
+
+# Schutz vor versehentlichem Massenmelden: so viele unbearbeitete Meldungen darf ein Nutzer haben
+MAX_OPEN_REPORTS_PER_USER = 20
+
+
+@require_POST
+def question_report(request, q_id):
+    """Fehler in einer Frage melden; erscheint im Admin unter „Meldungen“."""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Bitte melde dich an.'}, status=403)
+    question = get_object_or_404(_published(Questions_Theory), pk=q_id)
+    message = str(_json_body(request).get('message', '')).strip()[:1000]
+    if not message:
+        return JsonResponse({'error': 'Bitte beschreibe kurz, was nicht stimmt.'}, status=400)
+    if QuestionReport.objects.filter(user=request.user, resolved_at__isnull=True).count() >= MAX_OPEN_REPORTS_PER_USER:
+        return JsonResponse({'error': 'Du hast schon viele offene Meldungen. Bitte warte, bis sie bearbeitet sind.'}, status=429)
+    QuestionReport.objects.create(question=question, user=request.user, message=message)
+    return JsonResponse({'ok': True})
 
 
 def _start_training(request, question_ids):
@@ -640,8 +820,9 @@ def training_run(request):
 
     run_id = request.session.get('training_run_id') or secrets.token_hex(8)
     request.session['training_run_id'] = run_id
+    saved_ids = _bookmarked_ids(request.user)
     return render(request, 'exercise-theorie-training.html', {
-        'questions': [_question_payload(q) for q in questions],
+        'questions': [{**_question_payload(q), 'saved': q.pk in saved_ids} for q in questions],
         'run_id': run_id,
     })
 
@@ -668,6 +849,7 @@ def training_result(request, result_id):
     meta = result.meta_reference or {}
 
     q_map = {q.pk: q for q in Questions_Theory.objects.select_related('catalog').filter(pk__in=question_ids)}
+    saved_ids = _bookmarked_ids(request.user)
     questions_data = []
     for q_id in question_ids:
         q = q_map.get(q_id)
@@ -686,7 +868,15 @@ def training_result(request, result_id):
             'correct_texts': correct_texts,
             'is_correct': set(user_texts) == set(correct_texts),
             'is_multi_answer': q.is_multi_answer,
+            'saved': q.pk in saved_ids,
         })
+    wrong = [d for d in questions_data if not d['is_correct']]
+    right = [d for d in questions_data if d['is_correct']]
+
+    # Lernerfolg der aktiven Stufe vor und nach diesem Training
+    level_ids = list(_published(Questions_Theory).filter(
+        catalog__level__slug=current_la_filter(request)).values_list('pk', flat=True))
+    score_before, score_after = learning.score_change(request.user, result, level_ids)
 
     total = meta.get('total', len(questions_data))
     score = meta.get('score', sum(1 for d in questions_data if d['is_correct']))
@@ -703,7 +893,104 @@ def training_result(request, result_id):
         'pct': pct,
         'pass_threshold': pass_threshold,
         'questions_data': questions_data,
+        'wrong': wrong,
+        'right': right,
+        'retry_possible': _published(Questions_Theory).filter(pk__in=[d['question'].pk for d in wrong]).exists(),
+        'score_before': score_before,
+        'score_after': score_after,
+        'score_delta': None if score_before is None else score_after - score_before,
     })
+
+
+def _today_plan(overview):
+    """Zahlen für die Karte „Heute lernen“."""
+    if not overview['track_progress']:
+        return {'today': None}
+    level = overview['current_level']
+    count = level.default_training_count if level else 10
+    due = overview['due_count']
+    new = overview['progress']['counts']['new']
+    return {'today': {
+        'due': due,
+        'new': new,
+        'count': min(count, due + new) or count,
+        'done': not due and not new,
+    }}
+
+
+# ── MEIN LERNSTAND ────────────────────────────────────────────────────────────
+
+def learning_stats(request):
+    """Persönliche Statistik: Verlauf, Übungstage in Folge, Kataloge und alle Fragen mit Status."""
+    if not request.user.is_authenticated:
+        return redirect_to_login(request.get_full_path())
+    overview = _learning_overview(request)
+    attempts, history, ids = overview['attempts'], overview['history'], overview['question_ids']
+    today = timezone.localdate()
+    saved_ids = _bookmarked_ids(request.user)
+
+    q_map = Questions_Theory.objects.select_related('catalog').in_bulk(ids)
+    rows = []
+    for qid in ids:
+        tries = attempts.get(qid, [])
+        box, due = learning.schedule(tries)
+        status = learning.status(history.get(qid, []))
+        rows.append({
+            'question': q_map[qid],
+            'status': status,
+            'status_label': learning.STATUS_LABELS[status],
+            'mastery': round(learning.mastery(history.get(qid, [])) * 100),
+            'box': box,
+            'due': due,
+            'is_due': bool(tries) and due <= today,
+            'saved': qid in saved_ids,
+            'tries': len(tries),
+        })
+
+    trainings = TrainingResultData.objects.filter(user=request.user)
+    practice_days = {timezone.localdate(t) for t in trainings.values_list('meta_time', flat=True)}
+    timeline = learning.progress_timeline(ids, attempts)
+    return render(request, 'exercise-theorie-lernstand.html', {
+        **overview,
+        **_today_plan(overview),
+        'rows': rows,
+        'saved_count': sum(1 for r in rows if r['saved']),
+        'streak': learning.practice_streak(practice_days, today),
+        'practice_day_count': len(practice_days),
+        'training_count': trainings.count(),
+        'answer_count': sum(len(tries) for tries in attempts.values()),
+        'due_week': learning.due_count_until(ids, attempts, today + timedelta(days=7)),
+        'chart': _timeline_chart(timeline),
+        'intervals': learning.INTERVALS,
+    })
+
+
+def _timeline_chart(points, width=600, height=180, pad=28):
+    """Koordinaten für das Verlaufsdiagramm (Inline-SVG); None bei weniger als zwei Punkten."""
+    if len(points) < 2:
+        return None
+    first, last = points[0][0], points[-1][0]
+    span = max((last - first).days, 1)
+    inner_w, inner_h = width - 2 * pad, height - 2 * pad
+
+    def xy(day, value):
+        return (round(pad + (day - first).days / span * inner_w, 1), round(pad + (1 - value / 100) * inner_h, 1))
+
+    coords = [xy(day, value) for day, value in points]
+    return {
+        'width': width,
+        'height': height,
+        'line': ' '.join(f'{x},{y}' for x, y in coords),
+        'area': f'{coords[0][0]},{pad + inner_h} ' + ' '.join(f'{x},{y}' for x, y in coords) + f' {coords[-1][0]},{pad + inner_h}',
+        'grid': [{'y': round(pad + (1 - v / 100) * inner_h, 1), 'label': v} for v in (0, 50, 100)],
+        'last': {'x': coords[-1][0], 'y': coords[-1][1], 'value': points[-1][1]},
+        'start_label': first,
+        'end_label': last,
+        'points': [{'x': x, 'y': y, 'day': day, 'value': value} for (x, y), (day, value) in zip(coords, points)],
+        'left': pad,
+        'right': width - pad,
+        'bottom': pad + inner_h,
+    }
 
 
 def _published(model):
@@ -748,6 +1035,7 @@ def theory_lookup(request):
     return render(request, 'exercise-theorie-katalog.html', {
         'sections': [(catalog, items, ' '.join(e['search'] for e in items)) for catalog, items in sections],
         'question_count': len(entries),
+        'saved_ids': sorted(_bookmarked_ids(request.user) & {e['question'].pk for e in entries}),
     })
 
 

@@ -16,6 +16,9 @@ Admin-Seiten füllen {% block admin_content %}.
         <a href="{% url 'admin_catalog' %}" class="nav-link shrink-0 {% if nav_section == 'admin_catalog' %}nav-link-active{% endif %}">Kataloge</a>
         {% if perms.app.manage_group_exercises %}<a href="{% url 'admin_group_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_group' %}nav-link-active{% endif %}">Gruppenaufgaben</a>{% endif %}
         {% if perms.app.manage_theory %}<a href="{% url 'admin_import_questions' %}" class="nav-link shrink-0 {% if nav_section == 'admin_import' %}nav-link-active{% endif %}">Import</a>{% endif %}
+        {% if perms.app.manage_theory %}<a href="{% url 'admin_report_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_report' %}nav-link-active{% endif %}">Meldungen</a>{% endif %}
+        {% if perms.app.view_learning_progress %}<a href="{% url 'admin_learning' %}" class="nav-link shrink-0 {% if nav_section == 'admin_learning' %}nav-link-active{% endif %}">Lernstand</a>{% endif %}
+        {% if perms.app.manage_assignments %}<a href="{% url 'admin_assignment_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_assignment' %}nav-link-active{% endif %}">Lernaufträge</a>{% endif %}
         <a href="{% url 'admin_exam_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_exam' %}nav-link-active{% endif %}">Prüfungen</a>
         <a href="{% url 'admin_work_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_work' %}nav-link-active{% endif %}">Dienste</a>
         {% if perms.app.send_notifications %}<a href="{% url 'admin_push_message' %}" class="nav-link shrink-0 {% if nav_section == 'admin_push' %}nav-link-active{% endif %}">Benachrichtigungen</a>{% endif %}
@@ -35,9 +38,14 @@ Admin-Seiten füllen {% block admin_content %}.
             <a href="{% url 'admin_catalog' %}" class="sidebar-link {% if nav_section == 'admin_catalog' %}sidebar-link-active{% endif %}">{% include "icons/rectangle-stack.html" %} Kataloge</a>
             {% if perms.app.manage_group_exercises %}<a href="{% url 'admin_group_list' %}" class="sidebar-link {% if nav_section == 'admin_group' %}sidebar-link-active{% endif %}">{% include "icons/user-group.html" %} Gruppenaufgaben</a>{% endif %}
             {% if perms.app.manage_theory %}<a href="{% url 'admin_import_questions' %}" class="sidebar-link {% if nav_section == 'admin_import' %}sidebar-link-active{% endif %}">{% include "icons/arrow-up-tray.html" %} Fragen-Import</a>{% endif %}
+            {% if perms.app.manage_theory %}<a href="{% url 'admin_report_list' %}" class="sidebar-link {% if nav_section == 'admin_report' %}sidebar-link-active{% endif %}">{% include "icons/flag.html" %} Meldungen</a>{% endif %}
             <a href="{% url 'admin_exam_list' %}" class="sidebar-link {% if nav_section == 'admin_exam' %}sidebar-link-active{% endif %}">{% include "icons/clipboard-document-check.html" %} Prüfungen</a>
             <a href="{% url 'admin_work_list' %}" class="sidebar-link {% if nav_section == 'admin_work' %}sidebar-link-active{% endif %}">{% include "icons/calendar-days.html" %} Dienste</a>
             {% if perms.app.send_notifications %}<a href="{% url 'admin_push_message' %}" class="sidebar-link {% if nav_section == 'admin_push' %}sidebar-link-active{% endif %}">{% include "icons/paper-airplane.html" %} Benachrichtigungen</a>{% endif %}
+
+            {% if perms.app.view_learning_progress or perms.app.manage_assignments %}<p class="sidebar-heading">Ausbildung</p>{% endif %}
+            {% if perms.app.view_learning_progress %}<a href="{% url 'admin_learning' %}" class="sidebar-link {% if nav_section == 'admin_learning' %}sidebar-link-active{% endif %}">{% include "icons/chart-bar.html" %} Lernstand</a>{% endif %}
+            {% if perms.app.manage_assignments %}<a href="{% url 'admin_assignment_list' %}" class="sidebar-link {% if nav_section == 'admin_assignment' %}sidebar-link-active{% endif %}">{% include "icons/clipboard-document-check.html" %} Lernaufträge</a>{% endif %}
 
             <p class="sidebar-heading">Konfiguration</p>
             <a href="{% url 'admin_level_list' %}" class="sidebar-link {% if nav_section == 'admin_level' %}sidebar-link-active{% endif %}">{% include "icons/trophy.html" %} LA-Stufen</a>

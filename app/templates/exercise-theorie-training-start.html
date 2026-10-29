@@ -20,6 +20,14 @@
     </div>
     {% endif %}
 
+    {% if today %}
+    <div class="mb-4 space-y-4">
+        {% include "_today_card.html" %}
+        {% include "_assignments.html" %}
+    </div>
+    <h2 class="section-title mb-3">Eigene Übung</h2>
+    {% endif %}
+
     {# Lernerfolg: Mittel der Beherrschung aller Fragen (letzte 3 Versuche je Frage, siehe app/learning.py) #}
     {% if track_progress %}
     <section class="card card-body mb-4">
@@ -28,7 +36,7 @@
                 <p class="text-sm font-semibold text-ink-2">Dein Lernerfolg{% if current_level %} · {{ current_level.name }}{% endif %}</p>
                 <p class="mt-1 text-4xl font-bold tracking-tight text-ink tabular-nums">{{ progress.score }}<span class="text-2xl text-ink-3"> %</span></p>
             </div>
-            <p class="max-w-sm text-xs text-ink-3">Berechnet aus deinen letzten drei Antworten je Frage. Noch nicht geübte Fragen zählen mit 0 %.</p>
+            <p class="max-w-sm text-xs text-ink-3">Berechnet aus deinen letzten drei Antworten je Frage. Noch nicht geübte Fragen zählen mit 0 %. <a class="link" href="{% url 'learning_stats' %}">Mein Lernstand</a></p>
         </div>
         {% include "_learning_bar.html" with summary=progress height="h-3" %}
         <ul class="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">
@@ -79,6 +87,11 @@
                             <span class="mt-0.5 block text-xs text-ink-3">Noch keine Fragen</span>
                             {% endif %}
                         </span>
+                        {% if catalog.progress.total %}
+                        <a href="{% url 'theory_lookup' %}#katalog-{{ catalog.pk }}" class="btn btn-ghost btn-sm shrink-0 text-ink-2" title="Fragen mit Lösungen lesen, danach gezielt üben" @click.stop>
+                            {% include "icons/book-open.html" with cls="size-4" %}<span class="hidden sm:inline">Lesen</span>
+                        </a>
+                        {% endif %}
                     </label>
                     {% empty %}
                     <p class="empty-state">Noch keine Kataloge vorhanden. Bitte zuerst Kataloge anlegen.</p>
@@ -113,6 +126,13 @@
                             <span class="block text-xs text-ink-2">{% if track_progress %}<span class="font-semibold tabular-nums" x-text="sum('new')">{{ progress.counts.new }}</span> Fragen, die du noch nie beantwortet hast{% else %}Nach der Anmeldung verfügbar{% endif %}</span>
                         </span>
                     </label>
+                    <label class="answer-option {% if track_progress %}cursor-pointer{% else %}cursor-not-allowed opacity-50{% endif %} has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-accent/25">
+                        <input class="sr-only" type="radio" name="mode" value="saved" x-model="mode" {% if not track_progress %}disabled{% endif %}>
+                        <span class="min-w-0 flex-1">
+                            <span class="block text-sm font-semibold text-ink">Gemerkte Fragen</span>
+                            <span class="block text-xs text-ink-2">{% if track_progress %}<span class="font-semibold tabular-nums" x-text="sum('saved')">{{ saved_count }}</span> Fragen, die du mit dem Lesezeichen markiert hast{% else %}Nach der Anmeldung verfügbar{% endif %}</span>
+                        </span>
+                    </label>
                 </fieldset>
                 <div class="mt-auto flex flex-col gap-4 border-t border-line p-4 sm:p-6">
                     <div>
@@ -140,5 +160,5 @@
 
 {% block extra_scripts %}
 {# Je Katalog: Anzahl neuer und schwieriger Fragen (für die Live-Summen der Übungsarten) #}
-<script id="catalog-stats" type="application/json">{ {% for c in catalogs %}"{{ c.pk }}": {"new": {{ c.progress.counts.new }}, "hard": {{ c.progress.hard }}}{% if not forloop.last %}, {% endif %}{% endfor %} }</script>
+<script id="catalog-stats" type="application/json">{ {% for c in catalogs %}"{{ c.pk }}": {"new": {{ c.progress.counts.new }}, "hard": {{ c.progress.hard }}, "saved": {{ c.saved_count|default:0 }}}{% if not forloop.last %}, {% endif %}{% endfor %} }</script>
 {% endblock %}

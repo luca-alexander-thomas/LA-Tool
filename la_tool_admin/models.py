@@ -40,6 +40,9 @@ class Profile(models.Model):
     entra_oid = models.CharField(max_length=64, blank=True, default='')
     # Zuletzt bekannte Entra-Gruppen (Object-IDs); None = nie per Entra angemeldet
     entra_group_ids = models.JSONField(blank=True, null=True)
+    # Wöchentliche Push-Erinnerung an fällige Wiederholungen (Befehl send_learning_reminders)
+    learning_reminders = models.BooleanField(default=True)
+    last_learning_reminder_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return self.user.username

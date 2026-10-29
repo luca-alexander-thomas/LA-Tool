@@ -10,6 +10,7 @@ _NAV_SECTIONS = {
     'home': 'home',
     'excercise': 'excercise',
     'training_config': 'theory', 'training_run': 'theory', 'training_result': 'theory', 'theory_lookup': 'theory',
+    'training_today': 'theory', 'training_retry': 'theory', 'learning_stats': 'theory',
     'practical_list': 'practical', 'practical_detail': 'practical',
     'group_list': 'group', 'group_detail': 'group',
     'work': 'work', 'work_detail': 'work', 'work_training_start': 'work',
@@ -32,6 +33,10 @@ _NAV_SECTIONS = {
     'admin_autogroup_edit': 'admin_autogroup',
     'admin_settings': 'admin_settings',
     'admin_push_message': 'admin_push',
+    'admin_report_list': 'admin_report',
+    'admin_learning': 'admin_learning', 'admin_learning_user': 'admin_learning',
+    'admin_assignment_list': 'admin_assignment', 'admin_assignment_create': 'admin_assignment',
+    'admin_assignment_detail': 'admin_assignment', 'admin_assignment_edit': 'admin_assignment',
 }
 
 
