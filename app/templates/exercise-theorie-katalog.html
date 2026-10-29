@@ -1,69 +1,117 @@
 {% extends "base.html" %}
 
-{% block page_title %}Theoriefragen nachschlagen{% endblock %}
+{% block page_title %}Fragen nachschlagen{% endblock %}
 
 {% block site_content %}
-{# Alle Fragen der Stufe mit Lösung; die Suche filtert im Browser (data-search enthält Frage, Nummer, Antworten).
-   „Lesen, dann üben“: jeder Katalog hat einen Knopf, der genau diese Fragen abfragt (training_today mit catalog). #}
+{% comment %}
+Alle Fragen der Stufe mit Lösung. Suche und Katalog-Filter laufen im Browser (data-search: Frage, Nummer,
+Antworten; data-catalog: Katalog-ID). „Lesen, dann üben“: jeder Katalog hat einen Knopf, der genau diese
+Fragen abfragt (training_today mit catalog).
+{% endcomment %}
 <div class="page" x-data="{
         ...questionActionsData({
             urls: { bookmark: '{% url 'question_bookmark' 0 %}', report: '{% url 'question_report' 0 %}' },
             saved: { {% for pk in saved_ids %}{{ pk }}: true, {% endfor %} },
         }),
         q: '',
+        catalog: 'all',
+        allOpen: false,
+        init() {
+            // Link „Lesen“ von der Trainingsseite (#katalog-ID): direkt diesen Katalog zeigen
+            const match = location.hash.match(/^#katalog-(\d+)$/);
+            if (match) this.catalog = match[1];
+        },
         get term() { return this.q.trim().toLowerCase(); },
-        matches(el) { return !this.term || el.dataset.search.includes(this.term); },
-        get anyHit() { return [...this.$root.querySelectorAll('section[data-search]')].some((el) => this.matches(el)); },
+        matches(el) {
+            return (this.catalog === 'all' || el.dataset.catalog === this.catalog)
+                && (!this.term || el.dataset.search.includes(this.term));
+        },
+        get hits() {
+            this.term; this.catalog;  // Abhängigkeiten für Alpine
+            return [...this.$root.querySelectorAll('details[data-search]')].filter((el) => this.matches(el)).length;
+        },
+        toggleAll() {
+            this.allOpen = !this.allOpen;
+            this.$root.querySelectorAll('details[data-search]').forEach((el) => { el.open = this.allOpen; });
+        },
     }">
     <div class="page-header">
         <div>
-            <p class="eyebrow">Theorie</p>
+            <p class="eyebrow">Theorie{% if current_level %} · {{ current_level.name }}{% endif %}</p>
             <h1 class="page-title mt-1">Fragen nachschlagen</h1>
-            <p class="page-subtitle">{{ question_count }} Frage{{ question_count|pluralize:"n" }} mit Lösungen, nach Katalogen geordnet</p>
-        </div>
-        <a class="btn btn-primary" href="{% url 'training_config' %}">{% include "icons/play.html" with cls="size-4" %} Training starten</a>
-    </div>
-
-    <div class="sticky top-[env(safe-area-inset-top,0px)] z-10 -mx-1 mb-4 bg-bg/90 px-1 py-2 backdrop-blur">
-        <label class="sr-only" for="lookup-search">Fragen durchsuchen</label>
-        <div class="relative">
-            <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-3">{% include "icons/magnifying-glass.html" with cls="size-5" %}</span>
-            <input id="lookup-search" type="search" class="form-control pl-10" placeholder="Frage, Nummer oder Antwort suchen …"
-                   x-model.debounce.150ms="q" autocomplete="off">
+            <p class="page-subtitle">{{ question_count }} Frage{{ question_count|pluralize:"n" }} mit Lösungen. Lies einen Katalog und übe ihn danach gezielt.</p>
         </div>
     </div>
 
     {% if sections %}
-    <div class="space-y-6">
-        {% for catalog, items, section_search in sections %}
-        <section data-search="{{ section_search }}" x-show="matches($el)" id="katalog-{{ catalog.pk }}" class="scroll-mt-20">
-            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <h2 class="flex flex-wrap items-center gap-2 text-base font-semibold text-ink">
-                    {% if catalog.short_title %}<span class="badge badge-neutral">{{ catalog.short_title }}</span>{% endif %}
-                    {{ catalog.title }}
-                    <span class="text-xs font-normal text-ink-3">{{ items|length }}</span>
-                </h2>
-                <form method="post" action="{% url 'training_today' %}">
+    {# Suche, Katalog-Filter, alle aufklappen #}
+    <div class="sticky top-[calc(4rem+env(safe-area-inset-top,0px))] z-10 -mx-4 mb-4 space-y-2 border-b border-line/70 bg-bg/90 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-b-xl sm:border-x">
+        <div class="flex gap-2">
+            <label class="sr-only" for="lookup-search">Fragen durchsuchen</label>
+            <div class="relative flex-1">
+                <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-3">{% include "icons/magnifying-glass.html" with cls="size-5" %}</span>
+                <input id="lookup-search" type="search" class="form-control pl-10" placeholder="Frage, Nummer oder Antwort suchen …"
+                       x-model.debounce.150ms="q" autocomplete="off">
+            </div>
+            <button type="button" class="btn btn-secondary shrink-0" @click="toggleAll()" :aria-pressed="allOpen.toString()">
+                {% include "icons/eye.html" with cls="size-4" %}
+                <span class="hidden sm:inline" x-text="allOpen ? 'Lösungen ausblenden' : 'Alle Lösungen zeigen'">Alle Lösungen zeigen</span>
+                <span class="sm:hidden" x-text="allOpen ? 'Zuklappen' : 'Aufklappen'">Aufklappen</span>
+            </button>
+        </div>
+        <div class="-mx-4 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0" role="group" aria-label="Katalog wählen">
+            <button type="button" class="btn btn-sm shrink-0" :class="catalog === 'all' ? 'btn-primary' : 'btn-secondary'"
+                    @click="catalog = 'all'" :aria-pressed="(catalog === 'all').toString()">Alle</button>
+            {% for s in sections %}
+            <button type="button" class="btn btn-sm shrink-0" :class="catalog === '{{ s.catalog.pk }}' ? 'btn-primary' : 'btn-secondary'"
+                    @click="catalog = '{{ s.catalog.pk }}'" :aria-pressed="(catalog === '{{ s.catalog.pk }}').toString()"
+                    title="{{ s.catalog.title }}">{{ s.catalog.short_title|default:s.catalog.title }}</button>
+            {% endfor %}
+        </div>
+        <p class="text-xs text-ink-3" x-show="term || catalog !== 'all'" x-cloak aria-live="polite">
+            <span x-text="hits"></span> Treffer
+        </p>
+    </div>
+
+    <div class="space-y-8">
+        {% for s in sections %}
+        <section data-catalog="{{ s.catalog.pk }}" id="katalog-{{ s.catalog.pk }}" class="scroll-mt-40"
+                 x-show="[...$el.querySelectorAll('details[data-search]')].some((el) => matches(el))">
+            <div class="mb-3 flex items-start gap-3">
+                <div class="min-w-0 flex-1">
+                    <h2 class="text-base font-semibold text-ink sm:text-lg">
+                        {% if s.catalog.short_title %}<span class="badge badge-neutral mr-1.5 align-middle">{{ s.catalog.short_title }}</span>{% endif %}{{ s.catalog.title }}
+                    </h2>
+                    <div class="mt-1.5 flex items-center gap-2 text-xs text-ink-3">
+                        <span>{{ s.items|length }} Frage{{ s.items|length|pluralize:"n" }}</span>
+                        <span aria-hidden="true">·</span>
+                        <span class="tabular-nums">Lernerfolg {{ s.progress.score }} %</span>
+                        <span class="w-20">{% include "_learning_bar.html" with summary=s.progress height="h-1.5" compact=True %}</span>
+                    </div>
+                </div>
+                <form method="post" action="{% url 'training_today' %}" class="shrink-0">
                     {% csrf_token %}
-                    <input type="hidden" name="catalog" value="{{ catalog.pk }}">
+                    <input type="hidden" name="catalog" value="{{ s.catalog.pk }}">
                     <button type="submit" class="btn btn-soft btn-sm" title="Gelesen? Dann frag die Fragen dieses Katalogs ab">
-                        {% include "icons/play.html" with cls="size-4" %} Diesen Katalog üben
+                        {% include "icons/play.html" with cls="size-4" %} <span class="hidden sm:inline">Diesen Katalog</span> üben
                     </button>
                 </form>
             </div>
             <div class="space-y-2">
-                {% for e in items %}
-                <details class="group rounded-xl border border-line bg-surface" data-search="{{ e.search }}"
+                {% for e in s.items %}
+                <details class="group rounded-xl border border-line bg-surface" data-search="{{ e.search }}" data-catalog="{{ s.catalog.pk }}"
                          x-show="matches($el)">
                     <summary class="flex min-h-12 cursor-pointer list-none items-start gap-3 rounded-xl px-3 py-2.5 transition hover:bg-surface-2 [&::-webkit-details-marker]:hidden">
-                        <span class="w-10 shrink-0 pt-0.5 text-center text-xs font-medium text-ink-3 tabular-nums">{{ e.question.number }}</span>
+                        <span class="mt-1.5 size-2.5 shrink-0 rounded-full {% if e.status == 'mastered' %}bg-green-500{% elif e.status == 'learning' %}bg-amber-400{% elif e.status == 'weak' %}bg-red-500{% else %}bg-line{% endif %}"
+                              title="{{ e.status_label }}"><span class="sr-only">{{ e.status_label }}</span></span>
+                        <span class="w-12 shrink-0 pt-0.5 text-xs font-medium text-ink-3 tabular-nums">{{ e.question.number }}</span>
                         <span class="min-w-0 flex-1 text-sm font-semibold text-ink sm:text-base">{{ e.question.question }}</span>
                         {% include "icons/chevron-down.html" with cls="mt-0.5 size-5 shrink-0 text-ink-3 transition-transform group-open:rotate-180" %}
                     </summary>
-                    <div class="space-y-1.5 border-t border-line px-3 py-3 text-sm sm:pl-16">
+                    <div class="space-y-1.5 border-t border-line px-3 py-3 text-sm sm:pl-[5.25rem]">
                         {% for letter, text, is_correct in e.choices %}
                         <p class="flex gap-2 {% if is_correct %}font-semibold text-green-700 dark:text-green-400{% else %}text-ink-2{% endif %}">
-                            {% if is_correct %}{% include "icons/check-circle.html" with cls="size-5 shrink-0" %}{% else %}<span class="inline-flex size-5 shrink-0 items-center justify-center text-xs font-semibold uppercase">{{ letter }}</span>{% endif %}
+                            {% if is_correct %}{% include "icons/check-circle.html" with cls="size-5 shrink-0" %}<span class="sr-only">Richtig:</span>{% else %}<span class="inline-flex size-5 shrink-0 items-center justify-center text-xs font-semibold uppercase">{{ letter }}</span>{% endif %}
                             <span>{{ text }}</span>
                         </p>
                         {% endfor %}
@@ -77,7 +125,7 @@
             </div>
         </section>
         {% endfor %}
-        <p class="empty-state" x-show="!anyHit" x-cloak>Keine passenden Fragen gefunden.</p>
+        <p class="empty-state" x-show="!hits" x-cloak>Keine passenden Fragen gefunden.</p>
     </div>
     {% else %}
     <p class="empty-state">Für diese Stufe sind noch keine Theoriefragen vorhanden.</p>

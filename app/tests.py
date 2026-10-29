@@ -284,8 +284,8 @@ class LookupAndPracticalListTests(TestCase):
         Questions_Theory.objects.create(question='Geheim?', catalog=draft, answer_text='Ja', answer_choice=['Ja'])
         response = self.client.get(reverse('theory_lookup'))
         sections = response.context['sections']
-        self.assertEqual([c.title for c, _, _ in sections], ['Erster', 'Zweiter'])
-        self.assertEqual(sections[1][1][0]['choices'], [('a', 'Nein', False), ('b', 'Ja', True)])
+        self.assertEqual([s['catalog'].title for s in sections], ['Erster', 'Zweiter'])
+        self.assertEqual(sections[1]['items'][0]['choices'], [('a', 'Nein', False), ('b', 'Ja', True)])
         self.assertNotContains(response, 'Geheim?')
 
     def test_lookup_requires_login(self):

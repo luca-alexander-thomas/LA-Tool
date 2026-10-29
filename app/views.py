@@ -574,12 +574,12 @@ def _visible_assignments(user):
 
 
 def _assignment_question_ids(assignment):
-    """Freigegebene Fragen eines Lernauftrags (gewählte Kataloge, sonst alle der Stufe)."""
-    qs = _published(Questions_Theory).filter(catalog__level=assignment.level)
-    catalog_ids = [c.pk for c in assignment.catalogs.all()]
-    if catalog_ids:
-        qs = qs.filter(catalog_id__in=catalog_ids)
-    return list(qs.order_by(*learning.QUESTION_ORDER).values_list('pk', flat=True))
+    """Freigegebene Fragen eines Lernauftrags (gewählte Kataloge, sonst alle der Stufe), Katalog für Katalog."""
+    catalogs = list(assignment.catalogs.all()) or list(
+        Questions_Catalogs.objects.filter(level=assignment.level, is_draft=False))
+    catalogs.sort(key=lambda c: (c.order, c.title, c.pk))
+    ids = learning.catalog_question_ids(catalogs)
+    return [qid for c in catalogs for qid in ids[c.pk]]
 
 
 def assignment_status(assignment, history, today=None):
@@ -1019,21 +1019,28 @@ def theory_lookup(request):
     if not request.user.is_authenticated:
         return redirect_to_login(request.get_full_path())
     la = current_la_filter(request)
-    questions = _published(Questions_Theory).select_related('catalog').filter(
-        catalog__level__slug=la,
-    ).order_by('number', 'pk')
+    questions = list(_published(Questions_Theory).select_related('catalog').filter(catalog__level__slug=la))
+    questions.sort(key=lambda q: (learning.natural_key(q.number), q.pk))
+    history = learning.user_history(request.user)
     entries = []
     for q in questions:
         correct = set(q.correct_answers)
+        status = learning.status(history.get(q.pk, []))
         entries.append({
             'question': q,
             'choices': [(letter, text, text in correct) for letter, text in _labeled_choices(q)],
+            'status': status,
+            'status_label': learning.STATUS_LABELS[status],
             # Suchtext: Frage, Nummer und Antworten (für die Suche im Browser)
             'search': ' '.join([q.number or '', q.question, *(q.answer_choice or [])]).lower(),
         })
-    sections = _by_catalog(entries, catalog_of=lambda e: e['question'].catalog)
+    sections = [{
+        'catalog': catalog,
+        'items': items,
+        'progress': learning.summary([e['question'].pk for e in items], history),
+    } for catalog, items in _by_catalog(entries, catalog_of=lambda e: e['question'].catalog)]
     return render(request, 'exercise-theorie-katalog.html', {
-        'sections': [(catalog, items, ' '.join(e['search'] for e in items)) for catalog, items in sections],
+        'sections': sections,
         'question_count': len(entries),
         'saved_ids': sorted(_bookmarked_ids(request.user) & {e['question'].pk for e in entries}),
     })

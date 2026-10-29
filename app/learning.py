@@ -8,6 +8,7 @@ Wiederholung (Lernkartei): Jede richtig beantwortete Frage rückt eine Stufe auf
 INTERVALS[Stufe] Tagen wieder fällig. Wer sie vorher erneut richtig beantwortet, bleibt auf der Stufe.
 Eine falsche (oder nur teilweise richtige) Antwort setzt die Frage auf Stufe 0: sofort wieder fällig.
 """
+import re
 from collections import defaultdict
 from datetime import timedelta
 
@@ -34,22 +35,23 @@ STATUS_LABELS = {
 }
 
 
-# Reihenfolge der Fragen einer Stufe: Katalog für Katalog, darin nach Nummer
-QUESTION_ORDER = ('catalog__order', 'catalog__title', 'catalog_id', 'number', 'pk')
-
-
 def published_theory():
     """Freigegebene Theoriefragen: weder Frage noch Katalog oder Stufe im Entwurf."""
     return Questions_Theory.objects.filter(is_draft=False, catalog__is_draft=False, catalog__level__is_draft=False)
 
 
+def natural_key(text):
+    """Sortierschlüssel, der Zahlen als Zahlen vergleicht: „B1-2“ vor „B1-19“."""
+    return [(0, int(part), '') if part.isdigit() else (1, 0, part.lower())
+            for part in re.split(r'(\d+)', text or '') if part]
+
+
 def catalog_question_ids(catalogs):
-    """{catalog_id: [freigegebene Fragen-IDs in QUESTION_ORDER]} für die übergebenen Kataloge."""
-    ids = {c.pk: [] for c in catalogs}
-    for qid, catalog_id in published_theory().filter(
-            catalog__in=catalogs).order_by(*QUESTION_ORDER).values_list('pk', 'catalog_id'):
-        ids[catalog_id].append(qid)
-    return ids
+    """{catalog_id: [freigegebene Fragen-IDs nach Nummer, natürlich sortiert]} für die übergebenen Kataloge."""
+    rows = {c.pk: [] for c in catalogs}
+    for qid, catalog_id, number in published_theory().filter(catalog__in=catalogs).values_list('pk', 'catalog_id', 'number'):
+        rows[catalog_id].append((natural_key(number), qid))
+    return {catalog_id: [qid for _, qid in sorted(items)] for catalog_id, items in rows.items()}
 
 
 def _attempts(results, by_user=False):

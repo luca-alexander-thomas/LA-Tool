@@ -87,6 +87,10 @@ class ScheduleTests(LearningBase):
         self.assertEqual(learning.readiness({'total': 4, 'score': 40}, catalogs[:1], 75)['state'], 'red')
         self.assertIsNone(learning.readiness({'total': 0, 'score': 0}, [], 75))
 
+    def test_natural_question_order(self):
+        self.assertEqual(sorted(['B1-19', 'B1-2', 'B10-1', None, 'B1-3a'], key=learning.natural_key),
+                         [None, 'B1-2', 'B1-3a', 'B1-19', 'B10-1'])
+
     def test_timeline_and_streak(self):
         self.train({self.qa[0]: True}, days_ago=2)
         self.train({self.qa[1]: True}, days_ago=0)
