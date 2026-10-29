@@ -21,14 +21,14 @@
             <span class="flex shrink-0 items-center justify-center">
                 {% if question.catalog and question.catalog.level %}
                     {% if question.catalog.level.icon %}
-                        <img class="h-8 w-10 object-contain" src="{{ question.catalog.level.icon.url }}" alt="{{ question.catalog.level.name }}">
+                        <img class="h-8 w-10 object-contain" loading="lazy" decoding="async" width="40" height="32" src="{{ question.catalog.level.icon.url }}" alt="{{ question.catalog.level.name }}">
                     {% elif question.catalog.icon %}
-                        <img class="h-8 w-10 object-contain" src="{{ question.catalog.icon.url }}" alt="{{ question.catalog.level.name }}">
+                        <img class="h-8 w-10 object-contain" loading="lazy" decoding="async" width="40" height="32" src="{{ question.catalog.icon.url }}" alt="{{ question.catalog.level.name }}">
                     {% else %}
                         <span class="badge {{ question.catalog.level.badge_bg_class|default:'badge-primary' }} {{ question.catalog.level.badge_text_class }}">{{ question.catalog.level.name }}</span>
                     {% endif %}
                 {% elif question.catalog and question.catalog.icon %}
-                    <img class="h-8 w-10 object-contain" src="{{ question.catalog.icon.url }}" alt="">
+                    <img class="h-8 w-10 object-contain" loading="lazy" decoding="async" width="40" height="32" src="{{ question.catalog.icon.url }}" alt="">
                 {% endif %}
             </span>
             <span class="flex w-6 shrink-0 justify-center">

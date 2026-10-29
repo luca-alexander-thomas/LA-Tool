@@ -4,6 +4,8 @@ from django.db.models.signals import post_delete, post_save, pre_delete
 from django.dispatch import receiver
 from django.core.validators import FileExtensionValidator
 
+from .images import shrink_icon
+
 _PDF_IMAGE_VALIDATOR = FileExtensionValidator(allowed_extensions=['pdf', 'png', 'jpg', 'jpeg'])
 
 
@@ -25,6 +27,10 @@ class Levels(models.Model):
         permissions = [
             ('manage_levels', 'Stufen verwalten'),
         ]
+
+    def save(self, *args, **kwargs):
+        shrink_icon(self.icon, lambda name: Levels.objects.filter(icon=name).exclude(pk=self.pk).exists())
+        super().save(*args, **kwargs)
 
     @property
     def next_level(self):
@@ -114,6 +120,10 @@ class Questions_Catalogs(models.Model):
         permissions = [
             ('manage_catalogs', 'Kataloge verwalten'),
         ]
+
+    def save(self, *args, **kwargs):
+        shrink_icon(self.icon, lambda name: Questions_Catalogs.objects.filter(icon=name).exclude(pk=self.pk).exists())
+        super().save(*args, **kwargs)
 
     def __str__(self):
         if self.short_title:

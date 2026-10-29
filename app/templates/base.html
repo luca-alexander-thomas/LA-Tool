@@ -31,7 +31,7 @@
     <link rel="apple-touch-icon" href="{% static 'pwa/apple-touch-icon.png' %}">
 
     {% tailwind_css %}
-    <script src="{% static 'js/app.js' %}"></script>
+    <script defer src="{% static 'js/app.js' %}"></script>
     <script defer src="{% static 'vendor/alpine.min.js' %}"></script>
     {% block extra_head %}{% endblock %}
 </head>
@@ -43,7 +43,7 @@
     <header class="sticky top-0 z-40 border-b border-line/70 bg-surface/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
         <div class="container-app flex h-16 items-center gap-2 sm:gap-3">
             <a href="{% url 'home' %}" class="mr-2 flex shrink-0 items-center gap-2.5">
-                <img src="{% static 'img/thw-jugend-ge-logo.png' %}" alt="THW-Jugend Gelsenkirchen" class="h-9 w-auto" width="64" height="36">
+                <img src="{% static 'img/thw-jugend-ge-logo.webp' %}" alt="THW-Jugend Gelsenkirchen" class="h-9 w-auto" width="64" height="36">
                 <span class="hidden leading-tight sm:block">
                     <span class="block text-sm font-bold tracking-tight text-ink">LA-Tool</span>
                     <span class="block text-[0.6875rem] text-ink-3">THW-Jugend GE</span>
@@ -83,7 +83,7 @@
                         {% for level in all_levels %}
                         <a href="{% url 'set_la_filter' level.slug %}" class="dropdown-item {% if la_filter == level.slug %}font-semibold{% endif %}">
                             {% if level.icon %}
-                            <img src="{{ level.icon.url }}" alt="" class="h-7 w-9 object-contain">
+                            <img src="{{ level.icon.url }}" alt="" class="h-7 w-9 object-contain" loading="lazy" decoding="async" width="36" height="28">
                             {% else %}
                             <span class="badge {{ level.badge_bg_class|default:'badge-primary' }} {{ level.badge_text_class }} w-9 justify-center">&nbsp;</span>
                             {% endif %}

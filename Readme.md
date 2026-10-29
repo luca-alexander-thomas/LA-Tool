@@ -49,6 +49,14 @@ sudo systemctl restart <gunicorn-dienst>
 
 Für die PWA muss die Seite über HTTPS laufen. Der Service Worker liegt unter `/sw.js` und wird von Django ausgeliefert.
 
+**Statische Dateien:** WhiteNoise liefert `/static/` aus Gunicorn heraus aus – gzip-komprimiert und mit Dateinamen mit Inhalts-Hash (ein Jahr Browser-Cache). `collectstatic` ist deshalb Pflicht: ohne `staticfiles/staticfiles.json` bricht jede Seite mit `Missing staticfiles manifest entry` ab. Liefert der Reverse-Proxy `/static/` selbst aus, sollte er für diese Dateien ebenfalls `Cache-Control: public, max-age=31536000, immutable` setzen. `/media/` (hochgeladene Dateien) muss weiterhin der Proxy ausliefern.
+
+**Icons:** Hochgeladene Stufen- und Katalog-Icons werden automatisch auf max. 160 px verkleinert und als WebP gespeichert. Vorhandene Icons einmalig umwandeln:
+
+```bash
+python manage.py optimize_icons
+```
+
 ## Push-Benachrichtigungen
 
 Einmalig ein VAPID-Schlüsselpaar erzeugen und in die `.env` eintragen (privaten Schlüssel nie ins Repository):

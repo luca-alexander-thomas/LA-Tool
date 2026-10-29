@@ -1,8 +1,14 @@
+import io
 import json
+import os
+import shutil
+import tempfile
 import time
 
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase, override_settings
+from PIL import Image
 from django.urls import reverse
 
 from .models import ExamResultData, Exams, Levels, Questions_Catalogs, Questions_Theory, TrainingResultData
@@ -141,3 +147,53 @@ class ExamRunTests(TestCase):
         response = self.client.get(self.run_url)
         self.assertRedirects(response, reverse('exam_result', args=[self.exam.pk]), fetch_redirect_response=False)
         self.assertEqual(ExamResultData.objects.count(), 1)
+
+
+class IconShrinkTests(TestCase):
+    """Hochgeladene Icons werden auf max. 160 px verkleinert und als WebP gespeichert."""
+
+    def setUp(self):
+        self.media = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.media, ignore_errors=True)
+        override = override_settings(MEDIA_ROOT=self.media)
+        override.enable()
+        self.addCleanup(override.disable)
+
+    def upload(self, name='gold.png', size=(800, 600)):
+        buffer = io.BytesIO()
+        Image.new('RGBA', size, (200, 150, 0, 255)).save(buffer, 'PNG')
+        return SimpleUploadedFile(name, buffer.getvalue(), content_type='image/png')
+
+    def test_upload_is_shrunk_to_webp(self):
+        level = Levels.objects.create(name='Gold', slug='gold-test', order=50, icon=self.upload())
+        self.assertTrue(level.icon.name.startswith('levels/') and level.icon.name.endswith('.webp'))
+        with Image.open(level.icon.path) as image:
+            self.assertEqual(image.size, (160, 120))
+        # Erneutes Speichern lässt die Datei in Ruhe
+        name = level.icon.name
+        level.save()
+        self.assertEqual(level.icon.name, name)
+
+    def test_existing_file_replaced_and_old_one_removed(self):
+        catalog = Questions_Catalogs.objects.create(title='K', short_title='K')
+        path = os.path.join(self.media, 'ICONs')
+        os.makedirs(path)
+        with open(os.path.join(path, 'alt.png'), 'wb') as f:
+            f.write(self.upload().read())
+        Questions_Catalogs.objects.filter(pk=catalog.pk).update(icon='ICONs/alt.png')
+        catalog.refresh_from_db()
+        catalog.save()
+        self.assertEqual(catalog.icon.name, 'ICONs/alt.webp')
+        self.assertFalse(os.path.exists(os.path.join(path, 'alt.png')))
+
+    def test_shared_old_file_is_kept(self):
+        path = os.path.join(self.media, 'ICONs')
+        os.makedirs(path)
+        with open(os.path.join(path, 'geteilt.png'), 'wb') as f:
+            f.write(self.upload().read())
+        a = Questions_Catalogs.objects.create(title='A', short_title='A')
+        Questions_Catalogs.objects.create(title='B', short_title='B')
+        Questions_Catalogs.objects.update(icon='ICONs/geteilt.png')
+        a.refresh_from_db()
+        a.save()
+        self.assertTrue(os.path.exists(os.path.join(path, 'geteilt.png')))

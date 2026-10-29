@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 
+from django.conf import settings
 from django.contrib.staticfiles import finders
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -44,9 +45,14 @@ def manifest(request):
 
 
 def _asset_version():
-    # Neuer Cache-Name, sobald das Stylesheet neu gebaut wurde
-    css = finders.find('css/tailwind.css')
-    return int(Path(css).stat().st_mtime) if css else 0
+    # Neuer Cache-Name, sobald Stylesheet oder App-Skript geändert wurden (alte Einträge werden dann gelöscht)
+    paths = [finders.find(name) for name in ('css/tailwind.css', 'js/app.js')]
+    return max((int(Path(p).stat().st_mtime) for p in paths if p), default=0)
+
+
+def static_prefix():
+    # Nicht static(''): mit Manifest-Storage gibt es für den leeren Pfad keinen Eintrag
+    return settings.STATIC_URL if settings.STATIC_URL.startswith('/') else '/' + settings.STATIC_URL
 
 
 @cache_control(no_cache=True)
@@ -54,7 +60,7 @@ def service_worker(request):
     context = {
         'version': _asset_version(),
         'offline_url': reverse('offline'),
-        'static_prefix': static(''),
+        'static_prefix': static_prefix(),
         'icon_url': static('pwa/icon-192.png'),
         'badge_url': static('pwa/badge-96.png'),
         'precache': [
@@ -62,7 +68,7 @@ def service_worker(request):
             static('css/tailwind.css'),
             static('js/app.js'),
             static('vendor/alpine.min.js'),
-            static('img/thw-jugend-ge-logo.png'),
+            static('img/thw-jugend-ge-logo.webp'),
             static('pwa/favicon.png'),
             static('pwa/icon-192.png'),
         ],

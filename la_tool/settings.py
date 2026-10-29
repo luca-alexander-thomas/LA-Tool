@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import la_tool.env as env
 import os
+import sys
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -48,6 +49,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Statische Dateien komprimiert und mit langer Cache-Dauer ausliefern
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -161,6 +164,17 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [BASE_DIR / 'assets']
+
+# collectstatic legt gzip-Varianten und Dateinamen mit Inhalts-Hash an (z.B. tailwind.3f2a….css);
+# WhiteNoise liefert sie mit „Cache-Control: immutable“ (1 Jahr) aus. Neue Version = neuer Name.
+# Tests laufen ohne collectstatic, daher dort ohne Manifest.
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {
+        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage' if 'test' in sys.argv
+        else 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 
 # Tailwind CSS (django-tailwind-cli): Quelle tailwind/source.css -> assets/css/tailwind.css
 # Bauen: python manage.py tailwind build  |  Entwicklung: python manage.py tailwind runserver
