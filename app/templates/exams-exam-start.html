@@ -49,6 +49,17 @@
             <a href="{% url 'exam_result' exam.pk %}" class="ml-1 font-semibold underline underline-offset-4">Ergebnis ansehen</a>
         </span>
     </div>
+    {% elif running %}
+    <div class="alert alert-warning mb-3">
+        {% include "icons/clock.html" with cls="size-5 shrink-0" %}
+        <span>Du hast diese Prüfung bereits begonnen. Die Zeit läuft weiter.</span>
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary btn-lg w-full text-lg font-bold tracking-wide">
+            {% include "icons/play.html" with cls="size-6" %} FORTSETZEN
+        </button>
+    </form>
     {% elif exam.closed %}
     <div class="alert alert-warning">
         {% include "icons/lock-closed.html" with cls="size-5 shrink-0" %}

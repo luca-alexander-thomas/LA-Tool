@@ -2,6 +2,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import auth
 from django.contrib.auth.views import redirect_to_login
+from django.db import IntegrityError, transaction
 from django.db.models import Q
 import json
 import random
@@ -18,7 +19,7 @@ from .models import (
     Questions_Catalogs, Questions_Theory, TrainingResultData,
     Questions_Practical, Questions_GroupExercise,
     PracticalSelfAssessment, GroupExerciseSelfAssessment,
-    Exams, ExamResultData, Work, SiteSettings, Levels,
+    Exams, ExamAttempt, ExamResultData, Work, SiteSettings, Levels,
 )
 
 
@@ -208,18 +209,22 @@ def exam_start(request, exam_id):
     if not request.user.is_authenticated:
         return redirect_to_login(request.get_full_path())
 
-    exam = get_object_or_404(
-        Exams.objects.filter(_user_exam_filter(request.user), visible=True).distinct(),
-        pk=exam_id,
-    )
+    exam = get_object_or_404(_startable_exams(request.user), pk=exam_id)
     existing = ExamResultData.objects.filter(user=request.user, exam=exam).first()
+    running = ExamAttempt.objects.filter(user=request.user, exam=exam).exists()
 
-    if request.method == 'POST' and not exam.closed and not existing:
-        question_ids = list(exam.questions.values_list('pk', flat=True))
-        request.session[f'exam_{exam_id}_question_ids'] = question_ids
-        request.session[f'exam_{exam_id}_answers'] = {}
-        request.session[f'exam_{exam_id}_started_at'] = int(time.time())
-        return redirect('exam_run', exam_id=exam_id)
+    if request.method == 'POST' and not existing:
+        # Ein laufender Versuch wird fortgesetzt, nie neu gestartet (sonst begänne die Zeit von vorn)
+        if not running and not exam.closed:
+            try:
+                ExamAttempt.objects.create(
+                    user=request.user, exam=exam, started_at=timezone.now(),
+                    question_ids=list(exam.questions.values_list('pk', flat=True)),
+                )
+            except IntegrityError:
+                pass  # parallel gestartet (Doppelklick, zweites Gerät)
+        if running or not exam.closed:
+            return redirect('exam_run', exam_id=exam_id)
 
     question_count = exam.questions.count()
     pass_count = exam.pass_threshold
@@ -228,6 +233,7 @@ def exam_start(request, exam_id):
         'user': request.user,
         'exam': exam,
         'existing': existing,
+        'running': running,
         'question_count': question_count,
         'pass_pct': pass_pct,
         'pass_count': pass_count,
@@ -289,6 +295,11 @@ def _ordered_questions(question_ids):
 EXAM_SUBMIT_GRACE_SEC = 30
 
 
+def _startable_exams(user):
+    """Prüfungen, die der Nutzer starten/fortsetzen darf: zugewiesen, sichtbar, nicht archiviert."""
+    return Exams.objects.filter(_user_exam_filter(user), visible=True, archived=False).distinct()
+
+
 def exam_run(request, exam_id):
     """Ganze Prüfung in einer Seite: Blättern im Browser, Zwischenstand per Autosave, Abgabe auf einmal.
 
@@ -298,41 +309,43 @@ def exam_run(request, exam_id):
     if not request.user.is_authenticated:
         return redirect_to_login(request.get_full_path())
 
-    exam = get_object_or_404(
-        Exams.objects.filter(_user_exam_filter(request.user), visible=True).distinct(),
-        pk=exam_id,
-    )
+    exam = get_object_or_404(_startable_exams(request.user), pk=exam_id)
+    is_save = request.method == 'POST' and request.POST.get('action') == 'save'
 
-    prefix = f'exam_{exam_id}_'
-    question_ids = request.session.get(prefix + 'question_ids')
-    if not question_ids:
-        if request.method == 'POST' and request.POST.get('action') == 'save':
+    attempt = ExamAttempt.objects.filter(user=request.user, exam=exam).first()
+    if attempt is None:
+        if is_save:
             return JsonResponse({'error': 'Keine laufende Prüfung.'}, status=409)
+        if ExamResultData.objects.filter(user=request.user, exam=exam).exists():
+            return redirect('exam_result', exam_id=exam_id)  # bereits abgegeben (z.B. auf anderem Gerät)
         return redirect('exam_start', exam_id=exam_id)
 
+    question_ids = attempt.question_ids
     questions = _ordered_questions(question_ids)
-    saved_answers = request.session.get(prefix + 'answers', {})
-    started_at = request.session.get(prefix + 'started_at', int(time.time()))
     time_limit_sec = (exam.time_in_min or 30) * 60
-    elapsed = int(time.time()) - started_at
+    elapsed = int((timezone.now() - attempt.started_at).total_seconds())
     in_time = elapsed < time_limit_sec + EXAM_SUBMIT_GRACE_SEC
 
-    if request.method == 'POST' and request.POST.get('action') == 'save':
+    if is_save:
         if not in_time:
             return JsonResponse({'error': 'Zeit abgelaufen.'}, status=409)
-        request.session[prefix + 'answers'] = _answers_from_post(request, questions)
+        attempt.answers = _answers_from_post(request, questions)
+        attempt.save(update_fields=['answers'])
         return JsonResponse({'ok': True})
 
-    if request.method == 'POST' or elapsed >= time_limit_sec + EXAM_SUBMIT_GRACE_SEC:
-        answers = _answers_from_post(request, questions) if request.method == 'POST' and in_time else saved_answers
-        result = _save_exam_result(request.user, exam, question_ids, answers)
+    if request.method == 'POST' or not in_time:
+        answers = _answers_from_post(request, questions) if request.method == 'POST' and in_time else attempt.answers
+        with transaction.atomic():
+            # Wer den Versuch löscht, wertet aus: verhindert doppelte Ergebnisse bei parallelen Abgaben
+            deleted, _ = ExamAttempt.objects.filter(pk=attempt.pk).delete()
+            if not deleted:
+                return redirect('exam_result', exam_id=exam_id)
+            result = _save_exam_result(request.user, exam, question_ids, answers)
         # Bei Bestehen den LA-Filter auf die nächste Stufe setzen
         if (result.meta_reference or {}).get('passed', False) and exam.level:
             next_level = exam.level.next_level
             if next_level:
                 request.session['la_filter'] = next_level.slug
-        for key in ('question_ids', 'answers', 'current', 'started_at'):
-            request.session.pop(prefix + key, None)
         return redirect('exam_result', exam_id=exam_id)
 
     total = len(question_ids)
@@ -346,8 +359,8 @@ def exam_run(request, exam_id):
         'user': request.user,
         'exam': exam,
         'questions': payload,
-        'saved_answers': saved_answers,
-        'storage_key': f'exam:{exam_id}:{started_at}',
+        'saved_answers': attempt.answers,
+        'storage_key': f'exam:{exam_id}:{int(attempt.started_at.timestamp())}',
         'time_remaining_sec': max(0, time_limit_sec - elapsed),
         'pass_count': exam.pass_threshold,
         'pass_pct': round(exam.pass_threshold / total * 100) if total else 0,

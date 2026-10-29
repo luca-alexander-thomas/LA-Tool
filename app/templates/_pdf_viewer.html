@@ -1,3 +1,4 @@
+{% load static %}
 {% if question.file %}
 <section class="card p-2 sm:p-3">
     <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -43,12 +44,13 @@
     </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
+{# pdf.js lokal (kein CDN); 3.11.174 nur mit isEvalSupported:false (CVE-2024-4367) #}
+<script src="{% static 'vendor/pdfjs/pdf.min.js' %}"></script>
 <script>
 (function () {
-    const FILE_URL = "{{ question.file.url }}";
+    const FILE_URL = '{{ question.file.url|escapejs }}';
     pdfjsLib.GlobalWorkerOptions.workerSrc =
-        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        '{% static "vendor/pdfjs/pdf.worker.min.js" %}';
 
     const canvas     = document.getElementById('pdf-canvas');
     const ctx        = canvas.getContext('2d');
@@ -139,7 +141,7 @@
         if (taskFs) { taskFs.cancel(); taskFs = null; }
     }
 
-    pdfjsLib.getDocument(FILE_URL).promise.then(doc => {
+    pdfjsLib.getDocument({ url: FILE_URL, isEvalSupported: false }).promise.then(doc => {
         pdf = doc;
         renderSmall(1);
     }).catch(() => { errMsg.classList.remove('hidden'); });

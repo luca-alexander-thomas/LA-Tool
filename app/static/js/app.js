@@ -142,7 +142,12 @@
                 });
                 this.index = Math.min(Math.max(parseInt(saved.index, 10) || 0, 0), this.questions.length - 1);
                 this.store = store;
-                if (cfg.remaining != null) this.startTimer(cfg.remaining);
+                // Erst nach dem Aufbau der Kinder starten: bei Restzeit 0 wird sofort abgegeben (braucht $refs)
+                if (cfg.remaining != null) this.$nextTick(() => this.startTimer(cfg.remaining));
+                // Zurück aus dem bfcache nach einer Abgabe: Seite neu laden statt gesperrter Buttons
+                window.addEventListener('pageshow', (event) => {
+                    if (event.persisted && this.submitting) window.location.reload();
+                });
                 if (cfg.autosave) {
                     // Beim Verlassen/Wegschalten der Seite den Stand sichern
                     document.addEventListener('visibilitychange', () => {

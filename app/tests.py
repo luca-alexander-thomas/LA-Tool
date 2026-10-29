@@ -10,8 +10,10 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from PIL import Image
 from django.urls import reverse
+from django.utils import timezone
+from datetime import timedelta
 
-from .models import ExamResultData, Exams, Levels, Questions_Catalogs, Questions_Theory, TrainingResultData
+from .models import ExamAttempt, ExamResultData, Exams, Levels, Questions_Catalogs, Questions_Theory, TrainingResultData
 from .views import EXAM_SUBMIT_GRACE_SEC
 
 
@@ -101,9 +103,8 @@ class ExamRunTests(TestCase):
         self.run_url = reverse('exam_run', args=[self.exam.pk])
 
     def set_started(self, seconds_ago):
-        session = self.client.session
-        session[f'exam_{self.exam.pk}_started_at'] = int(time.time()) - seconds_ago
-        session.save()
+        ExamAttempt.objects.filter(user=self.user, exam=self.exam).update(
+            started_at=timezone.now() - timedelta(seconds=seconds_ago))
 
     def test_page_contains_questions_without_solutions_or_hints(self):
         response = self.client.get(self.run_url)
@@ -116,7 +117,7 @@ class ExamRunTests(TestCase):
     def test_autosave_then_submit(self):
         save = self.client.post(self.run_url, {'action': 'save', 'answers': json.dumps({str(self.q1.pk): ['b']})})
         self.assertEqual(save.json(), {'ok': True})
-        self.assertEqual(self.client.session[f'exam_{self.exam.pk}_answers'][str(self.q1.pk)], ['b'])
+        self.assertEqual(ExamAttempt.objects.get().answers[str(self.q1.pk)], ['b'])
         # Neu laden: der Server liefert den gesicherten Stand mit
         self.assertEqual(self.client.get(self.run_url).context['saved_answers'][str(self.q1.pk)], ['b'])
 
@@ -126,7 +127,7 @@ class ExamRunTests(TestCase):
         result = ExamResultData.objects.get()
         self.assertEqual(result.meta_reference['score'], 2)
         self.assertTrue(result.meta_reference['passed'])
-        self.assertNotIn(f'exam_{self.exam.pk}_question_ids', self.client.session)
+        self.assertFalse(ExamAttempt.objects.exists())
 
     def test_late_submit_uses_last_autosave(self):
         self.client.post(self.run_url, {'action': 'save', 'answers': json.dumps({str(self.q1.pk): ['a']})})
@@ -147,6 +148,32 @@ class ExamRunTests(TestCase):
         response = self.client.get(self.run_url)
         self.assertRedirects(response, reverse('exam_result', args=[self.exam.pk]), fetch_redirect_response=False)
         self.assertEqual(ExamResultData.objects.count(), 1)
+
+
+    def test_restart_and_relogin_keep_the_clock_running(self):
+        self.set_started(300)
+        self.client.post(reverse('exam_start', args=[self.exam.pk]))
+        self.client.logout()
+        self.client.force_login(self.user)
+        self.client.post(reverse('exam_start', args=[self.exam.pk]))
+        self.assertEqual(ExamAttempt.objects.count(), 1)
+        remaining = self.client.get(self.run_url).context['time_remaining_sec']
+        self.assertLessEqual(remaining, 10 * 60 - 300)
+
+    def test_second_submit_creates_no_second_result(self):
+        answers = {'answers': json.dumps({str(self.q1.pk): ['b']})}
+        self.client.post(self.run_url, answers)
+        response = self.client.post(self.run_url, answers)
+        self.assertRedirects(response, reverse('exam_result', args=[self.exam.pk]), fetch_redirect_response=False)
+        self.assertEqual(ExamResultData.objects.count(), 1)
+        # Nach der Abgabe lässt sich die Prüfung nicht erneut starten
+        self.client.post(reverse('exam_start', args=[self.exam.pk]))
+        self.assertFalse(ExamAttempt.objects.exists())
+
+    def test_archived_exam_cannot_be_started(self):
+        ExamAttempt.objects.all().delete()
+        Exams.objects.filter(pk=self.exam.pk).update(archived=True)
+        self.assertEqual(self.client.post(reverse('exam_start', args=[self.exam.pk])).status_code, 404)
 
 
 class IconShrinkTests(TestCase):

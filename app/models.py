@@ -77,6 +77,19 @@ class TrainingResultData(models.Model):
         return self.name
 
 
+class ExamAttempt(models.Model):
+    """Laufender Prüfungsversuch. Liegt in der DB statt in der Session, damit Logout, zweites Gerät oder
+    erneutes „Starten“ die Zeit nicht zurücksetzen. Wird bei der Abgabe gelöscht (dann zählt das Ergebnis)."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='exam_attempts')
+    exam = models.ForeignKey('Exams', on_delete=models.CASCADE, related_name='attempts')
+    question_ids = models.JSONField(default=list)
+    answers = models.JSONField(default=dict, blank=True)
+    started_at = models.DateTimeField()
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['user', 'exam'], name='unique_exam_attempt')]
+
+
 class ExamResultData(models.Model):
     name = models.CharField(max_length=100)
     questions = models.JSONField(blank=True, null=True)
