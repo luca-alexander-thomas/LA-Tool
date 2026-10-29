@@ -34,12 +34,12 @@
         {% csrf_token %}
         <input type="hidden" name="answers" x-ref="answers">
         <div class="space-y-3">
-            <template x-for="c in q.choices" :key="`${q.id}-${c[0]}`">
-                <label class="answer-option has-focus-visible:ring-2 has-focus-visible:ring-accent" :for="`choice_${c[0]}`">
-                    <input class="sr-only" type="checkbox" :id="`choice_${c[0]}`" :value="c[0]"
-                           x-model="answers[q.id]" @change="persist()">
-                    <span class="answer-letter" x-text="c[0].toUpperCase()"></span>
-                    <span class="min-w-0 flex-1 text-base text-ink" x-text="c[1]"></span>
+            <template x-for="c in options" :key="c.key">
+                <label class="answer-option has-focus-visible:ring-2 has-focus-visible:ring-accent" :for="`choice_${c.letter}`">
+                    <input class="sr-only" type="checkbox" :id="`choice_${c.letter}`" :value="c.letter"
+                           x-model="answers[c.qid]" @change="persist()">
+                    <span class="answer-letter" x-text="c.letter.toUpperCase()"></span>
+                    <span class="min-w-0 flex-1 text-base text-ink" x-text="c.text"></span>
                 </label>
             </template>
         </div>

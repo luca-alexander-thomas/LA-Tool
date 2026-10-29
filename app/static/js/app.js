@@ -165,6 +165,13 @@
                 });
             },
             get q() { return this.questions[this.index]; },
+            // Antworten der aktuellen Frage samt Fragen-ID. In x-for nur diese Werte nutzen, nicht den Getter q:
+            // Alpine wertet Getter im Schleifen-Scope ab dem 2. Eintrag ohne Komponenten-Kontext aus
+            // (dann ist q undefined und nur Antwort A erscheint).
+            get options() {
+                const q = this.q;
+                return q ? q.choices.map(([letter, text]) => ({ key: `${q.id}-${letter}`, qid: q.id, letter, text })) : [];
+            },
             get total() { return this.questions.length; },
             get isLast() { return this.index === this.questions.length - 1; },
             get progress() { return Math.round((this.index / this.questions.length) * 100); },

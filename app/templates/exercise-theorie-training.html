@@ -40,12 +40,12 @@
         {# Antworten #}
         <p class="mb-2 text-xs font-medium text-ink-3">Mehrere Antworten möglich</p>
         <div class="space-y-2.5">
-            <template x-for="c in q.choices" :key="`${q.id}-${c[0]}`">
-                <label class="answer-option has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-accent/25" :for="`choice-${c[0]}`">
-                    <input class="sr-only" type="checkbox" :id="`choice-${c[0]}`" :value="c[0]"
-                           x-model="answers[q.id]" @change="persist()">
-                    <span class="answer-letter" x-text="c[0].toUpperCase()"></span>
-                    <span class="min-w-0 flex-1 text-sm text-ink sm:text-base" x-text="c[1]"></span>
+            <template x-for="c in options" :key="c.key">
+                <label class="answer-option has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-accent/25" :for="`choice-${c.letter}`">
+                    <input class="sr-only" type="checkbox" :id="`choice-${c.letter}`" :value="c.letter"
+                           x-model="answers[c.qid]" @change="persist()">
+                    <span class="answer-letter" x-text="c.letter.toUpperCase()"></span>
+                    <span class="min-w-0 flex-1 text-sm text-ink sm:text-base" x-text="c.text"></span>
                 </label>
             </template>
         </div>
