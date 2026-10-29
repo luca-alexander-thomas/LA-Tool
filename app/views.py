@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import auth
 from django.contrib.auth.views import redirect_to_login
@@ -217,7 +218,6 @@ def exam_start(request, exam_id):
         question_ids = list(exam.questions.values_list('pk', flat=True))
         request.session[f'exam_{exam_id}_question_ids'] = question_ids
         request.session[f'exam_{exam_id}_answers'] = {}
-        request.session[f'exam_{exam_id}_current'] = 0
         request.session[f'exam_{exam_id}_started_at'] = int(time.time())
         return redirect('exam_run', exam_id=exam_id)
 
@@ -234,7 +234,67 @@ def exam_start(request, exam_id):
     })
 
 
+# ── FRAGEN-DURCHGÄNGE (Training und Prüfung) ─────────────────────────────────
+
+def _labeled_choices(q):
+    """[(Buchstabe, Text)] aller nicht-leeren Antwortmöglichkeiten; der Buchstabe steht für die Position."""
+    return [(chr(ord('a') + i), t) for i, t in enumerate(q.answer_choice or []) if t]
+
+
+def _selected_texts(q, letters):
+    """Antworttexte zu den gewählten Buchstaben (unbekannte Buchstaben werden ignoriert)."""
+    choices = q.answer_choice or []
+    texts = []
+    for letter in letters:
+        idx = ord(letter) - ord('a') if isinstance(letter, str) and len(letter) == 1 else -1
+        if 0 <= idx < len(choices) and choices[idx]:
+            texts.append(choices[idx])
+    return texts
+
+
+def _question_payload(q):
+    """Frage für den Browser – bewusst ohne Lösung."""
+    label = ' · '.join(x for x in (q.catalog.short_title if q.catalog else '', q.number or '') if x)
+    return {
+        'id': q.pk,
+        'label': label,
+        'question': q.question,
+        'help': q.help_reference or '',
+        'choices': _labeled_choices(q),
+    }
+
+
+def _answers_from_post(request, questions):
+    """Antworten aus dem JSON-Feld 'answers': nur bekannte Fragen und gültige Buchstaben."""
+    try:
+        raw = json.loads(request.POST.get('answers') or '{}')
+    except ValueError:
+        raw = {}
+    if not isinstance(raw, dict):
+        raw = {}
+    answers = {}
+    for q in questions:
+        given = raw.get(str(q.pk)) or []
+        valid = {letter for letter, _ in _labeled_choices(q)}
+        answers[str(q.pk)] = sorted({x for x in given if isinstance(x, str) and x in valid}) if isinstance(given, list) else []
+    return answers
+
+
+def _ordered_questions(question_ids):
+    q_map = {q.pk: q for q in Questions_Theory.objects.select_related('catalog').filter(pk__in=question_ids)}
+    return [q_map[pk] for pk in question_ids if pk in q_map]
+
+
+# Kulanz für die Abgabe nach Ablauf der Zeit (Netzwerk, langsames Gerät)
+EXAM_SUBMIT_GRACE_SEC = 30
+
+
 def exam_run(request, exam_id):
+    """Ganze Prüfung in einer Seite: Blättern im Browser, Zwischenstand per Autosave, Abgabe auf einmal.
+
+    Die Lösungen bleiben auf dem Server. Nach Ablauf der Zeit (plus Kulanz) zählt nur noch der
+    zuletzt automatisch gespeicherte Stand.
+    """
     if not request.user.is_authenticated:
         return redirect_to_login(request.get_full_path())
 
@@ -243,72 +303,55 @@ def exam_run(request, exam_id):
         pk=exam_id,
     )
 
-    question_ids = request.session.get(f'exam_{exam_id}_question_ids')
+    prefix = f'exam_{exam_id}_'
+    question_ids = request.session.get(prefix + 'question_ids')
     if not question_ids:
+        if request.method == 'POST' and request.POST.get('action') == 'save':
+            return JsonResponse({'error': 'Keine laufende Prüfung.'}, status=409)
         return redirect('exam_start', exam_id=exam_id)
 
-    current = request.session.get(f'exam_{exam_id}_current', 0)
-    answers = request.session.get(f'exam_{exam_id}_answers', {})
-    total = len(question_ids)
-    started_at = request.session.get(f'exam_{exam_id}_started_at', int(time.time()))
+    questions = _ordered_questions(question_ids)
+    saved_answers = request.session.get(prefix + 'answers', {})
+    started_at = request.session.get(prefix + 'started_at', int(time.time()))
     time_limit_sec = (exam.time_in_min or 30) * 60
     elapsed = int(time.time()) - started_at
-    time_expired = elapsed >= time_limit_sec
+    in_time = elapsed < time_limit_sec + EXAM_SUBMIT_GRACE_SEC
 
-    if request.method == 'POST' or time_expired:
-        if not time_expired:
-            direction = request.POST.get('direction', 'forward')
-            q_id = question_ids[current]
-            answers[str(q_id)] = request.POST.getlist('answer')  # empty list = no answer
-            request.session[f'exam_{exam_id}_answers'] = answers
+    if request.method == 'POST' and request.POST.get('action') == 'save':
+        if not in_time:
+            return JsonResponse({'error': 'Zeit abgelaufen.'}, status=409)
+        request.session[prefix + 'answers'] = _answers_from_post(request, questions)
+        return JsonResponse({'ok': True})
 
-            if direction == 'back':
-                prev_index = max(0, current - 1)
-                request.session[f'exam_{exam_id}_current'] = prev_index
-                return redirect('exam_run', exam_id=exam_id)
-
-            next_index = current + 1
-            if next_index < total:
-                request.session[f'exam_{exam_id}_current'] = next_index
-                return redirect('exam_run', exam_id=exam_id)
-
+    if request.method == 'POST' or elapsed >= time_limit_sec + EXAM_SUBMIT_GRACE_SEC:
+        answers = _answers_from_post(request, questions) if request.method == 'POST' and in_time else saved_answers
         result = _save_exam_result(request.user, exam, question_ids, answers)
-        # Auto-advance la_filter to next level on pass
-        if result and (result.meta_reference or {}).get('passed', False):
-            if exam.level:
-                next_level = exam.level.next_level
-                if next_level:
-                    request.session['la_filter'] = next_level.slug
-        for key in (f'exam_{exam_id}_question_ids', f'exam_{exam_id}_answers',
-                    f'exam_{exam_id}_current', f'exam_{exam_id}_started_at'):
-            request.session.pop(key, None)
+        # Bei Bestehen den LA-Filter auf die nächste Stufe setzen
+        if (result.meta_reference or {}).get('passed', False) and exam.level:
+            next_level = exam.level.next_level
+            if next_level:
+                request.session['la_filter'] = next_level.slug
+        for key in ('question_ids', 'answers', 'current', 'started_at'):
+            request.session.pop(prefix + key, None)
         return redirect('exam_result', exam_id=exam_id)
 
-    q_id = question_ids[current]
-    question = get_object_or_404(Questions_Theory, pk=q_id)
-    choices_raw = question.answer_choice or []
-    labeled_choices = [(chr(ord('a') + i), t) for i, t in enumerate(choices_raw) if t]
-    existing_answers = answers.get(str(q_id), [])
-    progress_pct = round((current / total) * 100) if total > 0 else 0
-    time_remaining_sec = max(0, time_limit_sec - elapsed)
-
-    pass_count = exam.pass_threshold
-    pass_pct = round(pass_count / total * 100) if total else 0
+    total = len(question_ids)
+    payload = []
+    for q in questions:
+        data = _question_payload(q)
+        data['help'] = ''  # in der Prüfung keine Hinweise
+        data['label'] = ''
+        payload.append(data)
     return render(request, 'exams-exam.html', {
         'user': request.user,
         'exam': exam,
-        'question': question,
-        'labeled_choices': labeled_choices,
-        'existing_answers': existing_answers,
-        'question_number': current + 1,
+        'questions': payload,
+        'saved_answers': saved_answers,
+        'storage_key': f'exam:{exam_id}:{started_at}',
+        'time_remaining_sec': max(0, time_limit_sec - elapsed),
+        'pass_count': exam.pass_threshold,
+        'pass_pct': round(exam.pass_threshold / total * 100) if total else 0,
         'question_total': total,
-        'progress_pct': progress_pct,
-        'started_at': started_at,
-        'time_limit_sec': time_limit_sec,
-        'time_remaining_sec': time_remaining_sec,
-        'pass_pct': pass_pct,
-        'pass_count': pass_count,
-        'can_go_back': current > 0,
     })
 
 
@@ -565,55 +608,6 @@ def _start_training(request, question_ids):
     request.session['training_question_ids'] = question_ids
     # Neue Kennung je Durchgang: der Browser speichert den Zwischenstand darunter
     request.session['training_run_id'] = secrets.token_hex(8)
-
-
-def _labeled_choices(q):
-    """[(Buchstabe, Text)] aller nicht-leeren Antwortmöglichkeiten; der Buchstabe steht für die Position."""
-    return [(chr(ord('a') + i), t) for i, t in enumerate(q.answer_choice or []) if t]
-
-
-def _selected_texts(q, letters):
-    """Antworttexte zu den gewählten Buchstaben (unbekannte Buchstaben werden ignoriert)."""
-    choices = q.answer_choice or []
-    texts = []
-    for letter in letters:
-        idx = ord(letter) - ord('a') if isinstance(letter, str) and len(letter) == 1 else -1
-        if 0 <= idx < len(choices) and choices[idx]:
-            texts.append(choices[idx])
-    return texts
-
-
-def _question_payload(q):
-    """Frage für den Browser – bewusst ohne Lösung."""
-    label = ' · '.join(x for x in (q.catalog.short_title if q.catalog else '', q.number or '') if x)
-    return {
-        'id': q.pk,
-        'label': label,
-        'question': q.question,
-        'help': q.help_reference or '',
-        'choices': _labeled_choices(q),
-    }
-
-
-def _answers_from_post(request, questions):
-    """Antworten aus dem JSON-Feld 'answers': nur bekannte Fragen und gültige Buchstaben."""
-    try:
-        raw = json.loads(request.POST.get('answers') or '{}')
-    except ValueError:
-        raw = {}
-    if not isinstance(raw, dict):
-        raw = {}
-    answers = {}
-    for q in questions:
-        given = raw.get(str(q.pk)) or []
-        valid = {letter for letter, _ in _labeled_choices(q)}
-        answers[str(q.pk)] = sorted({x for x in given if isinstance(x, str) and x in valid}) if isinstance(given, list) else []
-    return answers
-
-
-def _ordered_questions(question_ids):
-    q_map = {q.pk: q for q in Questions_Theory.objects.select_related('catalog').filter(pk__in=question_ids)}
-    return [q_map[pk] for pk in question_ids if pk in q_map]
 
 
 def training_run(request):

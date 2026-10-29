@@ -1,10 +1,12 @@
 import json
+import time
 
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Levels, Questions_Catalogs, Questions_Theory, TrainingResultData
+from .models import ExamResultData, Exams, Levels, Questions_Catalogs, Questions_Theory, TrainingResultData
+from .views import EXAM_SUBMIT_GRACE_SEC
 
 
 class TrainingRunTests(TestCase):
@@ -69,3 +71,73 @@ class TrainingRunTests(TestCase):
 
     def test_run_without_session_redirects_to_config(self):
         self.assertRedirects(self.client.get(reverse('training_run')), reverse('training_config'))
+
+
+class ExamRunTests(TestCase):
+    """Prüfung: Fragen ohne Lösungen im Browser, Autosave, Abgabe mit Zeitprüfung auf dem Server."""
+
+    def setUp(self):
+        self.user = User.objects.create_user('pruefling', password='pw')
+        level = Levels.objects.create(name='Teststufe', slug='teststufe', order=99)
+        catalog = Questions_Catalogs.objects.create(title='Katalog', short_title='KAT', level=level)
+        self.q1 = Questions_Theory.objects.create(
+            question='Eins?', catalog=catalog, answer_text='Ja', answer_choice=['Nein', 'Ja'],
+            help_reference='Geheimer Hinweis',
+        )
+        self.q2 = Questions_Theory.objects.create(
+            question='Zwei?', catalog=catalog, answer_text='C', answer_choice=['A', 'B', 'C'],
+        )
+        self.exam = Exams.objects.create(name='Probe', time_in_min=10, pass_threshold=1, visible=True, closed=False)
+        self.exam.questions.add(self.q1, self.q2)
+        self.exam.assigned_users.add(self.user)
+        self.client.force_login(self.user)
+        self.client.post(reverse('exam_start', args=[self.exam.pk]))
+        self.run_url = reverse('exam_run', args=[self.exam.pk])
+
+    def set_started(self, seconds_ago):
+        session = self.client.session
+        session[f'exam_{self.exam.pk}_started_at'] = int(time.time()) - seconds_ago
+        session.save()
+
+    def test_page_contains_questions_without_solutions_or_hints(self):
+        response = self.client.get(self.run_url)
+        self.assertEqual(response.status_code, 200)
+        payload = json.dumps(response.context['questions'])
+        self.assertIn('Eins?', payload)
+        self.assertNotIn('Geheimer Hinweis', payload)
+        self.assertNotIn('correct', payload)
+
+    def test_autosave_then_submit(self):
+        save = self.client.post(self.run_url, {'action': 'save', 'answers': json.dumps({str(self.q1.pk): ['b']})})
+        self.assertEqual(save.json(), {'ok': True})
+        self.assertEqual(self.client.session[f'exam_{self.exam.pk}_answers'][str(self.q1.pk)], ['b'])
+        # Neu laden: der Server liefert den gesicherten Stand mit
+        self.assertEqual(self.client.get(self.run_url).context['saved_answers'][str(self.q1.pk)], ['b'])
+
+        answers = {str(self.q1.pk): ['b'], str(self.q2.pk): ['c']}
+        response = self.client.post(self.run_url, {'answers': json.dumps(answers)})
+        self.assertRedirects(response, reverse('exam_result', args=[self.exam.pk]), fetch_redirect_response=False)
+        result = ExamResultData.objects.get()
+        self.assertEqual(result.meta_reference['score'], 2)
+        self.assertTrue(result.meta_reference['passed'])
+        self.assertNotIn(f'exam_{self.exam.pk}_question_ids', self.client.session)
+
+    def test_late_submit_uses_last_autosave(self):
+        self.client.post(self.run_url, {'action': 'save', 'answers': json.dumps({str(self.q1.pk): ['a']})})
+        self.set_started(10 * 60 + EXAM_SUBMIT_GRACE_SEC + 5)
+        self.assertEqual(self.client.post(self.run_url, {'action': 'save', 'answers': '{}'}).status_code, 409)
+        self.client.post(self.run_url, {'answers': json.dumps({str(self.q1.pk): ['b'], str(self.q2.pk): ['c']})})
+        result = ExamResultData.objects.get()
+        self.assertEqual(result.answers, {str(self.q1.pk): ['a'], str(self.q2.pk): []})
+        self.assertEqual(result.meta_reference['score'], 0)
+
+    def test_submit_within_grace_counts(self):
+        self.set_started(10 * 60 + 5)
+        self.client.post(self.run_url, {'answers': json.dumps({str(self.q2.pk): ['c']})})
+        self.assertEqual(ExamResultData.objects.get().meta_reference['score'], 1)
+
+    def test_expired_page_view_finishes_exam(self):
+        self.set_started(10 * 60 + EXAM_SUBMIT_GRACE_SEC + 5)
+        response = self.client.get(self.run_url)
+        self.assertRedirects(response, reverse('exam_result', args=[self.exam.pk]), fetch_redirect_response=False)
+        self.assertEqual(ExamResultData.objects.count(), 1)

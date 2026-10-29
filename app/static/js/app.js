@@ -122,26 +122,37 @@
         // Fragen-Durchgang (Theorie-Training, Prüfung): Blättern läuft im Browser, abgegeben wird per Formular.
         // cfg: questions [{id, label, question, help, choices: [[buchstabe, text]]}],
         //      storageKey (Zwischenstand, eindeutig je Durchgang), storagePrefix, persistent (localStorage statt sessionStorage)
+        //      optional: initialAnswers (Stand vom Server), autosave (Antworten beim Blättern an den Server schicken),
+        //      remaining (Sekunden bis zur automatischen Abgabe)
         Alpine.data('questionRun', (cfg) => ({
             questions: cfg.questions,
             index: 0,
             answers: {},
             hint: false,
             submitting: false,
+            timeLeft: null,
             init() {
                 const store = runStore(cfg.persistent);
                 store.prune(cfg.storagePrefix, cfg.storageKey);
                 const saved = store.read(cfg.storageKey) || {};
-                const savedAnswers = saved.answers || {};
+                const savedAnswers = saved.answers || cfg.initialAnswers || {};
                 this.questions.forEach((q) => {
                     const prev = savedAnswers[q.id];
                     this.answers[q.id] = Array.isArray(prev) ? prev.filter((x) => q.choices.some((c) => c[0] === x)) : [];
                 });
                 this.index = Math.min(Math.max(parseInt(saved.index, 10) || 0, 0), this.questions.length - 1);
                 this.store = store;
+                if (cfg.remaining != null) this.startTimer(cfg.remaining);
+                if (cfg.autosave) {
+                    // Beim Verlassen/Wegschalten der Seite den Stand sichern
+                    document.addEventListener('visibilitychange', () => {
+                        if (document.visibilityState === 'hidden') this.sync(true);
+                    });
+                }
                 this.$watch('index', () => {
                     this.hint = false;
                     this.persist();
+                    this.sync();
                     this.$nextTick(() => {
                         window.scrollTo(0, 0);
                         if (this.$refs.heading) this.$refs.heading.focus({ preventScroll: true });
@@ -155,6 +166,35 @@
             get answeredCount() { return this.questions.filter((q) => this.answers[q.id].length).length; },
             persist() {
                 this.store.write(cfg.storageKey, { index: this.index, answers: this.answers });
+            },
+            // Zwischenstand an den Server (nur mit cfg.autosave); Fehler stören das Weiterarbeiten nicht
+            sync(beacon) {
+                if (!cfg.autosave || this.submitting) return;
+                const data = new FormData();
+                data.append('csrfmiddlewaretoken', this.$refs.form.querySelector('[name=csrfmiddlewaretoken]').value);
+                data.append('action', 'save');
+                data.append('answers', JSON.stringify(this.answers));
+                if (beacon && navigator.sendBeacon) {
+                    navigator.sendBeacon(this.$refs.form.action, data);
+                } else {
+                    fetch(this.$refs.form.action, { method: 'POST', body: data, credentials: 'same-origin', keepalive: true })
+                        .catch(() => {});
+                }
+            },
+            startTimer(seconds) {
+                // Restzeit vom Server ab Seitenaufruf rechnen: eine falsch gehende Geräteuhr spielt keine Rolle
+                const deadline = Date.now() + seconds * 1000;
+                const tick = () => {
+                    const left = Math.max(0, Math.round((deadline - Date.now()) / 1000));
+                    this.timeLeft = left;
+                    if (left <= 0) this.submit();
+                    else setTimeout(tick, 1000);
+                };
+                tick();
+            },
+            get timeLabel() {
+                if (this.timeLeft == null) return '--:--';
+                return String(Math.floor(this.timeLeft / 60)).padStart(2, '0') + ':' + String(this.timeLeft % 60).padStart(2, '0');
             },
             back() {
                 if (this.index > 0) this.index--;

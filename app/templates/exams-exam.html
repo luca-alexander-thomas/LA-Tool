@@ -3,16 +3,23 @@
 {% block page_title %}{{ exam.name }}{% endblock %}
 
 {% block site_content %}
-<div class="page-narrow">
+{# Fragen (ohne Lösungen) liegen im Browser; Zwischenstand geht beim Blättern an den Server, „Abgeben“ schickt alles. #}
+<div class="page-narrow"
+     x-data="questionRun({
+         questions: JSON.parse(document.getElementById('exam-data').textContent),
+         initialAnswers: JSON.parse(document.getElementById('exam-saved').textContent),
+         storageKey: '{{ storage_key }}', storagePrefix: 'exam:{{ exam.pk }}:', persistent: true,
+         autosave: true, remaining: {{ time_remaining_sec }},
+     })">
     <!-- Header: title + timer -->
     <div class="mb-5 flex items-center justify-between gap-3">
         <div class="min-w-0">
-            <p class="eyebrow">Frage {{ question_number }} / {{ question_total }}</p>
+            <p class="eyebrow">Frage <span x-text="index + 1">1</span> / {{ question_total }}</p>
             <h1 class="mt-0.5 truncate text-lg font-bold tracking-tight text-ink sm:text-xl">{{ exam.name }}</h1>
         </div>
         <div class="flex shrink-0 items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-2 shadow-xs" aria-live="off" title="Verbleibende Zeit">
             {% include "icons/clock.html" with cls="size-5 text-ink-3" %}
-            <span class="font-semibold tabular-nums" id="timer-display">--:--</span>
+            <span class="font-semibold tabular-nums" :class="timeLeft !== null && timeLeft <= 60 && 'text-red-600 dark:text-red-400'" x-text="timeLabel">--:--</span>
         </div>
     </div>
 
@@ -20,85 +27,51 @@
     <div class="alert alert-info mb-4 justify-center text-center">
         <span>Mehrere Antworten möglich — alle zutreffenden auswählen.</span>
     </div>
-    <h2 class="mb-5 text-center text-xl font-bold text-ink sm:text-2xl">{{ question.question }}</h2>
+    <h2 class="mb-5 text-center text-xl font-bold text-ink outline-none sm:text-2xl" tabindex="-1" x-ref="heading" x-text="q.question"></h2>
 
     <!-- Answer form -->
-    <form method="post" id="exam-form" action="{% url 'exam_run' exam.pk %}">
+    <form method="post" action="{% url 'exam_run' exam.pk %}" x-ref="form" @submit.prevent="next()">
         {% csrf_token %}
-        <input type="hidden" name="direction" id="direction-input" value="forward">
+        <input type="hidden" name="answers" x-ref="answers">
         <div class="space-y-3">
-            {% for letter, text in labeled_choices %}
-            <label class="answer-option has-focus-visible:ring-2 has-focus-visible:ring-accent" for="choice_{{ letter }}">
-                <input class="sr-only" type="checkbox"
-                       name="answer" id="choice_{{ letter }}" value="{{ letter }}"
-                       {% if letter in existing_answers %}checked{% endif %}>
-                <span class="answer-letter">{{ letter|upper }}</span>
-                <span class="min-w-0 flex-1 text-base text-ink">{{ text }}</span>
-            </label>
-            {% endfor %}
+            <template x-for="c in q.choices" :key="`${q.id}-${c[0]}`">
+                <label class="answer-option has-focus-visible:ring-2 has-focus-visible:ring-accent" :for="`choice_${c[0]}`">
+                    <input class="sr-only" type="checkbox" :id="`choice_${c[0]}`" :value="c[0]"
+                           x-model="answers[q.id]" @change="persist()">
+                    <span class="answer-letter" x-text="c[0].toUpperCase()"></span>
+                    <span class="min-w-0 flex-1 text-base text-ink" x-text="c[1]"></span>
+                </label>
+            </template>
         </div>
 
         <!-- Progress -->
         <div class="mt-6 flex items-center gap-3">
-            <span class="shrink-0 text-sm text-ink-2 tabular-nums">{{ question_number }} / {{ question_total }}</span>
+            <span class="shrink-0 text-sm text-ink-2 tabular-nums"><span x-text="index + 1">1</span> / {{ question_total }}</span>
             <div class="progress h-2.5" role="progressbar" aria-label="Fortschritt"
-                 aria-valuenow="{{ progress_pct }}" aria-valuemin="0" aria-valuemax="100">
-                <div class="progress-bar" style="width: {{ progress_pct }}%"></div>
+                 :aria-valuenow="progress" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar" :style="`width: ${progress}%`"></div>
             </div>
         </div>
         <p class="mt-2 mb-5 text-right text-xs text-ink-3">Bestehensgrenze: {{ pass_count }} von {{ question_total }} Punkten ({{ pass_pct }}%)</p>
 
         <div class="flex items-center justify-between gap-3">
-            {% if can_go_back %}
-            <button type="button" class="btn btn-secondary" onclick="goBack()">
+            <button type="button" class="btn btn-secondary" x-show="index > 0" x-cloak @click="back()">
                 {% include "icons/arrow-left.html" with cls="size-4" %} Zurück
             </button>
-            {% else %}
-            <span></span>
-            {% endif %}
-            <button type="submit" class="btn btn-primary min-w-32" id="submit-btn">
-                {% if question_number == question_total %}Abgeben{% else %}Weiter{% endif %}
+            <span x-show="index === 0"></span>
+            <button type="submit" class="btn btn-primary min-w-32" :disabled="submitting">
+                <span x-text="isLast ? 'Abgeben' : 'Weiter'">Weiter</span>
                 {% include "icons/arrow-right.html" with cls="size-4" %}
             </button>
         </div>
+        <p class="mt-3 text-center text-xs text-ink-3" x-show="isLast" x-cloak>
+            <span x-text="answeredCount"></span> von {{ question_total }} Fragen beantwortet.
+        </p>
     </form>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-(function () {
-    const startedAt  = {{ started_at }};
-    const limitSec   = {{ time_limit_sec }};
-    const display    = document.getElementById('timer-display');
-    const form       = document.getElementById('exam-form');
-
-    // Timer
-    function tick() {
-        const elapsed    = Math.floor(Date.now() / 1000) - startedAt;
-        const remaining  = Math.max(0, limitSec - elapsed);
-        const m = Math.floor(remaining / 60);
-        const s = remaining % 60;
-        display.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
-        if (remaining <= 60) display.classList.add('text-red-600', 'dark:text-red-400');
-        if (remaining <= 0)  { form.submit(); return; }
-        setTimeout(tick, 1000);
-    }
-    tick();
-
-    // Hervorhebung der gewählten Antworten erfolgt per CSS (.answer-option:has(:checked)).
-})();
-
-// Antwort umschalten (das <label> schaltet die Checkbox bereits nativ um;
-// die Funktion bleibt für Aufrufe aus anderem Code erhalten).
-function toggleAnswer(letter) {
-    const cb = document.getElementById('choice_' + letter);
-    if (cb) cb.checked = !cb.checked;
-}
-
-function goBack() {
-    document.getElementById('direction-input').value = 'back';
-    document.getElementById('exam-form').submit();
-}
-</script>
+{{ questions|json_script:"exam-data" }}
+{{ saved_answers|json_script:"exam-saved" }}
 {% endblock %}
