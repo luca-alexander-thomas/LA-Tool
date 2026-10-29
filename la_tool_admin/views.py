@@ -481,10 +481,37 @@ def admin_draft_toggle(request, model, pk):
 
 # ── FRAGENKATALOG: KATALOGE ───────────────────────────────────────────────────
 
+def _list_filters(request, *names):
+    """Filterwerte aus der URL (GET), leer = kein Filter."""
+    return {name: request.GET.get(name, '').strip() for name in names}
+
+
+def _filter_by_level(qs, stufe, none_value):
+    """stufe: Slug einer Stufe, none_value (= ohne Stufe) oder leer (alle)."""
+    if stufe == none_value:
+        return qs.filter(level__isnull=True)
+    if stufe:
+        return qs.filter(level__slug=stufe)
+    return qs
+
+
+def _filter_by_status(qs, status):
+    if status == 'live':
+        return qs.filter(is_draft=False)
+    if status == 'draft':
+        return qs.filter(is_draft=True)
+    return qs
+
+
 @admin_required
 def admin_catalog_list(request):
-    catalogs = list(Questions_Catalogs.objects.select_related('level').order_by('level__order', 'order', 'title'))
-    # Je Fragenart eine gruppierte Zählung statt drei Queries pro Katalog
+    filters = _list_filters(request, 'q', 'stufe', 'status', 'inhalt')
+    all_catalogs = Questions_Catalogs.objects.select_related('level').order_by('level__order', 'order', 'title')
+    qs = _filter_by_status(_filter_by_level(all_catalogs, filters['stufe'], 'ohne'), filters['status'])
+    if filters['q']:
+        qs = qs.filter(Q(title__icontains=filters['q']) | Q(short_title__icontains=filters['q']))
+    catalogs = list(qs)
+    # Je Fragenart eine gruppierte Zählung statt zwei Queries pro Katalog
     counts = {
         attr: dict(model.objects.order_by().values_list('catalog').annotate(n=Count('pk')))
         for attr, model in (('n_theory', Questions_Theory), ('n_practical', Questions_Practical))
@@ -492,9 +519,20 @@ def admin_catalog_list(request):
     for c in catalogs:
         for attr, by_catalog in counts.items():
             setattr(c, attr, by_catalog.get(c.pk, 0))
+    content_filters = {
+        'ohne_theorie': lambda c: not c.n_theory,
+        'ohne_praxis': lambda c: not c.n_practical,
+        'leer': lambda c: not c.n_theory and not c.n_practical,
+    }
+    if filters['inhalt'] in content_filters:
+        catalogs = [c for c in catalogs if content_filters[filters['inhalt']](c)]
     return render(request, 'admin-catalog.html', {
         'user': request.user,
         'catalogs': catalogs,
+        'total': all_catalogs.count(),
+        'filters': filters,
+        'filtered': any(filters.values()),
+        'levels': Levels.objects.order_by('order'),
     })
 
 
@@ -1008,12 +1046,29 @@ def admin_practical_delete(request, catalog_id, q_id):
 @admin_permission_required('app.manage_group_exercises')
 def admin_group_list(request):
     """Gruppenaufgaben – eigenständig, nach LA-Stufe gruppiert (ohne Stufe = für alle Stufen)."""
-    exercises = list(Questions_GroupExercise.objects.select_related('level').order_by('number', 'pk'))
+    filters = _list_filters(request, 'q', 'stufe', 'status', 'datei')
+    all_exercises = Questions_GroupExercise.objects.select_related('level').order_by('number', 'pk')
+    qs = _filter_by_status(_filter_by_level(all_exercises, filters['stufe'], 'alle'), filters['status'])
+    if filters['q']:
+        qs = qs.filter(Q(number__icontains=filters['q']) | Q(question__icontains=filters['q'])
+                       | Q(help_reference__icontains=filters['q']))
+    if filters['datei'] == 'mit':
+        qs = qs.exclude(file='').exclude(file__isnull=True)
+    elif filters['datei'] == 'ohne':
+        qs = qs.filter(Q(file='') | Q(file__isnull=True))
+    exercises = list(qs)
     by_level = {}
     for exercise in exercises:
         by_level.setdefault(exercise.level, []).append(exercise)
     sections = sorted(by_level.items(), key=lambda pair: (pair[0] is not None, pair[0].order if pair[0] else 0))
-    return render(request, 'admin-group-exercises.html', {'sections': sections, 'total': len(exercises)})
+    return render(request, 'admin-group-exercises.html', {
+        'sections': sections,
+        'shown': len(exercises),
+        'total': all_exercises.count(),
+        'filters': filters,
+        'filtered': any(filters.values()),
+        'levels': Levels.objects.order_by('order'),
+    })
 
 
 @admin_permission_required('app.manage_group_exercises')

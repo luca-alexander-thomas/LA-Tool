@@ -14,6 +14,49 @@
     {% endif %}
 </div>
 
+{# Filter (GET, Lesezeichen-fähig); Auswahlfelder filtern sofort #}
+<form method="get" class="card card-body mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))]" role="search">
+    <div>
+        <label class="form-label" for="f-q">Suche</label>
+        <div class="relative">
+            <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-3">{% include "icons/magnifying-glass.html" with cls="size-4" %}</span>
+            <input id="f-q" type="search" name="q" value="{{ filters.q }}" class="form-control pl-9" placeholder="Titel oder Kurztitel …">
+        </div>
+    </div>
+    <div>
+        <label class="form-label" for="f-stufe">LA-Stufe</label>
+        <select id="f-stufe" name="stufe" class="form-select" onchange="this.form.requestSubmit()">
+            <option value="">Alle</option>
+            {% for level in levels %}<option value="{{ level.slug }}" {% if filters.stufe == level.slug %}selected{% endif %}>{{ level.name }}{% if level.is_draft %} (Entwurf){% endif %}</option>{% endfor %}
+            <option value="ohne" {% if filters.stufe == 'ohne' %}selected{% endif %}>Ohne Stufe</option>
+        </select>
+    </div>
+    <div>
+        <label class="form-label" for="f-status">Status</label>
+        <select id="f-status" name="status" class="form-select" onchange="this.form.requestSubmit()">
+            <option value="">Alle</option>
+            <option value="live" {% if filters.status == 'live' %}selected{% endif %}>Freigegeben</option>
+            <option value="draft" {% if filters.status == 'draft' %}selected{% endif %}>Entwurf</option>
+        </select>
+    </div>
+    <div>
+        <label class="form-label" for="f-inhalt">Inhalt</label>
+        <select id="f-inhalt" name="inhalt" class="form-select" onchange="this.form.requestSubmit()">
+            <option value="">Alle</option>
+                <option value="ohne_theorie" {% if filters.inhalt == 'ohne_theorie' %}selected{% endif %}>Ohne Theoriefragen</option>
+                <option value="ohne_praxis" {% if filters.inhalt == 'ohne_praxis' %}selected{% endif %}>Ohne Praxisaufgaben</option>
+                <option value="leer" {% if filters.inhalt == 'leer' %}selected{% endif %}>Ganz leer</option>
+        </select>
+    </div>
+    <div class="flex flex-wrap items-center justify-between gap-2 sm:col-span-2 lg:col-span-4">
+        <p class="text-sm text-ink-2" aria-live="polite">{{ catalogs|length }} von {{ total }} Katalog{{ total|pluralize:"en" }}</p>
+        <div class="flex gap-2">
+            {% if filtered %}<a href="?" class="btn btn-sm btn-secondary">{% include "icons/x-mark.html" with cls="size-4" %} Filter zurücksetzen</a>{% endif %}
+            <button type="submit" class="btn btn-sm btn-soft">{% include "icons/magnifying-glass.html" with cls="size-4" %} Suchen</button>
+        </div>
+    </div>
+</form>
+
 {% if catalogs %}
     <div class="space-y-3">
     {% for catalog in catalogs %}
@@ -55,11 +98,18 @@
     {% endfor %}
     </div>
 {% else %}
+    {% if filtered %}
+    <div class="empty-state">
+        <p>Keine Kataloge passen zu den Filtern.</p>
+        <a href="?" class="btn btn-secondary mt-4">Filter zurücksetzen</a>
+    </div>
+    {% else %}
     <div class="empty-state">
         <p>Noch keine Kataloge vorhanden.</p>
         {% if perms.app.manage_catalogs %}
         <a href="{% url 'admin_catalog_create' %}" class="btn btn-primary mt-4">{% include "icons/plus.html" %} Ersten Katalog erstellen</a>
         {% endif %}
     </div>
+    {% endif %}
 {% endif %}
 {% endblock %}

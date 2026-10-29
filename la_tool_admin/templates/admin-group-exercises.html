@@ -7,10 +7,52 @@
     <div>
         <p class="eyebrow">Inhalte</p>
         <h1 class="page-title mt-1">Gruppenaufgaben</h1>
-        <p class="page-subtitle">Eigenständige Aufgaben für die Gruppe, nicht Teil eines Katalogs. {{ total }} Aufgabe{{ total|pluralize:"n" }}.</p>
+        <p class="page-subtitle">Eigenständige Aufgaben für die Gruppe, nicht Teil eines Katalogs.</p>
     </div>
     <a href="{% url 'admin_group_create' %}" class="btn btn-primary">{% include "icons/plus.html" with cls="size-4" %} Neue Gruppenaufgabe</a>
 </div>
+
+{# Filter (GET, Lesezeichen-fähig); Auswahlfelder filtern sofort #}
+<form method="get" class="card card-body mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))]" role="search">
+    <div>
+        <label class="form-label" for="f-q">Suche</label>
+        <div class="relative">
+            <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-3">{% include "icons/magnifying-glass.html" with cls="size-4" %}</span>
+            <input id="f-q" type="search" name="q" value="{{ filters.q }}" class="form-control pl-9" placeholder="Nummer, Aufgabe oder Hinweis …">
+        </div>
+    </div>
+    <div>
+        <label class="form-label" for="f-stufe">LA-Stufe</label>
+        <select id="f-stufe" name="stufe" class="form-select" onchange="this.form.requestSubmit()">
+            <option value="">Alle</option>
+            {% for level in levels %}<option value="{{ level.slug }}" {% if filters.stufe == level.slug %}selected{% endif %}>{{ level.name }}{% if level.is_draft %} (Entwurf){% endif %}</option>{% endfor %}
+            <option value="alle" {% if filters.stufe == 'alle' %}selected{% endif %}>Für alle Stufen</option>
+        </select>
+    </div>
+    <div>
+        <label class="form-label" for="f-status">Status</label>
+        <select id="f-status" name="status" class="form-select" onchange="this.form.requestSubmit()">
+            <option value="">Alle</option>
+            <option value="live" {% if filters.status == 'live' %}selected{% endif %}>Freigegeben</option>
+            <option value="draft" {% if filters.status == 'draft' %}selected{% endif %}>Entwurf</option>
+        </select>
+    </div>
+    <div>
+        <label class="form-label" for="f-datei">PDF / Bild</label>
+        <select id="f-datei" name="datei" class="form-select" onchange="this.form.requestSubmit()">
+            <option value="">Alle</option>
+                <option value="mit" {% if filters.datei == 'mit' %}selected{% endif %}>Mit Datei</option>
+                <option value="ohne" {% if filters.datei == 'ohne' %}selected{% endif %}>Ohne Datei</option>
+        </select>
+    </div>
+    <div class="flex flex-wrap items-center justify-between gap-2 sm:col-span-2 lg:col-span-4">
+        <p class="text-sm text-ink-2" aria-live="polite">{{ shown }} von {{ total }} Aufgabe{{ total|pluralize:"n" }}</p>
+        <div class="flex gap-2">
+            {% if filtered %}<a href="?" class="btn btn-sm btn-secondary">{% include "icons/x-mark.html" with cls="size-4" %} Filter zurücksetzen</a>{% endif %}
+            <button type="submit" class="btn btn-sm btn-soft">{% include "icons/magnifying-glass.html" with cls="size-4" %} Suchen</button>
+        </div>
+    </div>
+</form>
 
 {% for level, exercises in sections %}
 <section class="mb-6">
@@ -53,6 +95,6 @@
     </div>
 </section>
 {% empty %}
-<p class="empty-state">Noch keine Gruppenaufgaben vorhanden.</p>
+<p class="empty-state">{% if filtered %}Keine Gruppenaufgaben passen zu den Filtern.{% else %}Noch keine Gruppenaufgaben vorhanden.{% endif %}</p>
 {% endfor %}
 {% endblock %}

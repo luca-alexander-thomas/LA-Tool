@@ -186,3 +186,42 @@ class SyncDiveraUsersTests(TestCase):
         self.run_sync({})
         self.gone.refresh_from_db()
         self.assertTrue(self.gone.is_active)
+
+
+class AdminListFilterTests(TestCase):
+    """Filter der Admin-Listen Kataloge und Gruppenaufgaben."""
+
+    def setUp(self):
+        from app.models import Levels, Questions_Catalogs, Questions_GroupExercise, Questions_Theory
+        self.admin = User.objects.create_user('admin')
+        grant(self.admin, 'access_admin', 'manage_group_exercises')
+        self.client.force_login(self.admin)
+        self.a = Levels.objects.create(name='Stufe A', slug='stufe-a', order=90)
+        self.b = Levels.objects.create(name='Stufe B', slug='stufe-b', order=91)
+        filled = Questions_Catalogs.objects.create(title='Leinen', short_title='L1', level=self.a)
+        Questions_Theory.objects.create(question='?', catalog=filled, answer_text='x', answer_choice=['x'])
+        Questions_Catalogs.objects.create(title='Leitern', short_title='L2', level=self.b, is_draft=True)
+        Questions_Catalogs.objects.create(title='Ohne', short_title='O')
+        Questions_GroupExercise.objects.create(number='G1', question='Brücke', level=self.a)
+        Questions_GroupExercise.objects.create(number='G2', question='Steg', file='Aufgaben-Gruppe/x.pdf')
+
+    def catalogs(self, **params):
+        response = self.client.get(reverse('admin_catalog'), params)
+        return {c.title for c in response.context['catalogs']} & {'Leinen', 'Leitern', 'Ohne'}
+
+    def groups(self, **params):
+        response = self.client.get(reverse('admin_group_list'), params)
+        return {q.number for _, items in response.context['sections'] for q in items}
+
+    def test_catalog_filters(self):
+        self.assertEqual(self.catalogs(stufe='stufe-a'), {'Leinen'})
+        self.assertEqual(self.catalogs(stufe='ohne'), {'Ohne'})
+        self.assertEqual(self.catalogs(status='draft'), {'Leitern'})
+        self.assertEqual(self.catalogs(q='l2'), {'Leitern'})
+        self.assertEqual(self.catalogs(inhalt='leer'), {'Leitern', 'Ohne'})
+
+    def test_group_filters(self):
+        self.assertEqual(self.groups(stufe='stufe-a'), {'G1'})
+        self.assertEqual(self.groups(stufe='alle'), {'G2'})
+        self.assertEqual(self.groups(datei='mit'), {'G2'})
+        self.assertEqual(self.groups(q='brü'), {'G1'})
