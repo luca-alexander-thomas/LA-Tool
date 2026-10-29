@@ -12,38 +12,47 @@
         </div>
     </div>
 
-    <div class="space-y-2">
-        {% for question, score in questions_with_score %}
-        <a href="{% url 'practical_detail' question.pk %}" class="list-row min-h-16">
-            <span class="w-10 shrink-0 text-center text-xs font-medium text-ink-3 tabular-nums">{{ question.number }}</span>
-            <span class="min-w-0 flex-1 text-sm font-semibold text-ink sm:text-base">{{ question.question }}</span>
-            {% if question.catalog.short_title %}<span class="badge badge-neutral shrink-0" title="{{ question.catalog.title }}">{{ question.catalog.short_title }}</span>{% endif %}
-            <span class="flex shrink-0 items-center justify-center">
-                {% if question.catalog and question.catalog.level %}
-                    {% if question.catalog.level.icon %}
-                        <img class="h-8 w-10 object-contain" loading="lazy" decoding="async" width="40" height="32" src="{{ question.catalog.level.icon.url }}" alt="{{ question.catalog.level.name }}">
-                    {% elif question.catalog.icon %}
-                        <img class="h-8 w-10 object-contain" loading="lazy" decoding="async" width="40" height="32" src="{{ question.catalog.icon.url }}" alt="{{ question.catalog.level.name }}">
-                    {% else %}
-                        <span class="badge {{ question.catalog.level.badge_bg_class|default:'badge-primary' }} {{ question.catalog.level.badge_text_class }}">{{ question.catalog.level.name }}</span>
-                    {% endif %}
-                {% elif question.catalog and question.catalog.icon %}
-                    <img class="h-8 w-10 object-contain" loading="lazy" decoding="async" width="40" height="32" src="{{ question.catalog.icon.url }}" alt="">
-                {% endif %}
-            </span>
-            <span class="flex w-6 shrink-0 justify-center">
-                {% if score is None %}
-                    <span class="size-4 rounded-full border-2 border-ink-3" title="Noch nicht bewertet"><span class="sr-only">Noch nicht bewertet</span></span>
-                {% elif score >= 75 %}
-                    <span class="size-4 rounded-full bg-green-500" title="Sicher"><span class="sr-only">Sicher</span></span>
-                {% elif score >= 40 %}
-                    <span class="size-4 rounded-full bg-amber-400" title="Nochmal anschauen"><span class="sr-only">Nochmal anschauen</span></span>
-                {% else %}
-                    <span class="size-4 rounded-full bg-red-500" title="Unsicher"><span class="sr-only">Unsicher</span></span>
-                {% endif %}
-            </span>
-            {% include "icons/chevron-right.html" with cls="size-5 shrink-0 text-ink-3" %}
-        </a>
+    <div class="space-y-6">
+        {% for catalog, rows in sections %}
+        <section>
+            <h2 class="mb-2 flex flex-wrap items-center gap-2 text-base font-semibold text-ink">
+                {% if catalog.short_title %}<span class="badge badge-neutral">{{ catalog.short_title }}</span>{% endif %}
+                {{ catalog.title }}
+            </h2>
+            <div class="space-y-2">
+                {% for question, score in rows %}
+                <a href="{% url 'practical_detail' question.pk %}" class="list-row min-h-16">
+                    <span class="w-10 shrink-0 text-center text-xs font-medium text-ink-3 tabular-nums">{{ question.number }}</span>
+                    <span class="min-w-0 flex-1 text-sm font-semibold text-ink hyphens-auto break-words sm:text-base">{{ question.question }}</span>
+                    <span class="flex shrink-0 items-center justify-center">
+                        {% if question.catalog and question.catalog.level %}
+                            {% if question.catalog.level.icon %}
+                                <img class="h-8 w-10 object-contain" loading="lazy" decoding="async" width="40" height="32" src="{{ question.catalog.level.icon.url }}" alt="{{ question.catalog.level.name }}">
+                            {% elif question.catalog.icon %}
+                                <img class="h-8 w-10 object-contain" loading="lazy" decoding="async" width="40" height="32" src="{{ question.catalog.icon.url }}" alt="{{ question.catalog.level.name }}">
+                            {% else %}
+                                <span class="badge {{ question.catalog.level.badge_bg_class|default:'badge-primary' }} {{ question.catalog.level.badge_text_class }}">{{ question.catalog.level.name }}</span>
+                            {% endif %}
+                        {% elif question.catalog and question.catalog.icon %}
+                            <img class="h-8 w-10 object-contain" loading="lazy" decoding="async" width="40" height="32" src="{{ question.catalog.icon.url }}" alt="">
+                        {% endif %}
+                    </span>
+                    <span class="flex w-6 shrink-0 justify-center">
+                        {% if score is None %}
+                            <span class="size-4 rounded-full border-2 border-ink-3" title="Noch nicht bewertet"><span class="sr-only">Noch nicht bewertet</span></span>
+                        {% elif score >= 75 %}
+                            <span class="size-4 rounded-full bg-green-500" title="Sicher"><span class="sr-only">Sicher</span></span>
+                        {% elif score >= 40 %}
+                            <span class="size-4 rounded-full bg-amber-400" title="Nochmal anschauen"><span class="sr-only">Nochmal anschauen</span></span>
+                        {% else %}
+                            <span class="size-4 rounded-full bg-red-500" title="Unsicher"><span class="sr-only">Unsicher</span></span>
+                        {% endif %}
+                    </span>
+                    {% include "icons/chevron-right.html" with cls="size-5 shrink-0 text-ink-3" %}
+                </a>
+                {% endfor %}
+            </div>
+        </section>
         {% empty %}
         <p class="empty-state">Keine Aufgaben vorhanden.</p>
         {% endfor %}

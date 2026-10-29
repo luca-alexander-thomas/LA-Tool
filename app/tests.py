@@ -259,3 +259,43 @@ class HardeningTests(TestCase):
         session.save()
         self.client.post(reverse('training_config'), {'catalogs': [draft.pk], 'count': 5})
         self.assertNotIn('training_question_ids', self.client.session)
+
+
+class LookupAndPracticalListTests(TestCase):
+    """Theoriefragen nachschlagen (mit Lösung, ohne Entwürfe) und Praxisliste nach Katalogen."""
+
+    def setUp(self):
+        self.user = User.objects.create_user('jugend', password='pw')
+        self.client.force_login(self.user)
+        self.level = Levels.objects.create(name='Teststufe', slug='teststufe', order=99)
+        session = self.client.session
+        session['la_filter'] = 'teststufe'
+        session.save()
+
+    def catalog(self, title, order, draft=False):
+        return Questions_Catalogs.objects.create(title=title, short_title=title[:3], level=self.level,
+                                                 order=order, is_draft=draft)
+
+    def test_lookup_groups_by_catalog_order_and_marks_solutions(self):
+        second, first = self.catalog('Zweiter', 2), self.catalog('Erster', 1)
+        draft = self.catalog('Entwurf', 0, draft=True)
+        Questions_Theory.objects.create(question='Z?', catalog=second, answer_text='Ja', answer_choice=['Nein', 'Ja'])
+        Questions_Theory.objects.create(question='E?', catalog=first, answer_text='Ja', answer_choice=['Ja', 'Nein'])
+        Questions_Theory.objects.create(question='Geheim?', catalog=draft, answer_text='Ja', answer_choice=['Ja'])
+        response = self.client.get(reverse('theory_lookup'))
+        sections = response.context['sections']
+        self.assertEqual([c.title for c, _, _ in sections], ['Erster', 'Zweiter'])
+        self.assertEqual(sections[1][1][0]['choices'], [('a', 'Nein', False), ('b', 'Ja', True)])
+        self.assertNotContains(response, 'Geheim?')
+
+    def test_lookup_requires_login(self):
+        self.client.logout()
+        self.assertEqual(self.client.get(reverse('theory_lookup')).status_code, 302)
+
+    def test_practical_list_grouped_by_catalog_order(self):
+        from .models import Questions_Practical
+        b, a = self.catalog('Bbb', 5), self.catalog('Aaa', 1)
+        Questions_Practical.objects.create(question='P-B', catalog=b, number='1')
+        Questions_Practical.objects.create(question='P-A', catalog=a, number='2')
+        sections = self.client.get(reverse('practical_list')).context['sections']
+        self.assertEqual([c.title for c, _ in sections], ['Aaa', 'Bbb'])

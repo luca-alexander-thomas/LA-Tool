@@ -9,7 +9,7 @@ def _user_has_admin_access(user):
 _NAV_SECTIONS = {
     'home': 'home',
     'excercise': 'excercise',
-    'training_config': 'theory', 'training_run': 'theory', 'training_result': 'theory',
+    'training_config': 'theory', 'training_run': 'theory', 'training_result': 'theory', 'theory_lookup': 'theory',
     'practical_list': 'practical', 'practical_detail': 'practical',
     'group_list': 'group', 'group_detail': 'group',
     'work': 'work', 'work_detail': 'work', 'work_training_start': 'work',

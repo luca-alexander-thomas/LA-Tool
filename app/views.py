@@ -723,6 +723,40 @@ def _published(model):
     return model.objects.filter(is_draft=False, catalog__is_draft=False, catalog__level__is_draft=False)
 
 
+def _by_catalog(items, catalog_of=lambda item: item.catalog):
+    """[(Katalog, [Einträge])] in der Sortierreihenfolge der Kataloge; Einträge behalten ihre Reihenfolge."""
+    groups = {}
+    for item in items:
+        groups.setdefault(catalog_of(item), []).append(item)
+    return sorted(groups.items(), key=lambda pair: (pair[0].order, pair[0].title.lower(), pair[0].pk))
+
+
+# ── THEORIE NACHSCHLAGEN ──────────────────────────────────────────────────────
+
+def theory_lookup(request):
+    """Alle Theoriefragen der aktiven Stufe mit Lösungen zum Nachlesen, gruppiert nach Katalog."""
+    if not request.user.is_authenticated:
+        return redirect_to_login(request.get_full_path())
+    la = current_la_filter(request)
+    questions = _published(Questions_Theory).select_related('catalog').filter(
+        catalog__level__slug=la,
+    ).order_by('number', 'pk')
+    entries = []
+    for q in questions:
+        correct = set(q.correct_answers)
+        entries.append({
+            'question': q,
+            'choices': [(letter, text, text in correct) for letter, text in _labeled_choices(q)],
+            # Suchtext: Frage, Nummer und Antworten (für die Suche im Browser)
+            'search': ' '.join([q.number or '', q.question, *(q.answer_choice or [])]).lower(),
+        })
+    sections = _by_catalog(entries, catalog_of=lambda e: e['question'].catalog)
+    return render(request, 'exercise-theorie-katalog.html', {
+        'sections': [(catalog, items, ' '.join(e['search'] for e in items)) for catalog, items in sections],
+        'question_count': len(entries),
+    })
+
+
 # ── PRAKTISCHE AUFGABEN ───────────────────────────────────────────────────────
 
 def practical_list(request):
@@ -739,10 +773,11 @@ def practical_list(request):
         for a in PracticalSelfAssessment.objects.filter(user=request.user, question__in=qs):
             assessments[a.question_id] = a.score
 
-    questions_with_score = [(q, assessments.get(q.pk)) for q in qs]
+    # Nach Katalogen in deren Sortierreihenfolge, innerhalb eines Katalogs nach Nummer
+    sections = _by_catalog([(q, assessments.get(q.pk)) for q in qs], catalog_of=lambda pair: pair[0].catalog)
 
     return render(request, 'exercise-pratical.html', {
-        'questions_with_score': questions_with_score,
+        'sections': sections,
         'active_stufe': complexity,
     })
 

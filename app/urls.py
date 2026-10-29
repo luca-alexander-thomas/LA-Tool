@@ -30,6 +30,7 @@ urlpatterns = [
     path('pruefungen/<int:exam_id>/ergebnis/', views.exam_result, name='exam_result'),
     path('uebungen/', views.excercise, name='excercise'),
     path('uebungen/theorie/', views.training_config, name='training_config'),
+    path('uebungen/theorie/fragen/', views.theory_lookup, name='theory_lookup'),
     path('uebungen/theorie/training/', views.training_run, name='training_run'),
     path('uebungen/theorie/training/<int:result_id>/', views.training_result, name='training_result'),
     path('uebungen/praxis/', views.practical_list, name='practical_list'),

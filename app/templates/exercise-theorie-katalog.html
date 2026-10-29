@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block page_title %}Theoriefragen nachschlagen{% endblock %}
+
+{% block site_content %}
+{# Alle Fragen der Stufe mit Lösung; die Suche filtert im Browser (data-search enthält Frage, Nummer, Antworten). #}
+<div class="page" x-data="{
+        q: '',
+        get term() { return this.q.trim().toLowerCase(); },
+        matches(el) { return !this.term || el.dataset.search.includes(this.term); },
+        get anyHit() { return [...this.$root.querySelectorAll('section[data-search]')].some((el) => this.matches(el)); },
+    }">
+    <div class="page-header">
+        <div>
+            <p class="eyebrow">Theorie</p>
+            <h1 class="page-title mt-1">Fragen nachschlagen</h1>
+            <p class="page-subtitle">{{ question_count }} Frage{{ question_count|pluralize:"n" }} mit Lösungen, nach Katalogen geordnet</p>
+        </div>
+        <a class="btn btn-primary" href="{% url 'training_config' %}">{% include "icons/play.html" with cls="size-4" %} Training starten</a>
+    </div>
+
+    <div class="sticky top-[env(safe-area-inset-top,0px)] z-10 -mx-1 mb-4 bg-bg/90 px-1 py-2 backdrop-blur">
+        <label class="sr-only" for="lookup-search">Fragen durchsuchen</label>
+        <div class="relative">
+            <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-3">{% include "icons/magnifying-glass.html" with cls="size-5" %}</span>
+            <input id="lookup-search" type="search" class="form-control pl-10" placeholder="Frage, Nummer oder Antwort suchen …"
+                   x-model.debounce.150ms="q" autocomplete="off">
+        </div>
+    </div>
+
+    {% if sections %}
+    <div class="space-y-6">
+        {% for catalog, items, section_search in sections %}
+        <section data-search="{{ section_search }}" x-show="matches($el)">
+            <h2 class="mb-2 flex flex-wrap items-center gap-2 text-base font-semibold text-ink">
+                {% if catalog.short_title %}<span class="badge badge-neutral">{{ catalog.short_title }}</span>{% endif %}
+                {{ catalog.title }}
+                <span class="text-xs font-normal text-ink-3">{{ items|length }}</span>
+            </h2>
+            <div class="space-y-2">
+                {% for e in items %}
+                <details class="group rounded-xl border border-line bg-surface" data-search="{{ e.search }}"
+                         x-show="matches($el)">
+                    <summary class="flex min-h-12 cursor-pointer list-none items-start gap-3 rounded-xl px-3 py-2.5 transition hover:bg-surface-2 [&::-webkit-details-marker]:hidden">
+                        <span class="w-10 shrink-0 pt-0.5 text-center text-xs font-medium text-ink-3 tabular-nums">{{ e.question.number }}</span>
+                        <span class="min-w-0 flex-1 text-sm font-semibold text-ink sm:text-base">{{ e.question.question }}</span>
+                        {% include "icons/chevron-down.html" with cls="mt-0.5 size-5 shrink-0 text-ink-3 transition-transform group-open:rotate-180" %}
+                    </summary>
+                    <div class="space-y-1.5 border-t border-line px-3 py-3 text-sm sm:pl-16">
+                        {% for letter, text, is_correct in e.choices %}
+                        <p class="flex gap-2 {% if is_correct %}font-semibold text-green-700 dark:text-green-400{% else %}text-ink-2{% endif %}">
+                            {% if is_correct %}{% include "icons/check-circle.html" with cls="size-5 shrink-0" %}{% else %}<span class="inline-flex size-5 shrink-0 items-center justify-center text-xs font-semibold uppercase">{{ letter }}</span>{% endif %}
+                            <span>{{ text }}</span>
+                        </p>
+                        {% endfor %}
+                        {% if e.question.help_reference %}
+                        <p class="mt-2 flex gap-2 text-xs text-ink-2">{% include "icons/light-bulb.html" with cls="size-4 shrink-0 text-amber-500" %}<span>{{ e.question.help_reference }}</span></p>
+                        {% endif %}
+                    </div>
+                </details>
+                {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+        <p class="empty-state" x-show="!anyHit" x-cloak>Keine passenden Fragen gefunden.</p>
+    </div>
+    {% else %}
+    <p class="empty-state">Für diese Stufe sind noch keine Theoriefragen vorhanden.</p>
+    {% endif %}
+</div>
+{% endblock %}
