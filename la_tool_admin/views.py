@@ -15,7 +15,8 @@ from app.models import (
 )
 from app.login_function import post_login_setup, safe_next_url
 from .forms import CatalogForm, TheoryQuestionForm, PracticalForm, GroupExerciseForm, ExamForm, WorkForm, WorkCreateForm, ImportQuestionForm, LevelForm, PushMessageForm
-from .models import Profile, PushSubscription
+from .models import PinnedGroup, Profile, PushSubscription
+from .utils import pin_group, unpin_group
 from .push import push_configured, send_push
 import logging
 import msal
@@ -145,65 +146,31 @@ def index(request):
 
 
 def sync_user_groups(user, access_token):
-    """Synchronisiert Azure AD Gruppenmitgliedschaften zu Django Groups"""
+    """Entra-Gruppen des Nutzers abrufen, am Profil merken und die Gruppen abgleichen (siehe sync_idp_groups)."""
+    from .utils import sync_idp_groups
+    headers = {'Authorization': f'Bearer {access_token}'}
+    url = 'https://graph.microsoft.com/v1.0/me/memberOf?$select=id'
+    group_ids = []
     try:
-        # Gruppenmitgliedschaften von Microsoft Graph abrufen
-        headers = {'Authorization': f'Bearer {access_token}'}
+        # memberOf ist seitenweise (100 pro Seite): nextLink folgen
+        while url:
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code != 200:
+                logger.warning('Entra-Gruppen konnten nicht abgerufen werden: HTTP %s', response.status_code)
+                return  # unvollständig: lieber nichts ändern als Gruppen fälschlich entfernen
+            data = response.json()
+            group_ids += [item['id'] for item in data.get('value', [])
+                          if 'microsoft.graph.group' in item.get('@odata.type', '') and item.get('id')]
+            url = data.get('@odata.nextLink')
+    except (requests.RequestException, ValueError) as exc:
+        logger.warning('Entra-Gruppen konnten nicht abgerufen werden: %s', type(exc).__name__)
+        return
 
-        # Versuche zuerst mit $filter
-        # memberOf abrufen (nur Gruppen, keine rollen)
-        graph_url = 'https://graph.microsoft.com/v1.0/me/memberOf'
-
-        graph_response = requests.get(graph_url, headers=headers, timeout=10)
-
-        if graph_response.status_code != 200:
-            logger.warning('Entra-Gruppen konnten nicht abgerufen werden: HTTP %s', graph_response.status_code)
-            return
-
-        groups_data = graph_response.json()
-        azure_group_ids = set()
-        all_entra_group_ids = []
-
-        # Alle Gruppen die der User in Azure hat - filtere nur Groups (nicht Roles)
-        for item in groups_data.get('value', []):
-            if '@odata.type' in item and 'microsoft.graph.group' in item['@odata.type']:
-                group_id = item.get('id')
-                if group_id:
-                    all_entra_group_ids.append(group_id)
-                    if group_id in getattr(settings, 'AZURE_GROUPS_MAPPING', {}):
-                        azure_group_ids.add(group_id)
-
-        # Django Groups via AZURE_GROUPS_MAPPING synchronisieren (legacy)
-        django_groups_to_assign = set()
-
-        for azure_group_id in azure_group_ids:
-            group_name = settings.AZURE_GROUPS_MAPPING[azure_group_id]
-            django_group, created = Group.objects.get_or_create(name=group_name)
-            django_groups_to_assign.add(django_group)
-
-        current_groups = user.groups.all()
-        mapped_group_names = set(getattr(settings, 'AZURE_GROUPS_MAPPING', {}).values())
-        groups_to_remove = current_groups.filter(name__in=mapped_group_names).exclude(
-            name__in=[g.name for g in django_groups_to_assign]
-        )
-
-        for group in groups_to_remove:
-            user.groups.remove(group)
-
-        for group in django_groups_to_assign:
-            user.groups.add(group)
-
-        user.save()
-
-        # DB-driven auto-group rules
-        try:
-            from .utils import sync_auto_groups
-            sync_auto_groups(user, entra_group_ids=all_entra_group_ids)
-        except Exception:
-            logger.exception('Fehler beim Sync der Auto-Gruppen für %s', user.username)
-
+    Profile.objects.filter(user=user).update(entra_group_ids=group_ids)
+    try:
+        sync_idp_groups(user)
     except Exception:
-        logger.exception('Fehler beim Synchronisieren der Entra-Gruppen für %s', user.username)
+        logger.exception('Fehler beim Gruppenabgleich für %s', user.username)
 
 # Microsoft OAuth Callbacks
 
@@ -316,9 +283,19 @@ def microsoft_callback(request):
             }
         )
 
-        # Profil anlegen/aktualisieren mit login_source
         profile, _ = Profile.objects.get_or_create(user=user)
-        profile.login_source = Profile.SOURCE_ENTRA
+        # Gleiche Mail, anderes Entra-Konto: nicht übernehmen
+        if profile.entra_oid and microsoft_id and profile.entra_oid != microsoft_id:
+            logger.warning('Entra-Login abgelehnt: Konto %s gehört zu einer anderen Entra-ID', user.username)
+            return render(request, 'login.html', {
+                'error': 'Dieses Konto ist mit einem anderen Microsoft-Konto verknüpft. Bitte an einen Admin wenden.'
+            })
+        if not user.is_active:
+            return render(request, 'login.html', {'error': 'Dieses Konto ist deaktiviert.'})
+        profile.entra_oid = microsoft_id or profile.entra_oid
+        # Divera-Konten bleiben Divera-Konten (Passwort-Login weiter gegen Divera prüfen)
+        if profile.login_source != Profile.SOURCE_DIVERA:
+            profile.login_source = Profile.SOURCE_ENTRA
         profile.save()
 
         # Gruppenmitgliedschaften synchronisieren
@@ -354,7 +331,8 @@ def admin_users(request):
 
         # Rechte vergeben/entziehen und Eingriffe in Admin-Konten (Passwort, Löschen) nur mit
         # 'manage_groups' – sonst könnte 'manage_users' sich über Dritte Rechte verschaffen.
-        needs_group_perm = action in ('make_admin', 'remove_admin', 'toggle_perm') or (
+        needs_group_perm = action in ('make_admin', 'remove_admin', 'toggle_perm', 'pin_group', 'unpin_group',
+                                      'add_group', 'remove_group') or (
             action in ('reset_password', 'delete_user') and target.has_perm('app.access_admin')
         )
         if needs_group_perm and not request.user.has_perm('app.manage_groups'):
@@ -362,15 +340,22 @@ def admin_users(request):
 
         if not target.is_superuser and target.pk != request.user.pk:
             if action == 'make_admin':
+                # Manuell vergeben = festgesetzt: der IdP-Abgleich entfernt die Admin-Gruppe nicht mehr
                 group, _ = Group.objects.get_or_create(name='LA-Tool-Admins')
-                target.groups.add(group)
+                pin_group(target, group, by=request.user)
                 target.is_staff = True
                 target.save()
             elif action == 'remove_admin':
                 if admin_group:
-                    target.groups.remove(admin_group)
+                    unpin_group(target, admin_group, remove=True)
                 target.is_staff = False
                 target.save()
+            elif action in ('pin_group', 'unpin_group', 'add_group', 'remove_group'):
+                group = get_object_or_404(Group, pk=request.POST.get('group_id'))
+                if action in ('pin_group', 'add_group'):
+                    pin_group(target, group, by=request.user)
+                else:
+                    unpin_group(target, group, remove=(action == 'remove_group'))
             elif action == 'reset_password' and target.has_usable_password():
                 alphabet = string.ascii_letters + string.digits + '!@#$%&*'
                 pw = ''.join(secrets.choice(alphabet) for _ in range(12))
@@ -435,9 +420,17 @@ def admin_users(request):
         }
         u.has_admin_access = u.is_superuser or 'access_admin' in u.la_perms_direct | u.la_perms_group
 
+    pinned = {}
+    for user_id, group_id in PinnedGroup.objects.values_list('user_id', 'group_id'):
+        pinned.setdefault(user_id, set()).add(group_id)
+    for u in users_list:
+        u.pinned_group_ids = pinned.get(u.pk, set())
+        u.member_group_ids = {g.pk for g in u.groups.all()}
+
     return render(request, 'admin-users.html', {
         'user': request.user,
         'users': users_list,
+        'all_groups': Group.objects.order_by('name'),
         'admin_group': admin_group,
         'temp_pw_info': temp_pw_info,
         'app_permissions': APP_PERMISSIONS,

@@ -111,6 +111,22 @@ journalctl -u la-tool-sync.service -n 20
 
 In DIVERA gelöschte Termine werden beim Abgleich nicht entfernt.
 
+## Konten, Gruppen und Berechtigungen
+
+- **Divera-Konten** werden über die feste Divera-ID (UCR) zugeordnet, nicht über den Benutzernamen. Ein Divera-Login übernimmt nie ein bestehendes lokales oder Entra-Konto mit gleichem Namen.
+- Divera-Konten melden sich **immer gegen Divera** an. Das lokal gespeicherte Passwort gilt nur, wenn Divera nicht erreichbar ist.
+- Wer nicht mehr im Divera-Standort ist, wird beim Login bzw. beim nächtlichen Abgleich **gesperrt** (und bei Rückkehr automatisch entsperrt). Von Admins gesperrte Konten bleiben gesperrt.
+- **Gruppen** kommen aus den Identity-Providern: Auto-Gruppen-Regeln (Divera-Qualifikationen, Entra-Gruppen) und `AZURE_GROUPS_MAPPING`. Unter **Admin → Nutzer → Berechtigungen** lassen sich Mitgliedschaften **festsetzen** – festgesetzte Gruppen entfernt der Abgleich nie. Manuell hinzugefügte Gruppen und „Admin machen“ sind automatisch festgesetzt. Direkt vergebene Einzelrechte werden vom Abgleich nie verändert.
+
+Nächtlicher Abgleich der Divera-Konten (zuerst mit `--dry-run` prüfen):
+
+```bash
+python manage.py sync_divera_users --dry-run
+python manage.py sync_divera_users
+```
+
+Als Timer analog zu oben, z.B. `OnCalendar=*-*-* 03:17:00` mit `ExecStart=… manage.py sync_divera_users`.
+
 # Mitwirken
 
 Im aktuellen Entwicklungsstadium können über GitHub Issues Feature Requests eingereicht werden.

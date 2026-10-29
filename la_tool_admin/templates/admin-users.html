@@ -165,6 +165,41 @@
                         {% endfor %}
                     </div>
                     <p class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-2"><span><span class="badge badge-success">Grün</span> = direkt zugewiesen</span> <span><span class="badge badge-info">Blau</span> = über Gruppe (nicht änderbar hier)</span></p>
+
+                    {# Gruppen: kommen grundsätzlich aus Entra/Divera; festgesetzte bleiben beim Abgleich erhalten #}
+                    <p class="mt-5 mb-2 text-xs font-semibold tracking-wider text-ink-2 uppercase">Gruppen</p>
+                    <ul class="divide-y divide-line rounded-xl border border-line bg-surface">
+                        {% for g in all_groups %}
+                        <li class="flex flex-wrap items-center gap-2 px-3 py-2">
+                            <span class="min-w-0 flex-1 text-sm font-medium">{{ g.name }}</span>
+                            {% if g.pk in u.pinned_group_ids %}
+                                <span class="badge badge-success">{% include "icons/lock-closed.html" with cls="size-3.5" %} festgesetzt</span>
+                            {% elif g.pk in u.member_group_ids %}
+                                <span class="badge badge-info">über IdP</span>
+                            {% else %}
+                                <span class="text-xs text-ink-3">kein Mitglied</span>
+                            {% endif %}
+                            {% if perms.app.manage_groups %}
+                            <form method="post" class="flex gap-1.5">
+                                {% csrf_token %}
+                                <input type="hidden" name="user_id" value="{{ u.pk }}">
+                                <input type="hidden" name="group_id" value="{{ g.pk }}">
+                                {% if g.pk in u.pinned_group_ids %}
+                                    <button type="submit" name="action" value="unpin_group" class="btn btn-sm btn-secondary" title="Beim nächsten Login entscheidet wieder der IdP">Lösen</button>
+                                    <button type="submit" name="action" value="remove_group" class="btn btn-sm btn-danger-soft">Entfernen</button>
+                                {% elif g.pk in u.member_group_ids %}
+                                    <button type="submit" name="action" value="pin_group" class="btn btn-sm btn-secondary" title="Mitgliedschaft auch ohne IdP behalten">Festsetzen</button>
+                                {% else %}
+                                    <button type="submit" name="action" value="add_group" class="btn btn-sm btn-soft">Hinzufügen</button>
+                                {% endif %}
+                            </form>
+                            {% endif %}
+                        </li>
+                        {% empty %}
+                        <li class="px-3 py-2 text-sm text-ink-3">Keine Gruppen angelegt.</li>
+                        {% endfor %}
+                    </ul>
+                    <p class="mt-2 text-xs text-ink-2">Gruppen werden beim Login aus Microsoft Entra und Divera übernommen. <strong>Festgesetzte</strong> Mitgliedschaften bleiben immer erhalten; manuell hinzugefügte sind automatisch festgesetzt.</p>
                 </td>
             </tr>
             {% endif %}

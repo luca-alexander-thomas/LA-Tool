@@ -32,7 +32,14 @@ class Profile(models.Model):
     divera_api_key = models.CharField(max_length=255, blank=True)
     divera_qualifications = models.JSONField(blank=True, null=True)
     divera_groups = models.JSONField(blank=True, null=True)
+    # Feste Divera-ID (User-Cluster-Relation am Standort): darüber wird ein Divera-Login dem Konto zugeordnet
     divera_ucr = models.IntegerField(blank=True, null=True)
+    # Zeitpunkt, zu dem das Konto deaktiviert wurde, weil die Person nicht mehr im Divera-Standort ist
+    divera_left_at = models.DateTimeField(blank=True, null=True)
+    # Feste Entra-ID (Object-ID); verhindert, dass ein anderes Entra-Konto mit gleicher Mail das Konto übernimmt
+    entra_oid = models.CharField(max_length=64, blank=True, default='')
+    # Zuletzt bekannte Entra-Gruppen (Object-IDs); None = nie per Entra angemeldet
+    entra_group_ids = models.JSONField(blank=True, null=True)
 
     def __str__(self):
         return self.user.username
@@ -87,6 +94,20 @@ class AutoGroupRule(models.Model):
 
     def __str__(self):
         return self.group.name
+
+
+class PinnedGroup(models.Model):
+    """Lokal festgesetzte Gruppenmitgliedschaft: Der IdP-Abgleich (Entra/Divera) entfernt sie nie."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pinned_groups')
+    group = models.ForeignKey('auth.Group', on_delete=models.CASCADE, related_name='pinned_members')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['user', 'group'], name='unique_pinned_group')]
+
+    def __str__(self):
+        return f'{self.user} → {self.group}'
 
 
 class Changes(models.Model):
