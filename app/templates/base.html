@@ -44,8 +44,7 @@
         <div class="container-app flex h-16 items-center gap-2 sm:gap-3">
             <a href="{% url 'home' %}" class="mr-2 flex shrink-0 items-center gap-2.5">
                 <img src="{% static 'img/thw-jugend-ge-logo.webp' %}" alt="THW-Jugend Gelsenkirchen" class="h-9 w-auto" width="64" height="36">
-                {# Zwischen md und lg braucht die Hauptnavigation den Platz #}
-                <span class="hidden leading-tight sm:block md:hidden lg:block">
+                <span class="hidden leading-tight sm:block">
                     <span class="block text-sm font-bold tracking-tight text-ink">LA-Tool</span>
                     <span class="block text-[0.6875rem] text-ink-3">THW-Jugend GE</span>
                 </span>
@@ -54,9 +53,16 @@
             {# Übungen sind auch ohne Anmeldung nutzbar; Dienste/Prüfungen leiten zum Login #}
             <nav class="hidden items-center gap-0.5 md:flex" aria-label="Hauptnavigation">
                 <a href="{% url 'home' %}" class="nav-link {% if nav_section == 'home' %}nav-link-active{% endif %}">Start</a>
-                <a href="{% url 'training_config' %}" class="nav-link {% if nav_section == 'theory' %}nav-link-active{% endif %}">Theorie</a>
-                <a href="{% url 'practical_list' %}" class="nav-link {% if nav_section == 'practical' %}nav-link-active{% endif %}">Praxis</a>
-                <a href="{% url 'group_list' %}" class="nav-link {% if nav_section == 'group' %}nav-link-active{% endif %}">Gruppenaufgaben</a>
+                {# Üben: Übersicht und Bereiche als Unterpunkte #}
+                <div class="relative" x-data="{ open: false }" @keydown.escape="open = false; $refs.practiceButton.focus()">
+                    <button type="button" x-ref="practiceButton" @click="open = !open" :aria-expanded="open.toString()" aria-haspopup="true"
+                            class="nav-link inline-flex items-center gap-1 {% if nav_practice %}nav-link-active{% endif %}">
+                        Üben {% include "icons/chevron-down.html" with cls="size-4 transition-transform" %}
+                    </button>
+                    <div x-show="open" x-cloak x-transition.origin.top.left @click.outside="open = false" class="dropdown-menu left-0 origin-top-left min-w-60">
+                        {% include "_practice_menu.html" with item_class="dropdown-item" active_class="bg-accent-soft font-semibold text-accent-ink" %}
+                    </div>
+                </div>
                 <a href="{% url 'work' %}" class="nav-link {% if nav_section == 'work' %}nav-link-active{% endif %}">Dienste</a>
                 <a href="{% url 'exam_list' %}" class="nav-link {% if nav_section == 'exam' %}nav-link-active{% endif %}">Prüfungen</a>
             </nav>
@@ -143,6 +149,15 @@
 
     {# ---------------------------------------------------------------- Inhalt #}
     <main id="inhalt" class="flex-1">
+        {% if practice_subnav %}
+        {# Mobil: Unterpunkte von „Üben“ (Desktop: Menü in der Kopfzeile) #}
+        <nav class="container-app md:hidden" aria-label="Üben">
+            <div class="-mx-4 flex gap-1 overflow-x-auto px-4 pt-3 pb-1 [scrollbar-width:none]"
+                 x-data x-init="const active = $el.querySelector('[aria-current]'); if (active) $el.scrollLeft = active.offsetLeft - 16">
+                {% include "_practice_menu.html" with item_class="nav-link shrink-0 inline-flex items-center gap-1.5" active_class="nav-link-active" compact=True %}
+            </div>
+        </nav>
+        {% endif %}
         {% if messages %}
         <div class="container-app space-y-2 pt-4" role="status">
             {% for message in messages %}
@@ -172,7 +187,7 @@
     <nav class="fixed inset-x-0 bottom-0 z-40 border-t border-line/70 bg-surface/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden" aria-label="Hauptnavigation mobil">
         <div class="mx-auto flex max-w-lg">
             <a href="{% url 'home' %}" class="tabbar-item {% if nav_section == 'home' %}tabbar-item-active{% endif %}">{% include "icons/home.html" %}Start</a>
-            <a href="{% if user.is_authenticated %}{% url 'excercise' %}{% else %}{% url 'training_config' %}{% endif %}" class="tabbar-item {% if nav_section == 'excercise' or nav_section == 'theory' or nav_section == 'practical' or nav_section == 'group' %}tabbar-item-active{% endif %}">{% include "icons/academic-cap.html" %}Üben</a>
+            <a href="{% if user.is_authenticated %}{% url 'excercise' %}{% else %}{% url 'training_config' %}{% endif %}" class="tabbar-item {% if nav_practice %}tabbar-item-active{% endif %}">{% include "icons/academic-cap.html" %}Üben</a>
             <a href="{% url 'work' %}" class="tabbar-item {% if nav_section == 'work' %}tabbar-item-active{% endif %}">{% include "icons/calendar-days.html" %}Dienste</a>
             <a href="{% url 'exam_list' %}" class="tabbar-item {% if nav_section == 'exam' %}tabbar-item-active{% endif %}">{% include "icons/clipboard-document-check.html" %}Prüfungen</a>
             {% if user.is_authenticated %}

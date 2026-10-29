@@ -1,0 +1,29 @@
+{% comment %}
+Unterpunkte von „Üben“: Desktop-Menü in der Kopfzeile und mobile Unterleiste.
+Parameter: item_class, active_class, compact (kurze Beschriftungen, ohne Überschriften/Trenner).
+Übersicht, Nachschlagen und Lernstand brauchen eine Anmeldung und erscheinen sonst nicht.
+{% endcomment %}
+{% if user.is_authenticated %}
+<a href="{% url 'excercise' %}" class="{{ item_class }} {% if nav_section == 'excercise' %}{{ active_class }}{% endif %}" {% if nav_section == 'excercise' %}aria-current="page"{% endif %}>
+    {% if not compact %}{% include "icons/squares-2x2.html" with cls="size-4" %}{% endif %} Übersicht
+</a>
+{% endif %}
+{% if not compact %}{% if user.is_authenticated %}<div class="dropdown-divider"></div>{% endif %}<p class="px-3 pt-1 pb-1 text-xs font-semibold text-ink-3">Theorie</p>{% endif %}
+<a href="{% url 'training_config' %}" class="{{ item_class }} {% if nav_section == 'theory' %}{{ active_class }}{% endif %}" {% if nav_section == 'theory' %}aria-current="page"{% endif %}>
+    {% if not compact %}{% include "icons/academic-cap.html" with cls="size-4" %} Theorie üben{% else %}Theorie{% endif %}
+</a>
+{% if user.is_authenticated %}
+<a href="{% url 'theory_lookup' %}" class="{{ item_class }} {% if nav_section == 'lookup' %}{{ active_class }}{% endif %}" {% if nav_section == 'lookup' %}aria-current="page"{% endif %}>
+    {% if not compact %}{% include "icons/book-open.html" with cls="size-4" %} Fragen nachschlagen{% else %}Nachschlagen{% endif %}
+</a>
+<a href="{% url 'learning_stats' %}" class="{{ item_class }} {% if nav_section == 'stats' %}{{ active_class }}{% endif %}" {% if nav_section == 'stats' %}aria-current="page"{% endif %}>
+    {% if not compact %}{% include "icons/chart-bar.html" with cls="size-4" %}{% endif %} Mein Lernstand
+</a>
+{% endif %}
+{% if not compact %}<div class="dropdown-divider"></div>{% endif %}
+<a href="{% url 'practical_list' %}" class="{{ item_class }} {% if nav_section == 'practical' %}{{ active_class }}{% endif %}" {% if nav_section == 'practical' %}aria-current="page"{% endif %}>
+    {% if not compact %}{% include "icons/wrench-screwdriver.html" with cls="size-4" %}{% endif %} Praxis
+</a>
+<a href="{% url 'group_list' %}" class="{{ item_class }} {% if nav_section == 'group' %}{{ active_class }}{% endif %}" {% if nav_section == 'group' %}aria-current="page"{% endif %}>
+    {% if not compact %}{% include "icons/user-group.html" with cls="size-4" %}{% endif %} Gruppenaufgaben
+</a>
