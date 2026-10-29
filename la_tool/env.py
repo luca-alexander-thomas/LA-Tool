@@ -5,9 +5,15 @@ from dotenv import load_dotenv
 # .env liegt im la_tool/-Verzeichnis (neben manage.py)
 load_dotenv(Path(__file__).resolve().parent.parent / '.env')
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'CHANGE-ME-IN-PRODUCTION')
+# Sicher voreingestellt: ohne DEBUG in der .env läuft der Produktionsmodus
+DEBUG = os.getenv('DEBUG', 'False').strip().lower() in ('1', 'true', 'yes', 'on')
 
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+SECRET_KEY = os.getenv('SECRET_KEY', '')
+if not SECRET_KEY:
+    if not DEBUG:
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured('SECRET_KEY fehlt in der .env (siehe .env.example).')
+    SECRET_KEY = 'nur-fuer-die-lokale-entwicklung'
 
 HOSTNAME = os.getenv('HOSTNAME', 'localhost')
 

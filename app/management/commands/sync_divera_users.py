@@ -36,7 +36,7 @@ class Command(BaseCommand):
                 # Step 1: Find UCR for our configured site
                 initial = _divera_pull(profile.divera_api_key)
             except requests.RequestException as e:
-                self.stderr.write(f'  API error for {username}: {e}')
+                self.stderr.write(f'  API error for {username}: {divera_error_text(e)}')
                 failed += 1
                 continue
 
@@ -61,7 +61,7 @@ class Command(BaseCommand):
                 # Step 2: Pull with our site's UCR so data.cluster is definitely our cluster
                 site_data = _divera_pull(profile.divera_api_key, ucr_id=matched_ucr_id)
             except requests.RequestException as e:
-                self.stderr.write(f'  Site-specific API error for {username}: {e}')
+                self.stderr.write(f'  Site-specific API error for {username}: {divera_error_text(e)}')
                 failed += 1
                 continue
 

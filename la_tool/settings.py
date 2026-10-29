@@ -187,3 +187,17 @@ MEDIA_URL = '/media/'
 
 # Django Sites Framework (benötigt von django-microsoft-auth)
 SITE_ID = 1
+
+
+# Logging: App-Meldungen (Divera, Push, Login) nach stdout → Gunicorn/journald.
+# Keine Secrets loggen: Divera-URLs enthalten Access-Keys (siehe app.login_function.divera_error_text).
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {'plain': {'format': '%(asctime)s %(levelname)s %(name)s: %(message)s'}},
+    'handlers': {'console': {'class': 'logging.StreamHandler', 'formatter': 'plain'}},
+    'loggers': {
+        'app': {'handlers': ['console'], 'level': 'INFO'},
+        'la_tool_admin': {'handlers': ['console'], 'level': 'INFO'},
+    },
+}

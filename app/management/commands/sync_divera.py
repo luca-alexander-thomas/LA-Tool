@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 import requests
 from django.core.management.base import BaseCommand
 from la_tool import env
+from app.login_function import divera_error_text
 from app.models import Work
 
 
@@ -32,7 +33,7 @@ class Command(BaseCommand):
         try:
             initial = _divera_pull(api_key)
         except requests.RequestException as e:
-            self.stderr.write(self.style.ERROR(f'Divera API request failed: {e}'))
+            self.stderr.write(self.style.ERROR(f'Divera API request failed: {divera_error_text(e)}'))
             return
 
         if not initial.get('success'):
@@ -60,7 +61,7 @@ class Command(BaseCommand):
         try:
             site_data = _divera_pull(api_key, ucr_id=matched_ucr_id)
         except requests.RequestException as e:
-            self.stderr.write(self.style.ERROR(f'Site-specific Divera request failed: {e}'))
+            self.stderr.write(self.style.ERROR(f'Site-specific Divera request failed: {divera_error_text(e)}'))
             return
 
         if not site_data.get('success'):

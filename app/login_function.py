@@ -1,9 +1,21 @@
 from django.contrib.auth.models import User
 from django.contrib import auth
+import logging
+
 import requests
 import la_tool.env as env
 from django.utils.http import url_has_allowed_host_and_scheme
 from la_tool_admin.models import Profile
+
+logger = logging.getLogger(__name__)
+
+
+def divera_error_text(exc):
+    """Fehlertext für Logs ohne URL: Divera-URLs enthalten den Access-Key als Query-Parameter."""
+    response = getattr(exc, 'response', None)
+    if response is not None:
+        return f'HTTP {response.status_code}'
+    return type(exc).__name__
 
 
 def safe_next_url(request, url):
@@ -217,12 +229,9 @@ def link_divera_with_credentials(user, username, password):
 
 
 def login(username, password, request):
-    print(f"Attempting to authenticate user: {username}")
     user = auth.authenticate(request, username=username, password=password)
     if user is not None:
         return user
-
-    print(f"User {username} not found locally, trying Divera login.")
     return divera_login(username, password, request)
 
 
@@ -238,7 +247,7 @@ def divera_login(username, password, request):
         return None
 
     if auth_response.status_code != 200:
-        print(f"Error logging in to Divera: {auth_response.status_code}")
+        logger.info('Divera-Login abgelehnt: HTTP %s', auth_response.status_code)
         request.session['login_error'] = 'Divera-Login fehlgeschlagen.'
         return None
 
@@ -249,7 +258,6 @@ def divera_login(username, password, request):
         return None
 
     if auth_data.get('success') is not True:
-        print("Divera login failed")
         request.session['login_error'] = 'Ungültige DIVERA Zugangsdaten.'
         return None
 
@@ -257,8 +265,6 @@ def divera_login(username, password, request):
     if not access_token:
         request.session['login_error'] = 'Kein Divera Access Token erhalten.'
         return None
-
-    print(f"Divera Access Token: {access_token}")
 
     expected_site_id = str(env.DIVERA_Site_ID)
 
@@ -308,8 +314,6 @@ def divera_login(username, password, request):
     consumer_info = cluster_consumers.get(str(matched_ucr_id), {})
     qualifications = consumer_info.get('qualifications', [])
     groups = consumer_info.get('groups', [])
-
-    print(f"UCR {matched_ucr_id}: quals={qualifications}, groups={groups}")
 
     user, _ = User.objects.get_or_create(username=username)
     user.email = username

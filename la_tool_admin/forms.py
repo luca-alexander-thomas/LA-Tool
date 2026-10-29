@@ -88,16 +88,11 @@ class TheoryQuestionForm(forms.Form):
     @staticmethod
     def parse_choices_from_post(post):
         """Returns (choices: list[str], correct_texts: list[str])."""
-        choices = [c.strip() for c in post.getlist('choice') if c.strip()]
-        correct_indices = post.getlist('correct')
-        correct_texts = []
-        for idx_str in correct_indices:
-            try:
-                idx = int(idx_str)
-                if 0 <= idx < len(choices):
-                    correct_texts.append(choices[idx])
-            except (ValueError, TypeError):
-                pass
+        # Die Indizes in 'correct' zählen alle Zeilen, auch leere – daher erst zuordnen, dann filtern
+        rows = [c.strip() for c in post.getlist('choice')]
+        correct_set = {int(i) for i in post.getlist('correct') if str(i).isdigit()}
+        choices = [text for text in rows if text]
+        correct_texts = [text for i, text in enumerate(rows) if text and i in correct_set]
         return choices, correct_texts
 
     def save_to_model(self, catalog, choices, correct_texts, instance=None):

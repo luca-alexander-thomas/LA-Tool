@@ -57,14 +57,16 @@
     </form>
 </div>
 
+{{ init_choices|json_script:"init-choices" }}
+{{ init_correct|json_script:"init-correct" }}
 <script>
 (function () {
     const container = document.getElementById('choices-container');
     const addBtn    = document.getElementById('add-choice-btn');
     const LETTERS   = 'ABCDEFGHIJ';
 
-    const initChoices = {{ init_choices|safe }};
-    const initCorrect = {{ init_correct|safe }};
+    const initChoices = JSON.parse(document.getElementById('init-choices').textContent);
+    const initCorrect = JSON.parse(document.getElementById('init-correct').textContent);
 
     function esc(str) {
         return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');

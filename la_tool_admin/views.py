@@ -17,6 +17,7 @@ from app.login_function import post_login_setup, safe_next_url
 from .forms import CatalogForm, TheoryQuestionForm, PracticalForm, GroupExerciseForm, ExamForm, WorkForm, WorkCreateForm, ImportQuestionForm, LevelForm, PushMessageForm
 from .models import Profile, PushSubscription
 from .push import push_configured, send_push
+import logging
 import msal
 import requests
 import uuid
@@ -27,6 +28,8 @@ import json
 import io
 import os
 from django.urls import reverse
+
+logger = logging.getLogger(__name__)
 
 # All custom permissions defined across app models (codename, label)
 APP_PERMISSIONS = [
@@ -87,18 +90,14 @@ def _report_push(request, sent):
 
 def send_divera_notification(user_profile, subject, message):
     """Send a Divera private message to a single user via their UCR ID. Returns True on success."""
-    import json as _json
     try:
         admin_key = getattr(__import__('la_tool.env', fromlist=['env']), 'DIVERA_ADMIN_USER_API_KEY', '')
-        print(f'[Divera] admin_key present: {bool(admin_key)} (len={len(admin_key) if admin_key else 0})')
         if not admin_key:
-            print('[Divera] ABORTED: no admin key configured')
+            logger.warning('Divera-Nachricht nicht gesendet: kein Admin-API-Key konfiguriert.')
             return False
 
         ucr_id = user_profile.divera_ucr
-        print(f'[Divera] ucr_id for user {user_profile.user_id}: {ucr_id!r}')
         if not ucr_id:
-            print('[Divera] ABORTED: user has no divera_ucr')
             return False
 
         payload = {
@@ -113,15 +112,14 @@ def send_divera_notification(user_profile, subject, message):
                 'user_cluster_relation': {'mapping': 'id'},
             },
         }
-        url = f'https://app.divera247.com/api/v2/news?accesskey={admin_key}'
-        print(f'[Divera] POST {url}')
-        print(f'[Divera] payload: {_json.dumps(payload, ensure_ascii=False)}')
-        resp = requests.post(url, json=payload, timeout=10)
-        print(f'[Divera] response status: {resp.status_code}')
-        print(f'[Divera] response body: {resp.text[:500]}')
+        # URL enthält den Admin-Key: nie loggen (auch nicht über Exception-Texte)
+        resp = requests.post('https://app.divera247.com/api/v2/news', params={'accesskey': admin_key},
+                             json=payload, timeout=10)
+        if resp.status_code != 200:
+            logger.warning('Divera-Nachricht an Nutzer %s fehlgeschlagen: HTTP %s', user_profile.user_id, resp.status_code)
         return resp.status_code == 200
     except Exception as e:
-        print(f'[Divera] EXCEPTION: {e}')
+        logger.warning('Divera-Nachricht an Nutzer %s fehlgeschlagen: %s', user_profile.user_id, type(e).__name__)
         return False
 
 
@@ -156,13 +154,10 @@ def sync_user_groups(user, access_token):
         # memberOf abrufen (nur Gruppen, keine rollen)
         graph_url = 'https://graph.microsoft.com/v1.0/me/memberOf'
 
-        graph_response = requests.get(graph_url, headers=headers)
+        graph_response = requests.get(graph_url, headers=headers, timeout=10)
 
         if graph_response.status_code != 200:
-            error_detail = graph_response.json() if graph_response.text else "Keine Details"
-            print(
-                f"Fehler beim Abrufen der Gruppen: {graph_response.status_code}")
-            print(f"Response: {error_detail}")
+            logger.warning('Entra-Gruppen konnten nicht abgerufen werden: HTTP %s', graph_response.status_code)
             return
 
         groups_data = graph_response.json()
@@ -199,17 +194,16 @@ def sync_user_groups(user, access_token):
             user.groups.add(group)
 
         user.save()
-        print(f"User {user.username} Gruppen synchronisiert: {[g.name for g in django_groups_to_assign]}")
 
         # DB-driven auto-group rules
         try:
             from .utils import sync_auto_groups
             sync_auto_groups(user, entra_group_ids=all_entra_group_ids)
-        except Exception as e:
-            print(f"Fehler beim Sync der Auto-Gruppen: {e}")
+        except Exception:
+            logger.exception('Fehler beim Sync der Auto-Gruppen für %s', user.username)
 
-    except Exception as e:
-        print(f"Fehler beim Synchronisieren der Gruppen: {str(e)}")
+    except Exception:
+        logger.exception('Fehler beim Synchronisieren der Entra-Gruppen für %s', user.username)
 
 # Microsoft OAuth Callbacks
 
@@ -289,7 +283,8 @@ def microsoft_callback(request):
         headers = {'Authorization': f'Bearer {access_token}'}
         graph_response = requests.get(
             'https://graph.microsoft.com/v1.0/me',
-            headers=headers
+            headers=headers,
+            timeout=10,
         )
 
         if graph_response.status_code != 200:
@@ -340,9 +335,10 @@ def microsoft_callback(request):
 
         return redirect(request.session.pop('login_next', None) or 'home')
 
-    except Exception as e:
+    except Exception:
+        logger.exception('Microsoft-Login fehlgeschlagen')
         return render(request, 'login.html', {
-            'error': f'Ein Fehler ist aufgetreten: {str(e)}'
+            'error': 'Die Anmeldung mit Microsoft ist fehlgeschlagen. Bitte erneut versuchen.'
         })
 
 # ── NUTZERVERWALTUNG ─────────────────────────────────────────────────────────
@@ -578,12 +574,13 @@ def admin_theory_create(request, catalog_id):
                 return redirect('admin_catalog_detail', catalog_id=catalog_id)
     else:
         form = TheoryQuestionForm()
+    is_post = request.method == 'POST'
     return render(request, 'admin-question-theory.html', {
         'user': request.user,
         'form': form,
         'catalog': catalog,
-        'init_choices': ['', '', '', ''],
-        'init_correct': [],
+        'init_choices': [c.strip() for c in request.POST.getlist('choice')] if is_post else ['', '', '', ''],
+        'init_correct': request.POST.getlist('correct') if is_post else [],
         'title': 'Neue Theoriefrage',
     })
 

@@ -48,7 +48,7 @@
                 </button>
             </form>
             <a href="{% url 'admin_catalog_detail' catalog.pk %}" class="btn btn-sm btn-soft">{% include "icons/pencil-square.html" with cls="size-4" %} Bearbeiten</a>
-            <form method="post" action="{% url 'admin_catalog_delete' catalog.pk %}" onsubmit="return confirm('Katalog {{ catalog.title }} wirklich löschen?');">
+            <form method="post" action="{% url 'admin_catalog_delete' catalog.pk %}" onsubmit="return confirm('Katalog {{ catalog.title|escapejs }} wirklich löschen?');">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-sm btn-danger-soft">{% include "icons/trash.html" with cls="size-4" %} Löschen</button>
             </form>
