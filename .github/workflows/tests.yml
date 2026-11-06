@@ -1,0 +1,142 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Ältere Läufe für denselben Branch/PR abbrechen, wenn neue Commits kommen
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.13"
+  SECRET_KEY: ci-only-not-secret
+  DEBUG: "False"
+  # Divera-/Entra-Zugangsdaten bleiben leer: Tests dürfen keine echten Dienste aufrufen
+
+jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: ruff installieren
+        run: pip install "$(grep '^ruff==' requirements-dev.txt)"
+
+      - name: ruff check
+        run: ruff check --output-format=github .
+
+  test:
+    name: Tests (${{ matrix.database }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        database: [sqlite3, mysql]
+
+    services:
+      mysql:
+        # Wird nur im MySQL-Lauf genutzt; im SQLite-Lauf startet der Container trotzdem, stört aber nicht
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: la_tool
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      DATABASE_TYPE: ${{ matrix.database }}
+      DB_MYSQL_HOST: 127.0.0.1
+      DB_MYSQL_PORT: "3306"
+      DB_MYSQL_USER: root
+      DB_MYSQL_PASSWORD: root
+      DB_MYSQL_NAME: la_tool
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Abhängigkeiten installieren
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: MySQL-Treiber installieren
+        if: matrix.database == 'mysql'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libmysqlclient-dev pkg-config
+          pip install "mysqlclient>=2.2.0"
+
+      # Migrationsdateien sind (noch) nicht im Repository, siehe Readme
+      - name: Migrationen erzeugen
+        run: python manage.py makemigrations app la_tool_admin
+
+      - name: Django-Systemcheck
+        run: python manage.py check
+
+      - name: Migrationen anwenden
+        run: python manage.py migrate --noinput
+
+      - name: Tests ausführen
+        run: coverage run --source=app,la_tool_admin,la_tool --omit='*/migrations/*,*/tests.py' manage.py test --verbosity 2
+
+      - name: Testabdeckung
+        if: always()
+        run: |
+          coverage report --skip-empty
+          {
+            echo "### Testabdeckung (${{ matrix.database }})"
+            echo
+            coverage report --skip-empty --format=markdown
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    name: Stylesheet & statische Dateien
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Abhängigkeiten installieren
+        run: pip install -r requirements.txt
+
+      - name: Tailwind-CLI cachen
+        uses: actions/cache@v4
+        with:
+          path: .django_tailwind_cli
+          key: tailwind-cli-${{ hashFiles('la_tool/settings.py') }}
+
+      - name: Tailwind-Stylesheet bauen
+        run: python manage.py tailwind build
+
+      - name: collectstatic
+        run: python manage.py collectstatic --noinput

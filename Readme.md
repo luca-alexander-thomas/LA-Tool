@@ -35,6 +35,25 @@ python manage.py tailwind runserver
 `tailwind runserver` startet Django und baut das Stylesheet bei Template-Änderungen automatisch neu.
 Beim ersten Aufruf wird die Tailwind-Binary nach `.django_tailwind_cli/` geladen.
 
+# Tests
+
+```bash
+pip install -r requirements-dev.txt
+python manage.py test                 # alle Tests (app/tests.py, la_tool_admin/tests.py)
+ruff check .                          # Code-Prüfung (Konfiguration in pyproject.toml)
+coverage run manage.py test && coverage report   # optional: Testabdeckung
+```
+
+Die Tests rufen keine echten Dienste (DIVERA, Microsoft) auf; Netzwerkzugriffe werden gemockt.
+
+Der GitHub-Workflow [`.github/workflows/tests.yml`](.github/workflows/tests.yml) läuft bei jedem Pull Request und Push auf `main`:
+
+| Job | Prüft |
+|---|---|
+| Lint (ruff) | Syntaxfehler, undefinierte Namen, ungenutzte Importe |
+| Tests (sqlite3 / mysql) | Systemcheck, Migrationen und alle Tests – gegen SQLite und MySQL 8.4 (wie in Produktion), inkl. Testabdeckung in der Job-Zusammenfassung |
+| Stylesheet & statische Dateien | `tailwind build` und `collectstatic` laufen fehlerfrei durch |
+
 # Deployment
 
 Nach jedem Update auf dem Server:

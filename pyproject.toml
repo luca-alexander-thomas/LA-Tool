@@ -1,0 +1,14 @@
+# Konfiguration für Entwicklungswerkzeuge (wird von der CI genutzt)
+
+[tool.ruff]
+target-version = "py313"
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+# Nur echte Fehler prüfen: Syntaxfehler (E9) und Pyflakes (F: undefinierte Namen,
+# ungenutzte Importe/Variablen, ...). Stilregeln bewusst (noch) nicht aktiv.
+select = ["E9", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+# admin.py registriert alle Modelle per Stern-Import
+"*/admin.py" = ["F403", "F405"]
