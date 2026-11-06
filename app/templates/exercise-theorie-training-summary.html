@@ -52,6 +52,23 @@
                 </div>
             </section>
 
+            {% if push_public_key %}
+            <section class="card card-body" x-data="pushPrompt({ publicKey: '{{ push_public_key|escapejs }}', subscribeUrl: '{% url 'push_subscribe' %}' })"
+                     x-show="show" x-cloak>
+                <div class="flex items-start gap-3">
+                    <span class="icon-tile">{% include "icons/bell.html" with cls="size-6" %}</span>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm font-semibold text-ink">Sollen wir dich erinnern?</p>
+                        <p class="mt-0.5 text-xs text-ink-2">Einmal pro Woche eine Nachricht, wenn Fragen zur Wiederholung fällig sind. Im Profil jederzeit abschaltbar.</p>
+                    </div>
+                </div>
+                <div class="mt-3 flex gap-2">
+                    <button type="button" class="btn btn-primary btn-sm flex-1" :disabled="busy" @click="accept()"><span class="spinner" x-show="busy" x-cloak></span> Ja, erinnern</button>
+                    <button type="button" class="btn btn-secondary btn-sm" :disabled="busy" @click="decline()">Nein danke</button>
+                </div>
+            </section>
+            {% endif %}
+
             {% if score_after is not None %}
             <section class="card card-body">
                 <p class="text-sm font-semibold text-ink-2">Dein Lernerfolg{% if current_level %} · {{ current_level.name }}{% endif %}</p>

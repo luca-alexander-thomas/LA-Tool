@@ -55,6 +55,7 @@ class Command(BaseCommand):
                 title='Zeit für eine Wiederholung',
                 body=f'{due} Frage{"n" if due != 1 else ""} zur Wiederholung fällig – ein paar Minuten üben?',
                 url=reverse('excercise'),
+                actions=[{'action': 'practice', 'title': 'Jetzt üben', 'url': reverse('training_today')}],
             )
             if sent:
                 Profile.objects.update_or_create(user=user, defaults={'last_learning_reminder_at': now})

@@ -10,7 +10,7 @@ from django.utils import timezone
 from pywebpush import WebPushException
 
 from app.models import Levels, Questions_Catalogs, Questions_Practical, Work
-from la_tool_admin.models import PushSubscription
+from la_tool_admin.models import PushSubscription, UserNotification
 from la_tool_admin.push import send_push
 
 
@@ -204,7 +204,10 @@ class PushTests(TestCase):
         self.assertEqual(send_push([self.user], 'Titel', 'Text', '/'), 1)
         self.assertFalse(PushSubscription.objects.filter(pk=gone.pk).exists())
         payload = json.loads(webpush.call_args_list[0].kwargs['data'])
-        self.assertEqual(payload, {'title': 'Titel', 'body': 'Text', 'url': '/'})
+        # Antippen führt über die gespeicherte Benachrichtigung (markiert sie als gelesen)
+        notification = UserNotification.objects.get(user=self.user)
+        self.assertEqual(payload, {'title': 'Titel', 'body': 'Text', 'url': f'/benachrichtigungen/{notification.pk}/',
+                                   'unread': 1, 'actions': []})
 
     @override_settings(VAPID_PRIVATE_KEY='')
     @patch('la_tool_admin.push.webpush')

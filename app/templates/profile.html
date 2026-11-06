@@ -62,6 +62,7 @@
                 </div>
             </div>
         </section>
+        {% include "_install_card.html" %}
         <!-- Benachrichtigungen (Web Push) -->
         <section class="card" x-data="pushToggle({
                 publicKey: '{{ push_public_key|escapejs }}',

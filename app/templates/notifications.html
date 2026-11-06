@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block page_title %}Benachrichtigungen{% endblock %}
+
+{% block site_content %}
+<div class="page-narrow">
+    <div class="page-header">
+        <div>
+            <p class="eyebrow">Konto</p>
+            <h1 class="page-title mt-1">Benachrichtigungen</h1>
+            <p class="page-subtitle">Nachrichten der letzten 90 Tage. Neue sind markiert.</p>
+        </div>
+    </div>
+
+    <ul class="space-y-2">
+        {% for n in notifications %}
+        <li>
+            <a href="{% url 'notification_open' n.pk %}" class="list-row items-start {% if not n.read_at %}border-accent/40 bg-accent-soft/40{% endif %}">
+                <span class="mt-1.5 size-2.5 shrink-0 rounded-full {% if not n.read_at %}bg-red-600{% else %}bg-transparent{% endif %}" aria-hidden="true"></span>
+                <span class="min-w-0 flex-1">
+                    <span class="block text-sm font-semibold text-ink">{% if not n.read_at %}<span class="sr-only">Neu: </span>{% endif %}{{ n.title }}</span>
+                    {% if n.body %}<span class="mt-0.5 block text-sm text-ink-2">{{ n.body }}</span>{% endif %}
+                    <span class="mt-1 block text-xs text-ink-3">{{ n.created_at|date:"d.m.Y H:i" }}</span>
+                </span>
+                {% include "icons/chevron-right.html" with cls="mt-1 size-4 shrink-0 text-ink-3" %}
+            </a>
+        </li>
+        {% empty %}
+        <li class="empty-state">Noch keine Benachrichtigungen.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

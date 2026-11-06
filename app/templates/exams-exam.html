@@ -2,6 +2,9 @@
 
 {% block page_title %}{{ exam.name }}{% endblock %}
 
+{# Herunterziehen soll die Prüfung nicht neu laden #}
+{% block extra_head %}<style>html, body { overscroll-behavior-y: none; }</style>{% endblock %}
+
 {% block site_content %}
 {# Fragen (ohne Lösungen) liegen im Browser; Zwischenstand geht beim Blättern an den Server, „Abgeben“ schickt alles. #}
 <div class="page-narrow"

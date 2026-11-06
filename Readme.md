@@ -143,6 +143,12 @@ python manage.py send_learning_reminders
 
 Als Timer analog zu oben, z.B. `OnCalendar=Sun *-*-* 17:53:00` mit `ExecStart=… manage.py send_learning_reminders`.
 
+## App (PWA)
+
+- **Benachrichtigungen** werden bei jedem Push auch gespeichert (Glocke in der Kopfzeile, Seite `/benachrichtigungen/`, 90 Tage). Die Zahl am App-Symbol zeigt die ungelesenen.
+- **Ohne Netz:** Trainings werden auf dem Gerät gespeichert und automatisch gesendet, sobald wieder Verbindung besteht. „Fragen nachschlagen“ funktioniert mit dem zuletzt geladenen Stand (ohne persönliche Daten); beim Abmelden wird er vom Gerät gelöscht.
+- **Startbilder (iOS)** liegen unter `app/static/pwa/startup/`, **Screenshots** für den Installationsdialog unter `app/static/pwa/screenshots/` (aus einem Demo-Konto erzeugt). Bei größeren Design-Änderungen neu erzeugen.
+
 # Mitwirken
 
 Im aktuellen Entwicklungsstadium können über GitHub Issues Feature Requests eingereicht werden.

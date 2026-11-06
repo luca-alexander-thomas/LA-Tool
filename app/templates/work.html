@@ -154,7 +154,9 @@
                 cell.appendChild(el('span', 'absolute bottom-0.5 left-1/2 size-1 -translate-x-1/2 rounded-full bg-jugend-orange'));
             }
             if (key === todayKey) cell.setAttribute('aria-current', 'date');
-            cell.addEventListener('click', () => { selected = selected === key ? null : key; render(); });
+            cell.dataset.key = key;
+            cell.setAttribute('aria-pressed', String(key === selected));
+            cell.addEventListener('click', () => { selected = selected === key ? null : key; render(key); });
             grid.appendChild(cell);
         }
     }
@@ -186,7 +188,13 @@
         });
     }
 
-    function render() { renderGrid(); renderList(); }
+    // Nach dem Neuzeichnen den Fokus auf den Tag legen (die alten Knöpfe gibt es dann nicht mehr)
+    function render(focusKey) {
+        renderGrid();
+        renderList();
+        const cell = focusKey && grid.querySelector(`[data-key="${focusKey}"]`);
+        if (cell) cell.focus();
+    }
 
     function goMonth(delta) {
         current.setMonth(current.getMonth() + delta);
@@ -196,7 +204,7 @@
 
     document.getElementById('prevMonth').addEventListener('click', () => goMonth(-1));
     document.getElementById('nextMonth').addEventListener('click', () => goMonth(1));
-    showMonth.addEventListener('click', () => { selected = null; render(); });
+    showMonth.addEventListener('click', () => { const day = selected; selected = null; render(day); });
     render();
 })();
 </script>

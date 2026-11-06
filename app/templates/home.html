@@ -15,6 +15,8 @@
         <a href="{% url 'training_config' %}" class="btn btn-primary">{% include "icons/play.html" %} Training starten</a>
     </div>
 
+    <div class="mb-4">{% include "_install_card.html" with dismiss_key="install-card-dismissed" %}</div>
+
     {# Schnellzugriff #}
     <div class="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <a href="{% url 'training_config' %}" class="card-link card-body flex flex-col gap-3">

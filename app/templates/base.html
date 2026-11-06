@@ -29,6 +29,7 @@
     <meta name="apple-mobile-web-app-title" content="LA-Tool">
     <link rel="icon" type="image/png" href="{% static 'pwa/favicon.png' %}">
     <link rel="apple-touch-icon" href="{% static 'pwa/apple-touch-icon.png' %}">
+    {% include "pwa/_startup_images.html" %}
 
     {% tailwind_css %}
     <script defer src="{% static 'js/app.js' %}"></script>
@@ -36,12 +37,14 @@
     {% block extra_head %}{% endblock %}
 </head>
 
-<body class="flex min-h-dvh flex-col pb-[calc(4.25rem+env(safe-area-inset-bottom))] md:pb-0">
+<body class="flex min-h-dvh flex-col pb-[calc(4.25rem+env(safe-area-inset-bottom))] md:pb-0"
+      data-service-worker="{% url 'service_worker' %}"
+      {% if user.is_authenticated %}data-unread="{{ unread_notifications }}" data-offline-data="{% url 'theory_offline_data' %}"{% endif %}>
     <div id="page-progress" class="page-progress" aria-hidden="true"></div>
     <a href="#inhalt" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2 focus:shadow-lg">Zum Inhalt springen</a>
 
     {# ------------------------------------------------------------ Kopfzeile #}
-    <header class="sticky top-0 z-40 border-b border-line/70 bg-surface/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+    <header style="view-transition-name: site-header" class="sticky top-0 z-40 border-b border-line/70 bg-surface/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
         <div class="container-app flex h-16 items-center gap-2 sm:gap-3">
             <a href="{% url 'home' %}" class="mr-2 flex shrink-0 items-center gap-2.5">
                 <img src="{% static 'img/thw-jugend-ge-logo.webp' %}" alt="THW-Jugend Gelsenkirchen" class="h-9 w-auto" width="64" height="36">
@@ -117,6 +120,15 @@
                     </div>
                 </div>
 
+                {# Benachrichtigungen #}
+                {% if user.is_authenticated %}
+                <a href="{% url 'notification_list' %}" class="btn btn-ghost btn-icon relative {% if nav_section == 'notifications' %}text-accent-ink{% endif %}"
+                   aria-label="Benachrichtigungen{% if unread_notifications %}, {{ unread_notifications }} ungelesen{% endif %}">
+                    {% include "icons/bell.html" %}
+                    {% if unread_notifications %}<span class="count-badge absolute top-1 right-1" aria-hidden="true">{% if unread_notifications > 99 %}99+{% else %}{{ unread_notifications }}{% endif %}</span>{% endif %}
+                </a>
+                {% endif %}
+
                 {# Konto #}
                 {% if user.is_authenticated %}
                 <div class="relative" x-data="{ open: false }" @keydown.escape="open = false">
@@ -135,7 +147,7 @@
                         <a href="{% url 'admin_index' %}" class="dropdown-item">{% include "icons/cog-6-tooth.html" with cls="size-4" %} Admin-Bereich</a>
                         {% endif %}
                         <div class="dropdown-divider"></div>
-                        <form method="post" action="{% url 'logout' %}">
+                        <form method="post" action="{% url 'logout' %}" data-logout>
                             {% csrf_token %}
                             <button type="submit" class="dropdown-item w-full text-red-600 dark:text-red-400">{% include "icons/arrow-right-start-on-rectangle.html" with cls="size-4" %} Abmelden</button>
                         </form>
@@ -148,6 +160,15 @@
         </div>
     </header>
 
+    {# Keine Verbindung (unter der Kopfzeile, bleibt sichtbar) #}
+    <div x-data="connection" x-show="!online" x-cloak role="status"
+         class="sticky top-[calc(4rem+env(safe-area-inset-top,0px))] z-30 border-b border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/40 dark:bg-amber-950 dark:text-amber-200">
+        <p class="container-app flex items-center gap-2 py-2 text-sm">
+            {% include "icons/wifi.html" with cls="size-4 shrink-0" %}
+            <span>Keine Verbindung. Gespeicherte Inhalte bleiben sichtbar, Speichern und Absenden ist erst wieder online möglich.</span>
+        </p>
+    </div>
+
     {# ---------------------------------------------------------------- Inhalt #}
     <main id="inhalt" class="flex-1">
         {% if practice_subnav %}
@@ -158,17 +179,6 @@
                 {% include "_practice_menu.html" with item_class="nav-link shrink-0 inline-flex items-center gap-1.5" active_class="nav-link-active" compact=True %}
             </div>
         </nav>
-        {% endif %}
-        {% if messages %}
-        <div class="container-app space-y-2 pt-4" role="status">
-            {% for message in messages %}
-            <div x-data="{ show: true }" x-show="show" x-transition.opacity
-                 class="alert {% if message.level_tag == 'success' %}alert-success{% elif message.level_tag == 'error' %}alert-danger{% elif message.level_tag == 'warning' %}alert-warning{% else %}alert-info{% endif %} items-center">
-                <span class="flex-1">{{ message }}</span>
-                <button type="button" class="btn btn-ghost btn-icon size-8 shrink-0" aria-label="Hinweis schließen" @click="show = false">{% include "icons/x-mark.html" with cls="size-4" %}</button>
-            </div>
-            {% endfor %}
-        </div>
         {% endif %}
         {% block site_content %}
         {% endblock %}
@@ -184,11 +194,29 @@
         </div>
     </footer>
 
+    {# Hinweise unten (Django-Meldungen und toast() aus app.js) #}
+    {% if messages %}
+    <ul id="flash-messages" hidden>
+        {% for message in messages %}<li data-level="{% if message.level_tag == 'error' %}error{% elif message.level_tag %}{{ message.level_tag }}{% else %}info{% endif %}">{{ message }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    <div x-data="toastStack" class="toast-stack" aria-live="polite">
+        <template x-for="item in items" :key="item.id">
+            <div class="toast" :class="`toast-${item.level}`" :role="item.level === 'error' ? 'alert' : 'status'"
+                 x-transition:enter="transition duration-200" x-transition:enter-start="translate-y-2 opacity-0"
+                 x-transition:leave="transition duration-150" x-transition:leave-end="opacity-0">
+                <span class="min-w-0 flex-1" x-text="item.text"></span>
+                <button type="button" class="btn btn-sm btn-secondary shrink-0" x-show="item.action" x-text="item.action && item.action.label" @click="run(item)"></button>
+                <button type="button" class="btn btn-ghost btn-icon size-8 shrink-0" aria-label="Hinweis schließen" @click="remove(item.id)">{% include "icons/x-mark.html" with cls="size-4" %}</button>
+            </div>
+        </template>
+    </div>
+
     {# ------------------------------------------------- Tab-Leiste (Mobil) #}
-    <nav class="fixed inset-x-0 bottom-0 z-40 border-t border-line/70 bg-surface/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden" aria-label="Hauptnavigation mobil">
+    <nav style="view-transition-name: tabbar" class="fixed inset-x-0 bottom-0 z-40 border-t border-line/70 bg-surface/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden" aria-label="Hauptnavigation mobil">
         <div class="mx-auto flex max-w-lg">
             <a href="{% url 'home' %}" class="tabbar-item {% if nav_section == 'home' %}tabbar-item-active{% endif %}">{% include "icons/home.html" %}Start</a>
-            <a href="{% if user.is_authenticated %}{% url 'excercise' %}{% else %}{% url 'training_config' %}{% endif %}" class="tabbar-item {% if nav_practice %}tabbar-item-active{% endif %}">{% include "icons/academic-cap.html" %}Üben</a>
+            <a href="{% if user.is_authenticated %}{% url 'excercise' %}{% else %}{% url 'training_config' %}{% endif %}" class="tabbar-item {% if nav_practice %}tabbar-item-active{% endif %}" {% if due_count %}aria-label="Üben, {{ due_count }} Fragen fällig"{% endif %}><span class="relative">{% include "icons/academic-cap.html" %}{% if due_count %}<span class="count-badge absolute -top-1.5 -right-2.5" aria-hidden="true">{% if due_count > 99 %}99+{% else %}{{ due_count }}{% endif %}</span>{% endif %}</span>Üben</a>
             <a href="{% url 'work' %}" class="tabbar-item {% if nav_section == 'work' %}tabbar-item-active{% endif %}">{% include "icons/calendar-days.html" %}Dienste</a>
             <a href="{% url 'exam_list' %}" class="tabbar-item {% if nav_section == 'exam' %}tabbar-item-active{% endif %}">{% include "icons/clipboard-document-check.html" %}Prüfungen</a>
             {% if user.is_authenticated %}
@@ -199,13 +227,6 @@
         </div>
     </nav>
 
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function () {
-                navigator.serviceWorker.register('{% url "service_worker" %}').catch(function () {});
-            });
-        }
-    </script>
     {# Links beim Überfahren/Antippen vorladen (Chromium). Nur Seiten ohne Nebenwirkungen beim Aufruf. #}
     <script type="speculationrules">
     {
@@ -216,6 +237,8 @@
                 {"not": {"href_matches": "/logout/"}},
                 {"not": {"href_matches": "/la-filter/*"}},
                 {"not": {"href_matches": "/dienste/*/ueben/"}},
+                {"not": {"href_matches": "/uebungen/theorie/heute/*"}},
+                {"not": {"href_matches": "/benachrichtigungen/*"}},
                 {"not": {"href_matches": "/microsoft-login/*"}},
                 {"not": {"href_matches": "/media/*"}},
                 {"not": {"selector_matches": "[data-no-prefetch], [download], [target=_blank]"}}

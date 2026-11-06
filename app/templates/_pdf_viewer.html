@@ -132,6 +132,7 @@
         document.body.style.overflow = 'hidden';
         scaleFs = null;
         renderFs(page);
+        btnFsClose.focus();
     }
 
     function closeFs() {
@@ -139,7 +140,18 @@
         overlay.classList.remove('flex');
         document.body.style.overflow = '';
         if (taskFs) { taskFs.cancel(); taskFs = null; }
+        renderSmall(page);  // im Vollbild geblättert: kleine Ansicht nachziehen
+        btnFsOpen.focus();
     }
+
+    // Tab bleibt im Vollbild (Dialog)
+    overlay.addEventListener('keydown', e => {
+        if (e.key !== 'Tab') return;
+        const items = [...overlay.querySelectorAll('button:not([disabled]), a[href]')];
+        const first = items[0], last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
 
     pdfjsLib.getDocument({ url: FILE_URL, isEvalSupported: false }).promise.then(doc => {
         pdf = doc;

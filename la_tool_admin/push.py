@@ -6,7 +6,12 @@ from urllib.parse import urlsplit
 from django.conf import settings
 from pywebpush import WebPushException, webpush
 
-from .models import PushSubscription
+from django.contrib.auth.models import User
+from django.urls import reverse
+from django.utils import timezone
+from datetime import timedelta
+
+from .models import PushSubscription, UserNotification
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +24,8 @@ PUSH_SERVICE_HOSTS = (
     'push.apple.com',                # Safari / iOS
 )
 MAX_PUSH_DEVICES_PER_USER = 10
+# Gelesene und ungelesene Benachrichtigungen werden nach dieser Zeit gelöscht
+NOTIFICATION_RETENTION = timedelta(days=90)
 
 
 def is_push_service(endpoint):
@@ -36,21 +43,52 @@ def push_configured():
     return bool(settings.VAPID_PUBLIC_KEY and settings.VAPID_PRIVATE_KEY and settings.VAPID_SUBJECT)
 
 
-def send_push(users, title, body, url='/'):
-    """Schickt eine Benachrichtigung an alle Geräte der Nutzer.
+def unread_count(user):
+    return UserNotification.objects.filter(user=user, read_at__isnull=True).count()
 
+
+def safe_internal_url(url):
+    """Nur Pfade dieser Seite (kein //host, kein Schema)."""
+    return url if isinstance(url, str) and url.startswith('/') and not url.startswith('//') else '/'
+
+
+def send_push(users, title, body, url='/', actions=None):
+    """Speichert eine Benachrichtigung je Nutzer und schickt sie an alle Push-Geräte der Nutzer.
+
+    actions: optional [{'action': id, 'title': Text, 'url': Pfad}] – Knöpfe in der Benachrichtigung.
     Gibt die Anzahl erfolgreich zugestellter Geräte zurück. Abgelaufene Abos werden gelöscht,
     andere Fehler nur protokolliert – ein fehlgeschlagener Push darf keine Admin-Aktion abbrechen.
     """
+    url = safe_internal_url(url)
+    recipients = list(User.objects.filter(pk__in=[u.pk for u in users], is_active=True))
+    UserNotification.objects.filter(user__in=recipients,
+                                    created_at__lt=timezone.now() - NOTIFICATION_RETENTION).delete()
+    notifications = {n.user_id: n for n in UserNotification.objects.bulk_create([
+        UserNotification(user=u, title=title[:120], body=body[:500], url=url) for u in recipients
+    ])}
+
     if not push_configured():
-        logger.warning('Web Push nicht konfiguriert (VAPID_* fehlt) – nichts gesendet.')
+        logger.warning('Web Push nicht konfiguriert (VAPID_* fehlt) – nur in der App gespeichert.')
         return 0
 
-    payload = json.dumps({'title': title, 'body': body, 'url': url})
+    actions = [{'action': a['action'], 'title': a['title'], 'url': safe_internal_url(a.get('url'))}
+               for a in (actions or [])]
     sent = 0
-    for sub in PushSubscription.objects.filter(user__in=users, user__is_active=True):
+    unread = {}
+    for sub in PushSubscription.objects.filter(user__in=recipients).select_related('user'):
         if not is_push_service(sub.endpoint):
             continue  # Altbestand vor der Host-Prüfung: nicht anfragen
+        if sub.user_id not in unread:
+            unread[sub.user_id] = unread_count(sub.user)
+        notification = notifications.get(sub.user_id)
+        payload = json.dumps({
+            'title': title,
+            'body': body,
+            # Antippen markiert die Nachricht als gelesen und öffnet dann das Ziel
+            'url': reverse('notification_open', args=[notification.pk]) if notification and notification.pk else url,
+            'unread': unread[sub.user_id],
+            'actions': actions,
+        })
         try:
             webpush(
                 subscription_info={'endpoint': sub.endpoint, 'keys': {'p256dh': sub.p256dh, 'auth': sub.auth}},

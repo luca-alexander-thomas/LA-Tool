@@ -135,3 +135,23 @@ class PushSubscription(models.Model):
 
     def __str__(self):
         return f'{self.user} – {self.user_agent[:40]}'
+
+
+class UserNotification(models.Model):
+    """Gespeicherte Benachrichtigung (Posteingang, Zähler an Glocke und App-Symbol).
+
+    Wird bei jedem Push angelegt – auch für Nutzer ohne Push-Gerät, damit sie die Nachricht in der App sehen.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    title = models.CharField(max_length=120)
+    body = models.CharField(max_length=500, blank=True, default='')
+    url = models.CharField(max_length=300, default='/')
+    created_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
+        indexes = [models.Index(fields=['user', 'read_at'])]
+
+    def __str__(self):
+        return f'{self.user} – {self.title}'

@@ -2,12 +2,16 @@
 
 {% block page_title %}Theorie-Training{% endblock %}
 
+{# Herunterziehen soll die Runde nicht neu laden #}
+{% block extra_head %}<style>html, body { overscroll-behavior-y: none; }</style>{% endblock %}
+
 {% block site_content %}
 {# Alle Fragen des Durchgangs liegen im Browser; erst „Abschließen“ schickt die Antworten an den Server. #}
-<div class="page-narrow"
+<div class="page-narrow" data-training-run="{{ run_id }}"
      x-data="questionRun({
          questions: JSON.parse(document.getElementById('training-data').textContent),
          storageKey: 'training:{{ run_id }}', storagePrefix: 'training:',
+         offlineQueue: { runId: '{{ run_id }}' },
          {% if user.is_authenticated %}urls: { bookmark: '{% url 'question_bookmark' 0 %}', report: '{% url 'question_report' 0 %}' },{% endif %}
      })">
     <form method="post" action="{% url 'training_run' %}" x-ref="form" @submit.prevent="next()">
@@ -61,9 +65,14 @@
             </button>
             <button type="submit" class="btn btn-primary btn-lg flex-1" :disabled="submitting">
                 <span x-show="!isLast" class="inline-flex items-center gap-2">Weiter {% include "icons/arrow-right.html" with cls="size-5" %}</span>
-                <span x-show="isLast" x-cloak class="inline-flex items-center gap-2">Abschließen <span x-show="!submitting">{% include "icons/check.html" with cls="size-5" %}</span><span class="spinner size-5" x-show="submitting" x-cloak></span></span>
+                <span x-show="isLast && waitingForNetwork" x-cloak class="inline-flex items-center gap-2"><span class="spinner"></span> Wartet auf Verbindung</span>
+                <span x-show="isLast && !waitingForNetwork" x-cloak class="inline-flex items-center gap-2">Abschließen <span x-show="!submitting">{% include "icons/check.html" with cls="size-5" %}</span><span class="spinner size-5" x-show="submitting" x-cloak></span></span>
             </button>
         </div>
+        <p x-show="waitingForNetwork" x-cloak class="alert alert-warning mt-4" role="status">
+            {% include "icons/wifi.html" with cls="size-5 shrink-0" %}
+            <span>Keine Verbindung. Deine Antworten sind auf diesem Gerät gespeichert und werden automatisch gesendet, sobald du wieder online bist.</span>
+        </p>
     </form>
     {% if user.is_authenticated %}
     <div class="mt-6 border-t border-line pt-3">

@@ -1,0 +1,111 @@
+{% load static tailwind_cli %}<!DOCTYPE html>
+<html lang="de" data-theme="light">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Fragen offline · LA-Tool</title>
+    <script>
+        (function () {
+            var t = null;
+            try { t = localStorage.getItem('theme'); } catch (e) {}
+            if (t !== 'light' && t !== 'dark') {
+                t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.dataset.theme = t;
+        })();
+    </script>
+    {% tailwind_css %}
+    <script defer src="{% static 'vendor/alpine.min.js' %}"></script>
+</head>
+
+{% comment %}
+Nachschlagen ohne Netz. Eigenständige Seite ohne Navigation und ohne Nutzerdaten: der Service Worker cacht sie
+und zeigt sie ohne Verbindung statt „Fragen nachschlagen“. Die Fragen kommen aus dem gecachten JSON
+(views.theory_offline_data), die zuletzt gewählte Stufe aus localStorage.
+{% endcomment %}
+<body class="min-h-dvh">
+    <div class="container-app py-6" x-data="{
+            data: null, error: false, level: '', q: '', catalog: 'all',
+            async init() {
+                try {
+                    const res = await fetch('{% url 'theory_offline_data' %}', { credentials: 'same-origin' });
+                    if (!res.ok) throw new Error();
+                    this.data = await res.json();
+                    let saved = null;
+                    try { saved = localStorage.getItem('offline-level'); } catch (e) {}
+                    this.level = this.data.levels.some((l) => l.slug === saved) ? saved : (this.data.levels[0] || {}).slug;
+                } catch (e) { this.error = true; }
+                this.$watch('level', (value) => { this.catalog = 'all'; try { localStorage.setItem('offline-level', value); } catch (e) {} });
+            },
+            get current() { return this.data ? this.data.levels.find((l) => l.slug === this.level) : null; },
+            get term() { return this.q.trim().toLowerCase(); },
+            matches(c, item) {
+                if (this.catalog !== 'all' && String(c.id) !== this.catalog) return false;
+                if (!this.term) return true;
+                return [item.number, item.question, ...item.choices.map((x) => x[1])].join(' ').toLowerCase().includes(this.term);
+            },
+            visible(c) { return c.questions.some((item) => this.matches(c, item)); },
+        }">
+        <div class="mb-4 flex items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-950 dark:text-amber-200" role="status">
+            <span class="flex-1">Keine Verbindung: gespeicherte Fragen<template x-if="data"><span> vom <span x-text="new Date(data.generated).toLocaleDateString('de-DE')"></span></span></template>.</span>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="location.reload()">Erneut verbinden</button>
+        </div>
+
+        <h1 class="page-title">Fragen nachschlagen</h1>
+
+        <p x-show="error" x-cloak class="empty-state mt-4">Auf diesem Gerät sind noch keine Fragen gespeichert. Öffne das LA-Tool einmal mit Verbindung.</p>
+
+        <template x-if="data">
+            <div>
+                <div class="sticky top-0 z-10 -mx-4 my-4 space-y-2 border-b border-line/70 bg-bg/90 px-4 py-3 backdrop-blur">
+                    <div class="flex gap-2">
+                        <label class="sr-only" for="offline-level">LA-Stufe</label>
+                        <select id="offline-level" class="form-select w-auto" x-model="level">
+                            <template x-for="l in data.levels" :key="l.slug"><option :value="l.slug" x-text="l.name"></option></template>
+                        </select>
+                        <label class="sr-only" for="offline-search">Fragen durchsuchen</label>
+                        <input id="offline-search" type="search" class="form-control flex-1" placeholder="Suchen …" x-model.debounce.150ms="q">
+                    </div>
+                    <div class="-mx-4 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none]" role="group" aria-label="Katalog wählen">
+                        <button type="button" class="btn btn-sm shrink-0" :class="catalog === 'all' ? 'btn-primary' : 'btn-secondary'" @click="catalog = 'all'">Alle</button>
+                        <template x-for="c in current ? current.catalogs : []" :key="c.id">
+                            <button type="button" class="btn btn-sm shrink-0" :class="catalog === String(c.id) ? 'btn-primary' : 'btn-secondary'"
+                                    @click="catalog = String(c.id)" x-text="c.short_title || c.title"></button>
+                        </template>
+                    </div>
+                </div>
+
+                <template x-for="c in current ? current.catalogs : []" :key="c.id">
+                    <section class="mb-8" x-show="visible(c)">
+                        <h2 class="mb-3 text-base font-semibold text-ink">
+                            <span class="badge badge-neutral mr-1.5" x-show="c.short_title" x-text="c.short_title"></span><span x-text="c.title"></span>
+                        </h2>
+                        <div class="space-y-2">
+                            <template x-for="(item, i) in c.questions" :key="i">
+                                <details class="group rounded-xl border border-line bg-surface" x-show="matches(c, item)">
+                                    <summary class="flex min-h-12 cursor-pointer list-none items-start gap-3 rounded-xl px-3 py-2.5 [&::-webkit-details-marker]:hidden">
+                                        <span class="w-12 shrink-0 pt-0.5 text-xs font-medium text-ink-3 tabular-nums" x-text="item.number"></span>
+                                        <span class="min-w-0 flex-1 text-sm font-semibold text-ink" x-text="item.question"></span>
+                                    </summary>
+                                    <div class="space-y-1.5 border-t border-line px-3 py-3 text-sm sm:pl-[4.5rem]">
+                                        <template x-for="ch in item.choices" :key="ch[0]">
+                                            <p class="flex gap-2" :class="ch[2] ? 'font-semibold text-green-700 dark:text-green-400' : 'text-ink-2'">
+                                                <span class="inline-flex size-5 shrink-0 items-center justify-center text-xs font-semibold uppercase" x-text="ch[2] ? '✓' : ch[0]"></span>
+                                                <span x-text="ch[1]"></span>
+                                                <span class="sr-only" x-show="ch[2]">(richtig)</span>
+                                            </p>
+                                        </template>
+                                        <p class="mt-2 text-xs text-ink-2" x-show="item.help" x-text="item.help"></p>
+                                    </div>
+                                </details>
+                            </template>
+                        </div>
+                    </section>
+                </template>
+            </div>
+        </template>
+    </div>
+</body>
+
+</html>

@@ -16,6 +16,7 @@ _NAV_SECTIONS = {
     'work': 'work', 'work_detail': 'work', 'work_training_start': 'work',
     'exam_list': 'exam', 'exam_start': 'exam', 'exam_run': 'exam', 'exam_result': 'exam',
     'profile': 'profile', 'first_run_wizard': 'profile',
+    'notification_list': 'notifications',
     'admin_index': 'admin_home',
     'admin_users': 'admin_users',
     'admin_catalog': 'admin_catalog', 'admin_catalog_create': 'admin_catalog',
@@ -121,3 +122,46 @@ def _la_filter(request):
 def push(request):
     from la_tool_admin.push import push_configured
     return {'push_enabled': push_configured()}
+
+
+DUE_CACHE_SECONDS = 600
+
+
+def _due_cache_key(user_id):
+    return f'due_count:{user_id}'
+
+
+def forget_due_count(user):
+    from django.core.cache import cache
+    cache.delete(_due_cache_key(user.pk))
+
+
+def _due_count(request, user):
+    """Heute fällige Wiederholungen der aktiven Stufe (Zahl am Reiter „Üben“), 10 Minuten gecacht.
+
+    Der Cache gilt je Gunicorn-Worker; ein gespeichertes Training leert ihn im eigenen Worker sofort.
+    """
+    from django.core.cache import cache
+    from app import learning
+    from app.models import Questions_Catalogs
+    level = la_filter(request)['la_filter']
+    key = _due_cache_key(user.pk)
+    cached = cache.get(key) or {}
+    if level not in cached:
+        catalogs = list(Questions_Catalogs.objects.filter(level__slug=level, is_draft=False, level__is_draft=False))
+        ids = [qid for ids in learning.catalog_question_ids(catalogs).values() for qid in ids]
+        cached[level] = len(learning.due_questions(ids, learning.user_attempts(user)))
+        cache.set(key, cached, DUE_CACHE_SECONDS)
+    return cached[level]
+
+
+def counters(request):
+    """Zähler für Glocke, App-Symbol und Reiter „Üben“ (nur angemeldet)."""
+    user = getattr(request, 'user', None)
+    if not (user and user.is_authenticated):
+        return {}
+    from la_tool_admin.push import unread_count
+    return {
+        'unread_notifications': unread_count(user),
+        'due_count': _due_count(request, user),
+    }

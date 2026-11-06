@@ -96,6 +96,7 @@ TEMPLATES = [
                 'app.context_processors.la_filter',
                 'app.context_processors.nav_section',
                 'app.context_processors.push',
+                'app.context_processors.counters',
             ],
         },
     },

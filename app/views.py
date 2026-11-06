@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods, require_POST
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import auth, messages
 from django.contrib.auth.views import redirect_to_login
@@ -17,8 +17,8 @@ from .context_processors import current_la_filter
 from . import learning
 from .scoring import score_question as _score_question
 from django.conf import settings
-from la_tool_admin.models import Profile
-from la_tool_admin.push import push_configured
+from la_tool_admin.models import Profile, UserNotification
+from la_tool_admin.push import push_configured, safe_internal_url
 from .models import (
     Questions_Catalogs, Questions_Theory, TrainingResultData,
     Questions_Practical, Questions_GroupExercise,
@@ -698,12 +698,13 @@ def training_config(request):
     return render(request, 'exercise-theorie-training-start.html', context)
 
 
-@require_POST
+@require_http_methods(['GET', 'POST'])
 def training_today(request):
     """„Heute lernen“: eine Runde ohne Einstellungen (siehe learning.pick_today).
 
-    Optional beschränkt auf einen Katalog („Lesen, dann üben“) oder einen Lernauftrag. Ohne Beschränkung
-    gehen Fragen aus offenen Lernaufträgen der Stufe vor.
+    Optional (nur POST) beschränkt auf einen Katalog („Lesen, dann üben“) oder einen Lernauftrag. Ohne
+    Beschränkung gehen Fragen aus offenen Lernaufträgen der Stufe vor. GET ist für App-Verknüpfung und
+    den Knopf „Jetzt üben“ in der Erinnerung; es startet nur die Runde in der eigenen Sitzung.
     """
     if not request.user.is_authenticated:
         return redirect_to_login(reverse('training_config'))
@@ -800,8 +801,47 @@ def _start_training(request, question_ids):
     request.session['training_run_id'] = secrets.token_hex(8)
 
 
+# So viele abgegebene Durchgänge merkt sich die Sitzung (gegen doppelte Offline-Abgaben)
+FINISHED_RUNS_KEPT = 20
+
+
+def _remember_finished_run(request, run_id, result):
+    if not run_id:
+        return
+    finished = [pair for pair in request.session.get('training_finished_runs', []) if pair[0] != run_id]
+    request.session['training_finished_runs'] = (finished + [[run_id, result.pk if result.user_id else None]])[-FINISHED_RUNS_KEPT:]
+
+
+def _late_training_submit(request):
+    """Abgabe eines Durchgangs, der offline beendet wurde und erst später gesendet wird.
+
+    Läuft inzwischen ein anderer Durchgang (oder keiner mehr), kommen die Fragen aus dem Formular
+    (nur freigegebene, höchstens 100). Ein bereits abgegebener Durchgang wird nicht doppelt gespeichert.
+    """
+    run_id = request.POST.get('run_id', '')
+    for done_id, result_id in request.session.get('training_finished_runs', []):
+        if done_id == run_id:
+            return redirect('training_result', result_id=result_id) if result_id else redirect('training_config')
+    try:
+        posted = json.loads(request.POST.get('question_ids') or '[]')
+    except ValueError:
+        posted = []
+    ids = [qid for qid in posted if isinstance(qid, int)][:100] if isinstance(posted, list) else []
+    published = set(_published(Questions_Theory).filter(pk__in=ids).values_list('pk', flat=True))
+    questions = _ordered_questions([qid for qid in ids if qid in published])
+    if not questions:
+        return redirect('training_config')
+    result = _save_training_result(request.user, [q.pk for q in questions], _answers_from_post(request, questions))
+    _remember_finished_run(request, run_id, result)
+    if result.user_id:
+        return redirect('training_result', result_id=result.pk)
+    return redirect('training_config')
+
+
 def training_run(request):
     """Ganzer Durchgang in einer Seite: Blättern läuft im Browser, nur die Abgabe geht an den Server."""
+    if request.method == 'POST' and request.POST.get('run_id') and request.POST['run_id'] != request.session.get('training_run_id'):
+        return _late_training_submit(request)
     question_ids = request.session.get('training_question_ids')
     if not question_ids:
         return redirect('training_config')
@@ -812,6 +852,7 @@ def training_run(request):
     if request.method == 'POST':
         answers = _answers_from_post(request, questions)
         result = _save_training_result(request.user, [q.pk for q in questions], answers)
+        _remember_finished_run(request, request.session.get('training_run_id'), result)
         for key in ('training_question_ids', 'training_run_id'):
             request.session.pop(key, None)
         if result.user_id:
@@ -828,6 +869,9 @@ def training_run(request):
 
 
 def _save_training_result(user, question_ids, answers):
+    if user.is_authenticated:
+        from .context_processors import forget_due_count
+        forget_due_count(user)
     q_map = {q.pk: q for q in Questions_Theory.objects.select_related('catalog').filter(pk__in=question_ids)}
     score = sum(_score_question(q, answers.get(str(q.pk), [])) for q in q_map.values())
     return TrainingResultData.objects.create(
@@ -899,6 +943,8 @@ def training_result(request, result_id):
         'score_before': score_before,
         'score_after': score_after,
         'score_delta': None if score_before is None else score_after - score_before,
+        # Nach dem Training Erinnerungen per Push anbieten (app.js pushPrompt, einmal je Gerät)
+        'push_public_key': settings.VAPID_PUBLIC_KEY if push_configured() else '',
     })
 
 
@@ -1044,6 +1090,66 @@ def theory_lookup(request):
         'question_count': len(entries),
         'saved_ids': sorted(_bookmarked_ids(request.user) & {e['question'].pk for e in entries}),
     })
+
+
+def theory_offline_data(request):
+    """Fragen aller freigegebenen Stufen mit Lösungen für das Nachschlagen ohne Netz.
+
+    Bewusst ohne persönliche Daten (kein Lernstand, keine Merkliste): der Service Worker speichert die
+    Antwort auf dem Gerät.
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Bitte melde dich an.'}, status=403)
+    questions = list(_published(Questions_Theory).select_related('catalog__level'))
+    questions.sort(key=lambda q: (learning.natural_key(q.number), q.pk))
+    levels = {}
+    for catalog, items in _by_catalog(questions):
+        level = catalog.level
+        entry = levels.setdefault(level.pk, {'slug': level.slug, 'name': level.name, 'order': level.order, 'catalogs': []})
+        entry['catalogs'].append({
+            'id': catalog.pk,
+            'short_title': catalog.short_title,
+            'title': catalog.title,
+            'questions': [{
+                'number': q.number or '',
+                'question': q.question,
+                'help': q.help_reference or '',
+                'choices': [[letter, text, text in set(q.correct_answers)] for letter, text in _labeled_choices(q)],
+            } for q in items],
+        })
+    response = JsonResponse({
+        'generated': timezone.now().isoformat(),
+        'levels': sorted(levels.values(), key=lambda l: l['order']),
+    }, json_dumps_params={'ensure_ascii': False})
+    response['Cache-Control'] = 'private, no-cache'
+    return response
+
+
+def theory_offline_page(request):
+    """Hülle für das Nachschlagen ohne Netz (vom Service Worker gecacht, ohne Nutzerdaten)."""
+    return render(request, 'pwa/offline-lookup.html')
+
+
+# ── BENACHRICHTIGUNGEN ────────────────────────────────────────────────────────
+
+def notification_list(request):
+    if not request.user.is_authenticated:
+        return redirect_to_login(request.get_full_path())
+    notifications = list(UserNotification.objects.filter(user=request.user)[:100])
+    # Beim Öffnen gelten alle als gelesen; die Liste zeigt trotzdem, was neu war
+    UserNotification.objects.filter(user=request.user, read_at__isnull=True).update(read_at=timezone.now())
+    return render(request, 'notifications.html', {'notifications': notifications})
+
+
+def notification_open(request, notification_id):
+    """Benachrichtigung als gelesen markieren und ihr Ziel öffnen (Link im Push und in der Liste)."""
+    if not request.user.is_authenticated:
+        return redirect_to_login(request.get_full_path())
+    notification = get_object_or_404(UserNotification, pk=notification_id, user=request.user)
+    if notification.read_at is None:
+        notification.read_at = timezone.now()
+        notification.save(update_fields=['read_at'])
+    return redirect(safe_internal_url(notification.url))
 
 
 # ── PRAKTISCHE AUFGABEN ───────────────────────────────────────────────────────
