@@ -2,12 +2,14 @@
 //
 // Strategie:
 //  - Statische Dateien (CSS, JS, Bilder): aus dem Cache, im Hintergrund aktualisieren
+//    (mit DEBUG zuerst vom Server, sonst sähe man Änderungen erst nach zweimaligem Neuladen)
 //  - Seiten (HTML): immer vom Server, ohne Netz die Offline-Seite. Navigation Preload lädt die Seite
 //    schon, während der Service Worker startet.
 //  - Seiten werden bewusst NICHT gecacht: sie enthalten persönliche Daten und Prüfungen.
 const CACHE = 'la-tool-{{ version }}';
 const OFFLINE_URL = '{{ offline_url|escapejs }}';
 const STATIC_PREFIX = '{{ static_prefix|escapejs }}';
+const STATIC_NETWORK_FIRST = {{ static_network_first|yesno:"true,false" }};
 const PRECACHE = [{% for url in precache %}'{{ url|escapejs }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
 
 self.addEventListener('install', (event) => {
@@ -52,7 +54,7 @@ self.addEventListener('fetch', (event) => {
                             return response;
                         })
                         .catch(() => cached);
-                    return cached || network;
+                    return STATIC_NETWORK_FIRST ? network.then((response) => response || cached) : cached || network;
                 })
             )
         );

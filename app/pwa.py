@@ -60,6 +60,8 @@ def static_prefix():
 def service_worker(request):
     context = {
         'version': _asset_version(),
+        # Entwicklung: Dateinamen ohne Hash (gleiche URL nach Änderung) → immer zuerst vom Server laden
+        'static_network_first': settings.DEBUG,
         'offline_url': reverse('offline'),
         'static_prefix': static_prefix(),
         'icon_url': static('pwa/icon-192.png'),
