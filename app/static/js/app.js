@@ -228,12 +228,94 @@
             submit() {
                 if (this.submitting) return;
                 this.submitting = true;
+                window.pageFeedback.start();
                 this.persist();
                 this.$refs.answers.value = JSON.stringify(this.answers);
                 this.$refs.form.submit();
             },
         }));
     });
+
+    // ── Rückmeldung ──────────────────────────────────────────────────────────
+    // Seitenwechsel (Links, Formulare) zeigen einen Ladebalken oben; der gedrückte Knopf bekommt einen Spinner
+    // und lässt sich nicht erneut auslösen. Ein Formular wird nur einmal abgeschickt (Doppelklick).
+    // Ausnahmen: data-no-progress, download, target=_blank, Links innerhalb der Seite.
+    const pageFeedback = (function () {
+        const SHOW_DELAY = 150;      // schnelle Seitenwechsel (vorgeladen) ohne Aufblitzen
+        const FALLBACK_RESET = 20000; // falls keine neue Seite kommt (z.B. Datei-Antwort, Abbruch)
+        let showTimer = null;
+        let resetTimer = null;
+
+        function bar() {
+            return document.getElementById('page-progress');
+        }
+
+        function start() {
+            clearTimeout(showTimer);
+            clearTimeout(resetTimer);
+            showTimer = setTimeout(() => bar() && bar().classList.add('is-active'), SHOW_DELAY);
+            resetTimer = setTimeout(reset, FALLBACK_RESET);
+        }
+
+        function markBusy(el) {
+            if (!el || el.classList.contains('is-loading')) return;
+            el.classList.add('is-loading');
+            el.setAttribute('aria-busy', 'true');
+            const spinner = document.createElement('span');
+            spinner.className = 'spinner js-feedback-spinner';
+            spinner.setAttribute('aria-hidden', 'true');
+            el.prepend(spinner);
+        }
+
+        function reset() {
+            clearTimeout(showTimer);
+            clearTimeout(resetTimer);
+            if (bar()) bar().classList.remove('is-active');
+            document.querySelectorAll('.js-feedback-spinner').forEach((el) => el.remove());
+            document.querySelectorAll('.is-loading').forEach((el) => {
+                el.classList.remove('is-loading');
+                el.removeAttribute('aria-busy');
+            });
+            document.querySelectorAll('form[data-busy]').forEach((form) => delete form.dataset.busy);
+        }
+
+        function isPageLink(link, event) {
+            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return false;
+            if (link.hasAttribute('download') || link.hasAttribute('data-no-progress')) return false;
+            if (link.target && link.target !== '_self') return false;
+            const url = new URL(link.href, location.href);
+            if (url.origin !== location.origin || !/^https?:$/.test(url.protocol)) return false;
+            // Sprung innerhalb derselben Seite
+            if (url.pathname === location.pathname && url.search === location.search && url.hash) return false;
+            return true;
+        }
+
+        document.addEventListener('click', (event) => {
+            const link = event.target.closest && event.target.closest('a[href]');
+            if (!link || !isPageLink(link, event)) return;
+            start();
+            if (link.classList.contains('btn')) markBusy(link);
+        });
+
+        document.addEventListener('submit', (event) => {
+            const form = event.target;
+            if (event.defaultPrevented || form.hasAttribute('data-no-progress') || (form.target && form.target !== '_self')) return;
+            if (form.dataset.busy) {
+                event.preventDefault(); // schon unterwegs
+                return;
+            }
+            form.dataset.busy = '1';
+            start();
+            const button = event.submitter || form.querySelector('button[type=submit], button:not([type])');
+            if (button && button.classList.contains('btn')) markBusy(button);
+        });
+
+        // Zurück-Taste (bfcache): Seite ohne hängende Spinner zeigen
+        window.addEventListener('pageshow', reset);
+
+        return { start, reset, markBusy };
+    })();
+    window.pageFeedback = pageFeedback;
 
     // POST mit JSON an die eigene Seite; CSRF-Token aus einem beliebigen Formular der Seite
     // (base.html enthält für angemeldete Nutzer immer das Abmelde-Formular)

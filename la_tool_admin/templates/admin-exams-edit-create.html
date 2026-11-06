@@ -60,7 +60,7 @@
             {% if exam %}
             <div class="card-footer justify-start">
                 <button type="button" class="btn btn-sm btn-danger-soft"
-                        onclick="if(confirm('Prüfung wirklich löschen?')) document.getElementById('delete-exam-form').submit()">
+                        onclick="if(confirm('Prüfung wirklich löschen?')) document.getElementById('delete-exam-form').requestSubmit()">
                     {% include "icons/trash.html" with cls="size-4" %} Löschen
                 </button>
             </div>

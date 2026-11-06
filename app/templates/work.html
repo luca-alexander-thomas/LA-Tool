@@ -19,7 +19,7 @@
                 <h2 class="section-title">Dienste</h2>
                 <form method="get">
                     <label class="sr-only" for="work-year">Jahr</label>
-                    <select id="work-year" name="jahr" class="form-select w-auto" onchange="this.form.submit()">
+                    <select id="work-year" name="jahr" class="form-select w-auto" onchange="this.form.requestSubmit()">
                         {% for y in years %}<option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>{% endfor %}
                     </select>
                     <noscript><button type="submit" class="btn btn-sm btn-secondary">Anzeigen</button></noscript>

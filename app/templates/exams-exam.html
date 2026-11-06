@@ -61,7 +61,8 @@
             <span x-show="index === 0"></span>
             <button type="submit" class="btn btn-primary min-w-32" :disabled="submitting">
                 <span x-text="isLast ? 'Abgeben' : 'Weiter'">Weiter</span>
-                {% include "icons/arrow-right.html" with cls="size-4" %}
+                <span x-show="!submitting">{% include "icons/arrow-right.html" with cls="size-4" %}</span>
+                <span class="spinner" x-show="submitting" x-cloak></span>
             </button>
         </div>
         <p class="mt-3 text-center text-xs text-ink-3" x-show="isLast" x-cloak>

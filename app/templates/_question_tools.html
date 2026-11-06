@@ -23,7 +23,7 @@
               placeholder="z. B. Antwort B ist laut Handbuch auch richtig"></textarea>
     <p class="form-error" x-show="report.error" x-text="report.error" role="alert"></p>
     <div class="flex gap-2">
-        <button type="button" class="btn btn-primary btn-sm" @click="sendReport({{ qid }})" :disabled="report.busy || !report.text.trim()">Senden</button>
+        <button type="button" class="btn btn-primary btn-sm" @click="sendReport({{ qid }})" :disabled="report.busy || !report.text.trim()"><span class="spinner" x-show="report.busy" x-cloak></span> Senden</button>
         <button type="button" class="btn btn-secondary btn-sm" @click="closeReport()">Abbrechen</button>
     </div>
 </div>

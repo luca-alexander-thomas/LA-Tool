@@ -61,7 +61,7 @@
             </button>
             <button type="submit" class="btn btn-primary btn-lg flex-1" :disabled="submitting">
                 <span x-show="!isLast" class="inline-flex items-center gap-2">Weiter {% include "icons/arrow-right.html" with cls="size-5" %}</span>
-                <span x-show="isLast" x-cloak class="inline-flex items-center gap-2">Abschließen {% include "icons/check.html" with cls="size-5" %}</span>
+                <span x-show="isLast" x-cloak class="inline-flex items-center gap-2">Abschließen <span x-show="!submitting">{% include "icons/check.html" with cls="size-5" %}</span><span class="spinner size-5" x-show="submitting" x-cloak></span></span>
             </button>
         </div>
     </form>
