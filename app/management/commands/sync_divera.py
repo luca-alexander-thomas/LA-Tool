@@ -36,7 +36,7 @@ class Command(BaseCommand):
             return
 
         if not initial.get('success'):
-            self.stderr.write(self.style.ERROR(f'Divera returned success=false'))
+            self.stderr.write(self.style.ERROR('Divera returned success=false'))
             return
 
         ucr_data = initial.get('data', {}).get('ucr', {})
@@ -64,7 +64,7 @@ class Command(BaseCommand):
             return
 
         if not site_data.get('success'):
-            self.stderr.write(self.style.ERROR(f'Divera returned success=false for site pull'))
+            self.stderr.write(self.style.ERROR('Divera returned success=false for site pull'))
             return
 
         data = site_data.get('data', {})

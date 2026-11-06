@@ -2,9 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, Http404
 from django.contrib import auth
 from django.conf import settings
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.models import User, Group, Permission
-from django.contrib.contenttypes.models import ContentType
 from django.db.models import Exists, OuterRef
 from app.models import (
     Questions_Catalogs, Questions_Theory, Questions_Practical,
@@ -269,7 +268,7 @@ def microsoft_callback(request):
         user_info = graph_response.json()
 
         # Benutzer-Identifikation
-        microsoft_id = user_info.get('id')
+        microsoft_id = user_info.get('id')  # noqa: F841 - fuer spaetere Verknuepfung ueber die Entra-ID
         email = user_info.get('mail') or user_info.get('userPrincipalName')
         first_name = user_info.get('givenName', '')
         # Default-Wert wenn leer

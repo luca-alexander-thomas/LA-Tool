@@ -1,0 +1,4 @@
+# Werkzeuge für Tests und Code-Prüfung (lokal und in der CI)
+-r requirements.txt
+coverage==7.17.2
+ruff==0.17.4
