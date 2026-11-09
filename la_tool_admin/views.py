@@ -17,7 +17,7 @@ from app.models import (
     QuestionReport, LearningAssignment, TrainingResultData,
 )
 from app.views import assignment_status
-from app.login_function import post_login_setup, safe_next_url
+from app.login_function import apply_remember, post_login_setup, safe_next_url
 from .forms import CatalogForm, TheoryQuestionForm, PracticalForm, GroupExerciseForm, ExamForm, WorkForm, WorkCreateForm, ImportQuestionForm, LevelForm, PushMessageForm, LearningAssignmentForm
 from .models import PinnedGroup, Profile, PushSubscription
 from .utils import pin_group, unpin_group
@@ -198,6 +198,8 @@ def microsoft_login(request):
     state = str(uuid.uuid4())
     request.session['oauth_state'] = state
     request.session['login_next'] = safe_next_url(request, request.GET.get('next'))
+    # „Angemeldet bleiben“ vom Login-Formular (ohne Angabe: ja, wie vorausgewählt)
+    request.session['login_remember'] = request.GET.get('remember', '1') == '1'
 
     # Authorization URL erstellen
     auth_url = client.get_authorization_request_url(
@@ -309,8 +311,10 @@ def microsoft_callback(request):
         sync_user_groups(user, access_token)
 
         # Benutzer einloggen
+        remember = request.session.pop('login_remember', True)
         auth.login(request, user,
                    backend='django.contrib.auth.backends.ModelBackend')
+        apply_remember(request, remember)
         post_login_setup(request, user)
 
         # State aus Session löschen

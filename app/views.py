@@ -144,6 +144,7 @@ def login(request):
         # auth_user = auth.authenticate(request, username=username, password=password)
         if user is not None:
             auth.login(request, user)
+            login_func.apply_remember(request, request.POST.get('remember') == '1')
             login_func.post_login_setup(request, user)
             return redirect(next_url or 'home')
         else:

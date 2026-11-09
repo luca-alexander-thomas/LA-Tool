@@ -112,3 +112,34 @@ class OfflineLookupTests(PwaBase):
         self.assertEqual(manifest['id'], '/')
         self.assertEqual(manifest['shortcuts'][0]['url'], reverse('training_today'))
         self.assertEqual(self.client.get(reverse('theory_offline_page')).status_code, 200)
+
+
+class RememberMeTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user('jugend', password='geheim')
+
+    def post_login(self, **extra):
+        from unittest import mock
+        with mock.patch('app.views.login_func.login', return_value=self.user):
+            return self.client.post(reverse('login'), {'username': 'jugend', 'password': 'geheim', **extra})
+
+    def test_remember_sets_persistent_cookie(self):
+        response = self.post_login(remember='1')
+        cookie = response.cookies['sessionid']
+        self.assertEqual(cookie['max-age'], 90 * 24 * 60 * 60)
+        self.assertFalse(self.client.session.get_expire_at_browser_close())
+
+    def test_without_remember_session_ends_with_browser(self):
+        response = self.post_login()
+        self.assertEqual(response.cookies['sessionid']['max-age'], '')
+        self.assertTrue(self.client.session.get_expire_at_browser_close())
+
+    def test_remembered_session_is_renewed_once_a_day(self):
+        import time
+        self.post_login(remember='1')
+        session = self.client.session
+        session['renewed_at'] = int(time.time()) - 2 * 24 * 60 * 60
+        session.save()
+        response = self.client.get(reverse('profile'))
+        self.assertIn('sessionid', response.cookies)  # Cookie mit neuem Ablauf
+        self.assertNotIn('sessionid', self.client.get(reverse('profile')).cookies)  # heute schon verlängert

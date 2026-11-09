@@ -55,11 +55,16 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'app.middleware.SlidingSessionMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 ROOT_URLCONF = 'la_tool.urls'
+
+# Anmeldung: mit „Angemeldet bleiben“ 90 Tage, bei Nutzung täglich verlängert (app.middleware);
+# ohne endet die Sitzung beim Schließen des Browsers bzw. der App
+SESSION_COOKIE_AGE = 90 * 24 * 60 * 60
 
 # Authentication Backends für MS Entra ID SSO + lokales Fallback
 LOGIN_URL = 'login'

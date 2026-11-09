@@ -18,7 +18,7 @@
         </div>
         {% endif %}
 
-        <form method="post" class="space-y-4">
+        <form method="post" class="space-y-4" x-data="{ remember: true }">
             {% csrf_token %}
             {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
             <div>
@@ -31,6 +31,13 @@
                 <input class="form-control" type="password" id="login-password" name="password" placeholder="Passwort"
                        autocomplete="current-password">
             </div>
+            <div>
+                <label class="form-check">
+                    <input class="form-check-input" type="checkbox" name="remember" value="1" checked x-model="remember">
+                    <span class="form-check-label">Angemeldet bleiben</span>
+                </label>
+                <p class="form-text">Auf fremden oder geteilten Geräten abwählen: dann endet die Anmeldung beim Schließen des Browsers.</p>
+            </div>
             <button class="btn btn-primary w-full" type="submit">
                 {% include "icons/arrow-right-end-on-rectangle.html" with cls="size-5" %} Anmelden
             </button>
@@ -41,7 +48,8 @@
                 <span class="h-px flex-1 bg-line"></span>
             </div>
 
-            <a class="btn btn-secondary w-full" href="{% url 'microsoft_login' %}{% if next %}?next={{ next|urlencode }}{% endif %}">
+            <a class="btn btn-secondary w-full" href="{% url 'microsoft_login' %}?remember=1{% if next %}&amp;next={{ next|urlencode }}{% endif %}"
+               :href="'{% url 'microsoft_login' %}?remember=' + (remember ? '1' : '0'){% if next %} + '&next={{ next|urlencode }}'{% endif %}">
                 <svg class="size-5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
                     <path d="M7.462 0H0v7.19h7.462zM16 0H8.538v7.19H16zM7.462 8.211H0V16h7.462zm8.538 0H8.538V16H16z"></path>
                 </svg>

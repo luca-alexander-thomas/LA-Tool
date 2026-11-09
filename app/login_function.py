@@ -303,3 +303,9 @@ def divera_login(username, password, request):
     _sync_groups(user)
     request.session.pop('login_error', None)
     return user
+
+
+def apply_remember(request, remember):
+    """Nach auth.login aufrufen: dauerhafte Sitzung (SESSION_COOKIE_AGE) oder bis zum Schließen des Browsers."""
+    request.session['remember'] = bool(remember)
+    request.session.set_expiry(None if remember else 0)
