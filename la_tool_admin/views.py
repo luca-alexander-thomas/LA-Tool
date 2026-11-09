@@ -184,35 +184,6 @@ def sync_user_groups(user, access_token):
 # Microsoft OAuth Callbacks
 
 
-def microsoft_login(request):
-    """Initiiert den OAuth Login Flow zu Microsoft Entra ID"""
-    if request.user.is_authenticated:
-        return redirect('home')
-
-    # MSAL Client erstellen für Authorization URL (ConfidentialClient mit Secret)
-    client = msal.ConfidentialClientApplication(
-        settings.MICROSOFT_AUTH_CLIENT_ID,
-        authority=f"https://login.microsoftonline.com/{settings.MICROSOFT_AUTH_TENANT_ID}",
-        client_credential=settings.MICROSOFT_AUTH_CLIENT_SECRET,
-    )
-
-    # State generieren für CSRF-Protection
-    state = str(uuid.uuid4())
-    request.session['oauth_state'] = state
-    request.session['login_next'] = safe_next_url(request, request.GET.get('next'))
-    # „Angemeldet bleiben“ vom Login-Formular (ohne Angabe: ja, wie vorausgewählt)
-    request.session['login_remember'] = request.GET.get('remember', '1') == '1'
-
-    # Authorization URL erstellen
-    auth_url = client.get_authorization_request_url(
-        scopes=['user.read', 'Directory.Read.All'],
-        redirect_uri=settings.MICROSOFT_AUTH_REDIRECT_URI,
-        state=state,
-    )
-
-    return redirect(auth_url)
-
-
 def _entra_refusal(claims, user_info):
     """Fehlertext, wenn das Microsoft-Konto nicht anmelden darf; sonst None.
 
@@ -241,41 +212,49 @@ def _entra_user(microsoft_id, email, first_name, last_name):
     return user
 
 
+# Nur das eigene Profil und die eigenen Gruppen-IDs (/me/memberOf liefert mit User.Read id und Typ)
+ENTRA_SCOPES = ['User.Read']
+
+
+def _msal_client():
+    return msal.ConfidentialClientApplication(
+        settings.MICROSOFT_AUTH_CLIENT_ID,
+        authority=f"https://login.microsoftonline.com/{settings.MICROSOFT_AUTH_TENANT_ID}",
+        client_credential=settings.MICROSOFT_AUTH_CLIENT_SECRET,
+    )
+
+
+def microsoft_login(request):
+    """Startet den OAuth-Login bei Microsoft Entra ID (Authorization Code mit PKCE, State und Nonce)."""
+    if request.user.is_authenticated:
+        return redirect('home')
+
+    # msal erzeugt State, Nonce und PKCE-Verifier; der Flow bleibt in der Sitzung bis zum Callback
+    flow = _msal_client().initiate_auth_code_flow(ENTRA_SCOPES, redirect_uri=settings.MICROSOFT_AUTH_REDIRECT_URI)
+    request.session['entra_flow'] = flow
+    request.session['login_next'] = safe_next_url(request, request.GET.get('next'))
+    # „Angemeldet bleiben“ vom Login-Formular (ohne Angabe: ja, wie vorausgewählt)
+    request.session['login_remember'] = request.GET.get('remember', '1') == '1'
+    return redirect(flow['auth_uri'])
+
+
 def microsoft_callback(request):
     """Verarbeitet den OAuth Callback von Microsoft Entra ID"""
-    # State validieren
-    stored_state = request.session.get('oauth_state')
-    callback_state = request.GET.get('state')
-
-    if not stored_state or stored_state != callback_state:
+    flow = request.session.pop('entra_flow', None)
+    if not flow or request.GET.get('state') != flow.get('state'):
         return render(request, 'login.html', {'error': 'Sicherheitsfehler: State stimmt nicht überein'})
 
-    # Authorization Code abrufen
-    code = request.GET.get('code')
     error = request.GET.get('error')
-    error_description = request.GET.get('error_description', '')
-
     if error:
         return render(request, 'login.html', {
-            'error': f'Microsoft Login fehlgeschlagen: {error_description}'
+            'error': f'Microsoft Login fehlgeschlagen: {request.GET.get("error_description", "")}'
         })
-
-    if not code:
+    if not request.GET.get('code'):
         return render(request, 'login.html', {'error': 'Kein Authorization Code erhalten'})
 
     try:
-        # Token mit Authorization Code austauschen (ConfidentialClient mit Secret)
-        client = msal.ConfidentialClientApplication(
-            settings.MICROSOFT_AUTH_CLIENT_ID,
-            authority=f"https://login.microsoftonline.com/{settings.MICROSOFT_AUTH_TENANT_ID}",
-            client_credential=settings.MICROSOFT_AUTH_CLIENT_SECRET,
-        )
-
-        token_result = client.acquire_token_by_authorization_code(
-            code=code,
-            scopes=['user.read', 'Directory.Read.All'],
-            redirect_uri=settings.MICROSOFT_AUTH_REDIRECT_URI,
-        )
+        # Prüft State, Nonce und PKCE und tauscht den Code gegen Tokens
+        token_result = _msal_client().acquire_token_by_auth_code_flow(flow, request.GET.dict())
 
         if 'error' in token_result:
             return render(request, 'login.html', {
@@ -341,10 +320,6 @@ def microsoft_callback(request):
                    backend='django.contrib.auth.backends.ModelBackend')
         apply_remember(request, remember)
         post_login_setup(request, user)
-
-        # State aus Session löschen
-        if 'oauth_state' in request.session:
-            del request.session['oauth_state']
 
         return redirect(request.session.pop('login_next', None) or 'home')
 

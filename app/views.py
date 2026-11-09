@@ -44,7 +44,7 @@ def index(request):
 
     # First-Run-Wizard: once per session for users without Divera link
     try:
-        has_divera = bool(user.profile.divera_api_key)
+        has_divera = bool(user.profile.divera_ucr)
     except Exception:
         has_divera = True
     if not has_divera and not request.session.get('first_run_done'):
@@ -115,14 +115,10 @@ def first_run_wizard(request):
                     'active_tab': 'apikey',
                 })
             profile, _ = Profile.objects.get_or_create(user=request.user)
-            profile.divera_api_key = api_key
-            profile.save(update_fields=['divera_api_key'])
-            ok = login_func.refresh_divera_profile(profile)
-            if ok:
+            # Key nur zum Verknüpfen nutzen, nicht speichern
+            if login_func.refresh_divera_profile(profile, api_key):
                 login_func.post_login_setup(request, request.user)
                 return redirect('home')
-            profile.divera_api_key = ''
-            profile.save(update_fields=['divera_api_key'])
             return render(request, 'first-run.html', {
                 'user': request.user,
                 'error': 'API-Key konnte nicht verifiziert werden. Bitte prüfe den Key.',
@@ -1273,6 +1269,101 @@ def group_detail(request, q_id):
         'question': question,
         'assessment': assessment,
     })
+
+
+# ── RECHTLICHES UND EIGENE DATEN ──────────────────────────────────────────────
+
+def legal_page(request, template):
+    from .legal_info import legal_context
+    return render(request, template, legal_context())
+
+
+def robots_txt(request):
+    """Geschlossene Anwendung: Suchmaschinen sollen nichts indexieren."""
+    from django.http import HttpResponse
+    return HttpResponse('User-agent: *\nDisallow: /\n', content_type='text/plain')
+
+
+def my_data_export(request):
+    """Auskunft/Datenübertragbarkeit (Art. 15/20 DSGVO): alle eigenen Daten als JSON-Datei."""
+    if not request.user.is_authenticated:
+        return redirect_to_login(request.get_full_path())
+    from la_tool_admin.models import PushSubscription
+    from .models import (GroupExerciseSelfAssessment, PracticalSelfAssessment, QuestionBookmark, QuestionReport)
+    user = request.user
+    profile = Profile.objects.filter(user=user).first()
+    dt = lambda value: value.isoformat() if value else None  # noqa: E731
+    data = {
+        'erstellt': timezone.now().isoformat(),
+        'konto': {
+            'benutzername': user.username, 'vorname': user.first_name, 'nachname': user.last_name,
+            'email': user.email, 'registriert': dt(user.date_joined), 'letzte_anmeldung': dt(user.last_login),
+            'gruppen': list(user.groups.values_list('name', flat=True)),
+        },
+        'profil': {
+            'anmeldung_ueber': profile.login_source, 'divera_id': profile.divera_ucr,
+            'divera_qualifikationen': profile.divera_qualifications, 'divera_gruppen': profile.divera_groups,
+            'microsoft_id': profile.entra_oid or None, 'lern_erinnerungen': profile.learning_reminders,
+        } if profile else None,
+        'trainings': [
+            {'zeitpunkt': dt(t.meta_time), 'fragen': t.questions, 'antworten': t.answers, 'ergebnis': t.meta_reference}
+            for t in TrainingResultData.objects.filter(user=user).order_by('meta_time')
+        ],
+        # Punkte nicht freigegebener Prüfungen bleiben bis zur Freigabe verborgen
+        'pruefungen': [
+            {'pruefung': r.name, 'zeitpunkt': dt(r.meta_time), 'freigegeben': r.state == 'published',
+             'antworten': r.answers, 'ergebnis': r.meta_reference if r.state == 'published' else None}
+            for r in ExamResultData.objects.filter(user=user).order_by('meta_time')
+        ],
+        'gemerkte_fragen': list(QuestionBookmark.objects.filter(user=user).values_list('question_id', flat=True)),
+        'fehlermeldungen': [
+            {'frage': r.question_id, 'text': r.message, 'zeitpunkt': dt(r.created_at)}
+            for r in QuestionReport.objects.filter(user=user)
+        ],
+        'selbsteinschaetzung_praxis': [
+            {'aufgabe': a.question_id, 'wert': a.score, 'zeitpunkt': dt(a.updated_at)}
+            for a in PracticalSelfAssessment.objects.filter(user=user)
+        ],
+        'selbsteinschaetzung_gruppe': [
+            {'aufgabe': a.question_id, 'wert': a.score, 'zeitpunkt': dt(a.updated_at)}
+            for a in GroupExerciseSelfAssessment.objects.filter(user=user)
+        ],
+        'benachrichtigungen': [
+            {'titel': n.title, 'text': n.body, 'zeitpunkt': dt(n.created_at), 'gelesen': dt(n.read_at)}
+            for n in UserNotification.objects.filter(user=user)
+        ],
+        'push_geraete': [
+            {'browser': s.user_agent, 'seit': dt(s.created_at)} for s in PushSubscription.objects.filter(user=user)
+        ],
+    }
+    response = JsonResponse(data, json_dumps_params={'ensure_ascii': False, 'indent': 2})
+    response['Content-Disposition'] = f'attachment; filename="la-tool-meine-daten-{date.today():%Y-%m-%d}.json"'
+    response['Cache-Control'] = 'no-store'
+    return response
+
+
+@require_POST
+def my_learning_data_delete(request):
+    """Eigene Lerndaten löschen (Trainings, Merkliste, Selbsteinschätzungen, Benachrichtigungen).
+
+    Konto und Prüfungsergebnisse bleiben: Das Konto entsteht bei der nächsten Divera-Anmeldung ohnehin neu,
+    Prüfungsergebnisse sind Nachweise – beides löscht auf Antrag ein Admin.
+    """
+    if not request.user.is_authenticated:
+        return redirect_to_login(reverse('profile'))
+    if request.POST.get('confirm') != 'LÖSCHEN':
+        messages.error(request, 'Bitte zur Bestätigung LÖSCHEN eintippen.')
+        return redirect('profile')
+    from .models import GroupExerciseSelfAssessment, PracticalSelfAssessment
+    user = request.user
+    with transaction.atomic():
+        for model in (TrainingResultData, QuestionBookmark, PracticalSelfAssessment, GroupExerciseSelfAssessment,
+                      UserNotification):
+            model.objects.filter(user=user).delete()
+    from .context_processors import forget_due_count
+    forget_due_count(user)
+    messages.success(request, 'Deine Lerndaten wurden gelöscht.')
+    return redirect('profile')
 
 
 # ── BETRIEB ───────────────────────────────────────────────────────────────────

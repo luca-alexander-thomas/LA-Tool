@@ -529,6 +529,32 @@
         @apply px-3 pt-4 pb-1 text-[0.6875rem] font-semibold tracking-wider text-ink-3 uppercase;
     }
 
+    /* Rechtstexte (Datenschutz, Nutzungsbedingungen, Impressum) */
+    .legal {
+        @apply text-sm leading-relaxed text-ink-2;
+
+        & h2 {
+            @apply mt-8 mb-2 text-base font-semibold text-ink;
+        }
+
+        & p,
+        & ul {
+            @apply mt-2;
+        }
+
+        & ul {
+            @apply list-disc space-y-1.5 pl-5;
+        }
+
+        & strong {
+            @apply text-ink;
+        }
+    }
+
+    .legal-check {
+        @apply rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950 dark:text-amber-200;
+    }
+
     /* Zähler an Glocke, Reiter und Menü */
     .count-badge {
         @apply inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-red-600 px-1 text-[0.625rem] leading-none font-bold text-white tabular-nums ring-2 ring-surface;

@@ -139,8 +139,8 @@ def divera_member_data(access_token):
     }
 
 
-def _apply_divera_data(profile, access_token, member):
-    profile.divera_api_key = access_token
+def _apply_divera_data(profile, member):
+    # Der persönliche Divera-Accesskey wird bewusst nicht gespeichert (Vollzugriff auf Divera)
     profile.divera_ucr = member['ucr']
     profile.divera_qualifications = member['qualifications']
     profile.divera_groups = member['groups']
@@ -151,20 +151,17 @@ def _ucr_taken_by_other(ucr, user):
     return Profile.objects.filter(divera_ucr=ucr).exclude(user=user).exists()
 
 
-def refresh_divera_profile(profile):
-    """Qualifikationen und Gruppen mit dem gespeicherten Token neu laden. True bei Erfolg."""
-    if not profile.divera_api_key:
-        return False
+def refresh_divera_profile(profile, access_token):
+    """Konto über einen Divera-Accesskey verknüpfen bzw. Daten neu laden (Key wird nicht gespeichert)."""
     try:
-        member = divera_member_data(profile.divera_api_key)
+        member = divera_member_data(access_token)
     except DiveraError:
         return False
     if _ucr_taken_by_other(member['ucr'], profile.user):
         logger.warning('Divera-ID von %s ist bereits einem anderen Konto zugeordnet', profile.user.username)
         return False
-    _apply_divera_data(profile, profile.divera_api_key, member)
-    profile.save(update_fields=['divera_api_key', 'divera_ucr', 'divera_qualifications',
-                                'divera_groups', 'divera_left_at'])
+    _apply_divera_data(profile, member)
+    profile.save(update_fields=['divera_ucr', 'divera_qualifications', 'divera_groups', 'divera_left_at'])
     return True
 
 
@@ -185,11 +182,7 @@ def post_login_setup(request, user):
         request.session['la_filter'] = first_level.slug if first_level else ''
         return
 
-    if profile.divera_api_key and profile.login_source != Profile.SOURCE_DIVERA:
-        # Divera-Logins haben die Daten gerade erst geholt; Entra-/lokale Konten mit Verknüpfung hier
-        refresh_divera_profile(profile)
-        profile.refresh_from_db()
-
+    # Qualifikationen verknüpfter Entra-/lokaler Konten frischt der nächtliche Abgleich auf (sync_divera_users)
     current_la = profile.divera_la_level
     current_level = Levels.objects.filter(slug=current_la).first() if current_la else None
     if current_level:
@@ -213,7 +206,7 @@ def link_divera_with_credentials(user, username, password):
     if _ucr_taken_by_other(member['ucr'], user):
         return 'Dieser Divera-Account ist bereits mit einem anderen Konto verknüpft.'
     profile, _ = Profile.objects.get_or_create(user=user)
-    _apply_divera_data(profile, token, member)
+    _apply_divera_data(profile, member)
     profile.save()
     _sync_groups(user)
     return True
@@ -223,20 +216,36 @@ def _is_divera_account(user):
     return Profile.objects.filter(user=user, login_source=Profile.SOURCE_DIVERA).exists()
 
 
+ENTRA_ONLY_MESSAGE = 'Admin-Konten mit Microsoft-Konto melden sich nur mit „Mit Microsoft anmelden“ an.'
+
+
+def entra_only(user):
+    """Admins mit verknüpftem Microsoft-Konto dürfen sich nur über Entra anmelden (Mehrfaktor, Richtlinien).
+
+    Admins ohne Microsoft-Verknüpfung (z.B. lokaler Notfall-Superuser) bleiben beim Passwort-Login.
+    """
+    profile = Profile.objects.filter(user=user).first()
+    return bool(profile and profile.entra_oid) and (user.is_superuser or user.has_perm('app.access_admin'))
+
+
 def login(username, password, request):
     """Lokale Konten prüfen lokal, Divera-Konten immer gegen Divera.
 
     Das lokal gespeicherte Passwort eines Divera-Kontos gilt nur, wenn Divera nicht erreichbar ist.
+    Admins mit Microsoft-Konto werden hier immer abgelehnt (nur Entra-Login, siehe entra_only).
     """
     username = (username or '').strip()
     local_user = auth.authenticate(request, username=username, password=password)
     if local_user is not None and not _is_divera_account(local_user):
+        if entra_only(local_user):
+            request.session['login_error'] = ENTRA_ONLY_MESSAGE
+            return None
         return local_user
 
     try:
         return divera_login(username, password, request)
     except DiveraError as exc:
-        if exc.kind == 'unreachable' and local_user is not None:
+        if exc.kind == 'unreachable' and local_user is not None and not entra_only(local_user):
             logger.warning('Divera nicht erreichbar: %s mit lokal gespeichertem Passwort angemeldet',
                            local_user.username)
             return local_user
@@ -275,6 +284,9 @@ def divera_login(username, password, request):
         if not user.is_active and profile.divera_left_at is None:
             # Von einem Admin gesperrt (nicht wegen Austritt): gesperrt lassen
             raise DiveraError('rejected', 'Dieses Konto ist deaktiviert.')
+        if entra_only(user):
+            # Vor jeder Änderung am Konto ablehnen (kein Passwort setzen, Quelle nicht umstellen)
+            raise DiveraError('rejected', ENTRA_ONLY_MESSAGE)
     else:
         user = User.objects.filter(username__iexact=username).first()
         if user is not None:
@@ -297,7 +309,7 @@ def divera_login(username, password, request):
 
     profile, _ = Profile.objects.get_or_create(user=user)
     profile.login_source = Profile.SOURCE_DIVERA
-    _apply_divera_data(profile, token, member)
+    _apply_divera_data(profile, member)
     profile.save()
 
     _sync_groups(user)

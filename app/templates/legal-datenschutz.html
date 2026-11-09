@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block page_title %}Datenschutz{% endblock %}
+
+{% block site_content %}
+<article class="page-narrow legal">
+    <p class="eyebrow">Rechtliches</p>
+    <h1 class="page-title mt-1">Datenschutzerklärung</h1>
+    <p class="text-xs text-ink-3">Stand: {{ legal.last_updated }}</p>
+    {% include "_legal_incomplete.html" %}
+
+    <p>Diese Erklärung beschreibt, welche personenbezogenen Daten das LA-Tool verarbeitet, wofür, wie lange und welche Rechte du hast. Das LA-Tool ist ein internes Werkzeug zur Vorbereitung auf das Leistungsabzeichen der THW-Jugend und nur für Mitglieder bestimmt.</p>
+
+    <h2>1. Verantwortliche Stelle</h2>
+    <p>{{ legal.controller_name }}<br>{{ legal.controller_address }}<br>Vertreten durch: {{ legal.controller_represented_by }}<br>E-Mail: {{ legal.contact_email }}</p>
+    {% if legal.dpo %}<p><strong>Datenschutzbeauftragte Person:</strong> {{ legal.dpo }}</p>{% endif %}
+    <p>{{ legal.operator_note }}</p>
+
+    <h2>2. Welche Daten wir verarbeiten und wofür</h2>
+    <ul>
+        <li><strong>Konto:</strong> Vor- und Nachname, Benutzername bzw. E-Mail-Adresse, Zeitpunkt der letzten Anmeldung, Gruppen und Rechte im LA-Tool. Zweck: Anmeldung und Zuordnung zu deiner Stufe und Gruppe.</li>
+        <li><strong>Divera 24/7:</strong> Bei Anmeldung mit Divera prüfen wir deine Zugangsdaten bei Divera und übernehmen deine Divera-Personen-ID, Qualifikationen (z.&nbsp;B. erreichte LA-Stufe) und Divera-Gruppen. Dein Divera-Zugangsschlüssel wird nicht gespeichert. Für den Notfall, dass Divera nicht erreichbar ist, speichern wir dein Passwort ausschließlich als nicht umkehrbaren Hash.</li>
+        <li><strong>Microsoft-Konto (Entra ID):</strong> Bei Anmeldung mit Microsoft erhalten wir Name, E-Mail-Adresse, die feste Microsoft-ID und die IDs deiner Microsoft-Gruppen.</li>
+        <li><strong>Lern- und Übungsdaten:</strong> deine Antworten in Theorie-Trainings, daraus berechneter Lernerfolg und Wiederholungsplan, gemerkte Fragen, Selbsteinschätzungen bei Praxis- und Gruppenaufgaben, gemeldete Fehler in Fragen.</li>
+        <li><strong>Prüfungen:</strong> deine Antworten, Punktzahl, Bestanden/Nicht bestanden und Zeitpunkt.</li>
+        <li><strong>Benachrichtigungen:</strong> Nachrichten an dich (z.&nbsp;B. Lernauftrag, Erinnerung) und – wenn du Push auf einem Gerät einschaltest – die Push-Adresse dieses Geräts und die Browser-Kennung.</li>
+        <li><strong>Server-Protokolle:</strong> technische Meldungen (z.&nbsp;B. Fehler, fehlgeschlagene Anmeldungen mit IP-Adresse) zur Sicherheit und Fehlersuche.</li>
+    </ul>
+
+    <h2>3. Rechtsgrundlagen</h2>
+    <ul>
+        <li>Art. 6 Abs. 1 lit. b DSGVO bzw. die Mitgliedschaft in der THW-Jugend: Bereitstellung des Lern- und Prüfungsangebots.</li>
+        <li>Art. 6 Abs. 1 lit. f DSGVO: berechtigtes Interesse an einem sicheren Betrieb (Protokolle, Schutz vor Missbrauch) und an der Planung der Ausbildung (Lernstand-Übersicht für Ausbilder).</li>
+        <li>Art. 6 Abs. 1 lit. a DSGVO: Einwilligung für Push-Benachrichtigungen (jederzeit im Profil abschaltbar).</li>
+    </ul>
+    <p class="legal-check">[RECHTLICH PRÜFEN: Rechtsgrundlage für Minderjährige und ggf. Einbindung der Sorgeberechtigten.]</p>
+
+    <h2>4. Wer deine Daten sieht</h2>
+    <ul>
+        <li>Du selbst: alle deine Daten (siehe „Mein Lernstand“, Profil und Datenexport).</li>
+        <li>Ausbilderinnen und Ausbilder mit dem Recht „Lernstand einsehen“: deinen Lernerfolg je Katalog und deine unsicheren Fragen.</li>
+        <li>Personen mit dem Recht „Prüfungsergebnisse einsehen“: deine Prüfungsergebnisse.</li>
+        <li>Administratoren der Anwendung im Rahmen ihrer Aufgaben.</li>
+    </ul>
+
+    <h2>5. Empfänger und Dienstleister</h2>
+    <ul>
+        <li><strong>Hosting:</strong> {{ legal.hoster }}</li>
+        <li><strong>Divera 24/7</strong> (DIVERA GmbH, Deutschland) für die Anmeldung und den Abgleich der Mitgliedsdaten.</li>
+        <li><strong>Microsoft</strong> (Entra ID) für die Anmeldung mit Microsoft-Konto.</li>
+        <li><strong>Push-Dienste der Browser-Hersteller</strong> (Google, Mozilla, Apple, Microsoft) – nur wenn du Push einschaltest. Die Nachrichten werden verschlüsselt übermittelt.</li>
+    </ul>
+    <p class="legal-check">[RECHTLICH PRÜFEN: Auftragsverarbeitungsverträge und Übermittlungen in Drittländer (Microsoft, Google, Apple).]</p>
+
+    <h2>6. Speicherdauer</h2>
+    <ul>
+        <li>Trainingsergebnisse: {{ retention.training_days }} Jahre, danach automatische Löschung.</li>
+        <li>Prüfungsergebnisse: {{ retention.exam_days }} Jahre, danach automatische Löschung.</li>
+        <li>Benachrichtigungen: {{ retention.notification_days }} Tage.</li>
+        <li>Erledigte Fehlermeldungen zu Fragen: {{ retention.resolved_report_days }} Jahr.</li>
+        <li>Konten von Personen, die nicht mehr im Divera-Standort sind, werden gesperrt und {{ retention.left_account_days }} Jahr nach dem Austritt mit allen Daten gelöscht.</li>
+        <li>Anmeldesitzungen: mit „Angemeldet bleiben“ bis zu {{ session_days }} Tage nach der letzten Nutzung, sonst bis zum Schließen des Browsers.</li>
+    </ul>
+
+    <h2>7. Cookies und Speicher im Browser</h2>
+    <p>Wir verwenden nur technisch notwendige Cookies: ein Sitzungs-Cookie für die Anmeldung und ein Cookie zum Schutz von Formularen (CSRF). Im Speicher deines Browsers liegen außerdem: dein Farbschema, Zwischenstände laufender Trainings und Prüfungen, für die App ohne Netz die Theoriefragen deiner Stufen sowie noch nicht gesendete Trainings. Beim Abmelden werden Fragen und offene Trainings vom Gerät gelöscht. Es gibt kein Tracking, keine Werbung und keine Analyse-Dienste.</p>
+
+    <h2>8. Deine Rechte</h2>
+    <p>Du hast das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch (Art. 21 DSGVO). Eine Einwilligung kannst du jederzeit widerrufen.</p>
+    <ul>
+        <li>Unter <a class="link" href="{% url 'profile' %}">Mein Konto</a> kannst du deine Daten herunterladen und deine Lerndaten selbst löschen.</li>
+        <li>Für alles Weitere (z.&nbsp;B. Löschung des Kontos) wende dich an {{ legal.contact_email }}.</li>
+        <li>Du kannst dich bei einer Datenschutz-Aufsichtsbehörde beschweren, zuständig ist: {{ legal.authority }}.</li>
+    </ul>
+</article>
+{% endblock %}

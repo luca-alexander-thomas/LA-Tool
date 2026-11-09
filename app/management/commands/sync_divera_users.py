@@ -1,18 +1,16 @@
 """Divera-Konten abgleichen: Qualifikationen/Gruppen aktualisieren, Ausgetretene sperren, Gruppen neu berechnen.
 
-Nutzt den Admin-API-Key (DIVERA_ADMIN_USER_API_KEY) für die Personenliste des Standorts (cluster.consumer).
-Die Liste enthält nicht zwingend alle Mitglieder (z.B. keine reinen Verwaltungskonten). Fehlt jemand darin,
-wird deshalb mit dessen eigenem Divera-Token nachgeprüft; gesperrt wird nur, wenn Divera eindeutig meldet,
-dass die Person nicht mehr im Standort ist. Für den Cron/systemd-Timer gedacht.
+Nutzt nur den Admin-API-Key (DIVERA_ADMIN_USER_API_KEY) für die Personenliste des Standorts (cluster.consumer);
+persönliche Divera-Keys werden nicht gespeichert. Die Liste enthält nicht zwingend alle Mitglieder (z.B. keine
+reinen Verwaltungskonten). Gesperrt wird deshalb nur, wer schon einmal in der Liste stand (Profile.divera_listed)
+und jetzt fehlt. Qualifikationen werden für alle verknüpften Konten aufgefrischt, auch für Entra-Konten.
+Für den Cron/systemd-Timer gedacht.
 """
 import requests
 from django.core.management.base import BaseCommand
 
 import la_tool.env as env
-from app.login_function import (
-    DiveraError, _divera_pull, _store_divera_cluster_quals, deactivate_divera_user, divera_error_text,
-    divera_member_data,
-)
+from app.login_function import _divera_pull, _store_divera_cluster_quals, deactivate_divera_user, divera_error_text
 from la_tool_admin.models import Profile
 from la_tool_admin.utils import sync_idp_groups
 
@@ -39,47 +37,35 @@ class Command(BaseCommand):
             return
 
         updated = deactivated = unclear = 0
-        profiles = Profile.objects.filter(login_source=Profile.SOURCE_DIVERA, divera_ucr__isnull=False)
+        profiles = Profile.objects.filter(divera_ucr__isnull=False)
         for profile in profiles.select_related('user'):
             member = members.get(str(profile.divera_ucr))
             name = profile.user.username
             if member is None:
-                status, member = self._check_with_own_token(profile)
-                if status == 'left':
+                # Gesperrt werden nur Divera-Konten; Entra-Konten regelt Entra
+                if profile.divera_listed and profile.login_source == Profile.SOURCE_DIVERA:
                     if profile.user.is_active:
                         self.stdout.write(f'Gesperrt (nicht mehr im Standort): {name}')
                         deactivated += 1
                         if not dry_run:
                             deactivate_divera_user(profile)
-                    continue
-                if status == 'unclear':
-                    self.stdout.write(f'Nicht prüfbar (kein gültiger Divera-Token): {name}')
+                elif not profile.divera_listed:
+                    self.stdout.write(f'Nicht in der Personenliste (nie gelistet, bleibt unverändert): {name}')
                     unclear += 1
-                    continue
+                continue
 
             if dry_run:
                 continue
             profile.divera_qualifications = member.get('qualifications', [])
             profile.divera_groups = member.get('groups', [])
-            profile.save(update_fields=['divera_qualifications', 'divera_groups'])
+            profile.divera_listed = True
+            profile.save(update_fields=['divera_qualifications', 'divera_groups', 'divera_listed'])
             sync_idp_groups(profile.user)
             updated += 1
 
         prefix = '[Probelauf] ' if dry_run else ''
         self.stdout.write(self.style.SUCCESS(
             f'{prefix}{updated} aktualisiert, {deactivated} gesperrt, {unclear} nicht prüfbar.'))
-
-    def _check_with_own_token(self, profile):
-        """('member', daten) | ('left', None) | ('unclear', None) – Prüfung mit dem Token der Person."""
-        if not profile.divera_api_key:
-            return 'unclear', None
-        try:
-            data = divera_member_data(profile.divera_api_key)
-        except DiveraError as exc:
-            return ('left' if exc.kind == 'not_member' else 'unclear'), None
-        if data['ucr'] != profile.divera_ucr:
-            return 'unclear', None
-        return 'member', data
 
     def _site_members(self, api_key):
         """{ucr: consumer-Daten} aller Mitglieder des Standorts oder None bei Fehlern."""

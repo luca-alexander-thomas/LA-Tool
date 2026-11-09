@@ -1,0 +1,7 @@
+{# Hinweis, solange in app/legal_info.py noch Platzhalter stehen #}
+{% if legal_incomplete %}
+<div class="alert alert-warning my-4" role="note">
+    {% include "icons/exclamation-triangle.html" with cls="size-5 shrink-0" %}
+    <span>Entwurf: Einige Angaben fehlen noch (siehe <code>app/legal_info.py</code>) und der Text ist rechtlich noch nicht geprüft.</span>
+</div>
+{% endif %}

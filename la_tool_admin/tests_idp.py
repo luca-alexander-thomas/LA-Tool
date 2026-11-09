@@ -148,18 +148,13 @@ class SyncDiveraUsersTests(TestCase):
     def setUp(self):
         self.stay = User.objects.create_user('bleibt')
         Profile.objects.create(user=self.stay, login_source=Profile.SOURCE_DIVERA, divera_ucr=1)
+        # „weg“ stand früher in der Personenliste, „verwaltung“ nie (Mitglied ohne Alarmierung)
         self.gone = User.objects.create_user('weg')
-        Profile.objects.create(user=self.gone, login_source=Profile.SOURCE_DIVERA, divera_ucr=2,
-                               divera_api_key='token-weg')
+        Profile.objects.create(user=self.gone, login_source=Profile.SOURCE_DIVERA, divera_ucr=2, divera_listed=True)
         self.admin_only = User.objects.create_user('verwaltung')
-        Profile.objects.create(user=self.admin_only, login_source=Profile.SOURCE_DIVERA, divera_ucr=3,
-                               divera_api_key='token-verwaltung')
-
-    def own_token_check(self, token):
-        # Nicht in der Personenliste: „weg“ ist ausgetreten, „verwaltung“ ist Mitglied ohne Alarmierung
-        if token == 'token-weg':
-            raise DiveraError('not_member', 'weg')
-        return member(ucr=3, quals=[7])
+        Profile.objects.create(user=self.admin_only, login_source=Profile.SOURCE_DIVERA, divera_ucr=3)
+        self.entra = User.objects.create_user('entra@thw-jugend-ge.de')
+        Profile.objects.create(user=self.entra, login_source=Profile.SOURCE_ENTRA, divera_ucr=4, divera_listed=True)
 
     def run_sync(self, consumers):
         pulls = [
@@ -168,19 +163,24 @@ class SyncDiveraUsersTests(TestCase):
         ]
         with override_settings(), patch('la_tool.env.DIVERA_ADMIN_USER_API_KEY', 'key'), \
                 patch('la_tool.env.DIVERA_Site_ID', '20369'), \
-                patch('app.management.commands.sync_divera_users._divera_pull', side_effect=pulls),                 patch('app.management.commands.sync_divera_users.divera_member_data', side_effect=self.own_token_check):
+                patch('app.management.commands.sync_divera_users._divera_pull', side_effect=pulls):
             call_command('sync_divera_users', stdout=StringIO(), stderr=StringIO())
 
     def test_missing_members_are_deactivated(self):
         self.run_sync({'1': {'qualifications': [5]}, '9': {}})
-        self.stay.refresh_from_db()
-        self.gone.refresh_from_db()
+        for u in (self.stay, self.gone, self.admin_only, self.entra):
+            u.refresh_from_db()
         self.assertTrue(self.stay.is_active)
         self.assertEqual(self.stay.profile.divera_qualifications, [5])
-        self.assertFalse(self.gone.is_active)
-        self.admin_only.refresh_from_db()
-        self.assertTrue(self.admin_only.is_active)
-        self.assertEqual(self.admin_only.profile.divera_qualifications, [7])
+        self.assertTrue(self.stay.profile.divera_listed)
+        self.assertFalse(self.gone.is_active)          # stand in der Liste, fehlt jetzt: ausgetreten
+        self.assertTrue(self.admin_only.is_active)     # nie gelistet: unverändert
+        self.assertTrue(self.entra.is_active)          # Entra-Konten sperrt der Divera-Abgleich nicht
+
+    def test_entra_accounts_get_qualifications(self):
+        self.run_sync({'1': {}, '4': {'qualifications': [30132]}})
+        self.entra.refresh_from_db()
+        self.assertEqual(self.entra.profile.divera_qualifications, [30132])
 
     def test_empty_member_list_changes_nothing(self):
         self.run_sync({})

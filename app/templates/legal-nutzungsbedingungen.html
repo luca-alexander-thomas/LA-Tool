@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block page_title %}Nutzungsbedingungen{% endblock %}
+
+{% block site_content %}
+<article class="page-narrow legal">
+    <p class="eyebrow">Rechtliches</p>
+    <h1 class="page-title mt-1">Nutzungsbedingungen</h1>
+    <p class="text-xs text-ink-3">Stand: {{ legal.last_updated }}</p>
+    {% include "_legal_incomplete.html" %}
+
+    <h2>1. Zweck</h2>
+    <p>Das LA-Tool unterstützt Mitglieder der THW-Jugend Gelsenkirchen bei der Vorbereitung auf das Leistungsabzeichen. Anbieter ist {{ legal.controller_name }}.</p>
+
+    <h2>2. Zugang</h2>
+    <ul>
+        <li>Nutzen dürfen das LA-Tool Mitglieder sowie Betreuerinnen und Betreuer der THW-Jugend Gelsenkirchen. Die Anmeldung erfolgt mit Divera 24/7 oder einem Microsoft-Konto der Organisation.</li>
+        <li>Zugangsdaten sind persönlich und dürfen nicht weitergegeben werden. Melde dich auf fremden Geräten ohne „Angemeldet bleiben“ an und melde dich danach ab.</li>
+        <li>Wer nicht mehr Mitglied ist, verliert den Zugang automatisch.</li>
+    </ul>
+
+    <h2>3. Regeln für die Nutzung</h2>
+    <ul>
+        <li>Prüfungen sind allein und ohne Hilfsmittel abzulegen. Während einer Prüfung sind Training und Nachschlagen gesperrt.</li>
+        <li>Prüfungsfragen und -ergebnisse anderer dürfen nicht weitergegeben werden.</li>
+        <li>Fehler in Fragen bitte über „Fehler melden“ mitteilen. Meldungen sollen sachlich sein.</li>
+        <li>Rechte im Admin-Bereich dürfen nur für die übertragenen Aufgaben genutzt werden.</li>
+    </ul>
+
+    <h2>4. Inhalte</h2>
+    <p>Fragen und Aufgaben beruhen auf den Unterlagen zum Leistungsabzeichen der THW-Jugend. Wir prüfen sie sorgfältig, können Fehler aber nicht ausschließen. Maßgeblich für die Abnahme des Leistungsabzeichens sind die offiziellen Vorgaben der THW-Jugend.</p>
+
+    <h2>5. Verfügbarkeit</h2>
+    <p>Das LA-Tool wird ehrenamtlich betrieben. Es besteht kein Anspruch auf ständige Verfügbarkeit. Wartungen und Ausfälle sind möglich.</p>
+
+    <h2>6. Sperrung</h2>
+    <p>Bei Verstößen gegen diese Bedingungen kann der Zugang ganz oder teilweise gesperrt werden.</p>
+
+    <h2>7. Datenschutz</h2>
+    <p>Wie wir mit deinen Daten umgehen, steht in der <a class="link" href="{% url 'legal_privacy' %}">Datenschutzerklärung</a>.</p>
+
+    <h2>8. Änderungen</h2>
+    <p>Wir können diese Bedingungen ändern, etwa wenn neue Funktionen hinzukommen. Über wesentliche Änderungen informieren wir in der App.</p>
+
+    <p class="legal-check">[RECHTLICH PRÜFEN: Haftungsregelungen und Vereinbarkeit mit Satzung/Jugendordnung.]</p>
+</article>
+{% endblock %}

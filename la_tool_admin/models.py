@@ -29,13 +29,15 @@ class Profile(models.Model):
     login_source = models.CharField(
         max_length=20, choices=SOURCE_CHOICES, default=SOURCE_LOCAL
     )
-    divera_api_key = models.CharField(max_length=255, blank=True)
     divera_qualifications = models.JSONField(blank=True, null=True)
     divera_groups = models.JSONField(blank=True, null=True)
     # Feste Divera-ID (User-Cluster-Relation am Standort): darüber wird ein Divera-Login dem Konto zugeordnet
     divera_ucr = models.IntegerField(blank=True, null=True)
     # Zeitpunkt, zu dem das Konto deaktiviert wurde, weil die Person nicht mehr im Divera-Standort ist
     divera_left_at = models.DateTimeField(blank=True, null=True)
+    # Stand schon einmal in der Personenliste des Standorts (Admin-Key). Fehlt die Person später darin,
+    # ist sie ausgetreten; wer nie darin stand (z.B. reine Verwaltungskonten), wird nicht gesperrt.
+    divera_listed = models.BooleanField(default=False)
     # Feste Entra-ID (Object-ID); verhindert, dass ein anderes Entra-Konto mit gleicher Mail das Konto übernimmt
     entra_oid = models.CharField(max_length=64, blank=True, default='')
     # Zuletzt bekannte Entra-Gruppen (Object-IDs); None = nie per Entra angemeldet

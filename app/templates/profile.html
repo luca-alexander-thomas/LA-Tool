@@ -36,7 +36,7 @@
 
                 <div class="mt-5 border-t border-line pt-5">
                     <h3 class="mb-3 text-sm font-semibold text-ink">DIVERA 24/7 Verknüpfung</h3>
-                    {% if user.profile.divera_api_key %}
+                    {% if user.profile.divera_ucr %}
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="badge badge-success">{% include "icons/check.html" with cls="size-3.5" %} Verbunden</span>
                         {% if user.profile.divera_la_level %}
@@ -63,6 +63,25 @@
             </div>
         </section>
         {% include "_install_card.html" %}
+        <!-- Meine Daten (DSGVO) -->
+        <section class="card">
+            <div class="card-header"><h2 class="section-title">Meine Daten</h2></div>
+            <div class="card-body space-y-4 text-sm">
+                <div>
+                    <p class="text-ink-2">Lade alle Daten herunter, die das LA-Tool über dich speichert (JSON-Datei).</p>
+                    <a href="{% url 'my_data_export' %}" class="btn btn-secondary btn-sm mt-2" download>{% include "icons/arrow-down-tray.html" with cls="size-4" %} Daten herunterladen</a>
+                </div>
+                <form method="post" action="{% url 'my_learning_data_delete' %}" class="space-y-2 border-t border-line pt-4" x-data="{ text: '' }">
+                    {% csrf_token %}
+                    <p class="text-ink-2">Lösche deine Trainings, gemerkten Fragen, Selbsteinschätzungen und Benachrichtigungen. Dein Lernerfolg beginnt danach bei 0. Prüfungsergebnisse und das Konto selbst löscht auf Anfrage ein Admin (siehe <a class="link" href="{% url 'legal_privacy' %}">Datenschutz</a>).</p>
+                    <label class="form-label" for="delete-confirm">Zur Bestätigung <strong>LÖSCHEN</strong> eintippen</label>
+                    <div class="flex gap-2">
+                        <input id="delete-confirm" name="confirm" class="form-control" autocomplete="off" x-model="text">
+                        <button type="submit" class="btn btn-danger-soft btn-sm shrink-0" :disabled="text !== 'LÖSCHEN'">{% include "icons/trash.html" with cls="size-4" %} Löschen</button>
+                    </div>
+                </form>
+            </div>
+        </section>
         <!-- Benachrichtigungen (Web Push) -->
         <section class="card" x-data="pushToggle({
                 publicKey: '{{ push_public_key|escapejs }}',

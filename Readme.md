@@ -143,6 +143,24 @@ python manage.py send_learning_reminders
 
 Als Timer analog zu oben, z.B. `OnCalendar=Sun *-*-* 17:53:00` mit `ExecStart=… manage.py send_learning_reminders`.
 
+## Datenschutz und Löschkonzept
+
+- Rechtstexte unter `/datenschutz/`, `/nutzungsbedingungen/`, `/impressum/`. Fehlende Angaben in `app/legal_info.py` ergänzen (Platzhalter `[BITTE ERGÄNZEN …]`); die Texte sind Entwürfe und sollten rechtlich geprüft werden.
+- Unter **Mein Konto → Meine Daten** können Nutzer alle eigenen Daten herunterladen und ihre Lerndaten löschen.
+- Fristen (in `app/legal_info.py`, `RETENTION`): Trainings 2 Jahre, Prüfungsergebnisse 3 Jahre, Benachrichtigungen 90 Tage, erledigte Fehlermeldungen 1 Jahr, Konten ausgetretener Mitglieder 1 Jahr nach dem Austritt.
+- Persönliche Divera-Accesskeys werden nicht gespeichert. Der nächtliche Abgleich (`sync_divera_users`) arbeitet nur mit dem Admin-Key und frischt auch die Qualifikationen von Microsoft-Konten mit Divera-Verknüpfung auf. Gesperrt wird, wer schon einmal in der Personenliste stand und jetzt fehlt – nach dem Update erst ab dem zweiten Lauf.
+- Admins mit verknüpftem Microsoft-Konto können sich nur noch mit „Mit Microsoft anmelden“ anmelden.
+
+Löschen nach Fristablauf (täglich, zuerst mit `--dry-run`), dazu abgelaufene Sitzungen entfernen:
+
+```bash
+python manage.py cleanup_data --dry-run
+python manage.py cleanup_data
+python manage.py clearsessions
+```
+
+Als Timer analog zu oben, z.B. `OnCalendar=*-*-* 03:41:00`.
+
 ## App (PWA)
 
 - **Benachrichtigungen** werden bei jedem Push auch gespeichert (Glocke in der Kopfzeile, Seite `/benachrichtigungen/`, 90 Tage). Die Zahl am App-Symbol zeigt die ungelesenen.

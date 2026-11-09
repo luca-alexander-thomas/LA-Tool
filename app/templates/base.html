@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>{% block page_title %}LA-Tool{% endblock %} · THW-Jugend Gelsenkirchen</title>
     <meta name="description" content="Das LA-Tool der THW-Jugend Gelsenkirchen: Vorbereitung auf das Leistungsabzeichen.">
+    <meta name="robots" content="noindex, nofollow">
     <script>
         // Farbschema vor dem ersten Rendern setzen (verhindert Aufblitzen)
         (function () {
@@ -188,8 +189,9 @@
         <div class="container-app flex flex-col items-center justify-between gap-2 sm:flex-row">
             <p>© 2026 Luca-Alexander Thomas · THW-Jugend Gelsenkirchen</p>
             <nav class="flex gap-4">
-                <a href="#" class="hover:text-ink">Datenschutz</a>
-                <a href="#" class="hover:text-ink">Nutzungsbedingungen</a>
+                <a href="{% url 'legal_privacy' %}" class="hover:text-ink">Datenschutz</a>
+                <a href="{% url 'legal_terms' %}" class="hover:text-ink">Nutzungsbedingungen</a>
+                <a href="{% url 'legal_imprint' %}" class="hover:text-ink">Impressum</a>
             </nav>
         </div>
     </footer>
