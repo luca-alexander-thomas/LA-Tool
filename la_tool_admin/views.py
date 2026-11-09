@@ -2,12 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, Http404
 from django.contrib import auth, messages
 from django.conf import settings
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User, Group, Permission
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from functools import wraps
-from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import Count, Exists, OuterRef, Prefetch, Q
 from django.utils import timezone
@@ -34,6 +32,7 @@ import json
 import io
 import os
 from django.urls import reverse
+from la_tool import env
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +98,7 @@ def _report_push(request, sent):
 def send_divera_notification(user_profile, subject, message):
     """Send a Divera private message to a single user via their UCR ID. Returns True on success."""
     try:
-        admin_key = getattr(__import__('la_tool.env', fromlist=['env']), 'DIVERA_ADMIN_USER_API_KEY', '')
+        admin_key = env.DIVERA_ADMIN_USER_API_KEY
         if not admin_key:
             logger.warning('Divera-Nachricht nicht gesendet: kein Admin-API-Key konfiguriert.')
             return False

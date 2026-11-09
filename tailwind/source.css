@@ -206,10 +206,6 @@
         @apply flex items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3 transition hover:border-accent/40 hover:bg-surface-2;
     }
 
-    .list-divided {
-        @apply divide-y divide-line;
-    }
-
     .icon-tile {
         @apply flex size-11 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent-ink;
     }
@@ -486,33 +482,13 @@
     .answer-option {
         @apply flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-line bg-surface p-3.5 transition select-none hover:border-accent/50 sm:p-4;
 
-        &:has(:checked),
-        &.is-selected {
-            @apply border-accent bg-accent-soft;
-        }
-
-        &.is-correct {
-            @apply border-green-500 bg-green-50 dark:bg-green-500/10;
-        }
-
-        &.is-wrong {
-            @apply border-red-500 bg-red-50 dark:bg-red-500/10;
-        }
-    }
+        &:has(:checked),    }
 
     .answer-letter {
         @apply flex size-9 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-sm font-bold text-ink-2 transition;
 
-        :is(.answer-option:has(:checked), .answer-option.is-selected) & {
+        .answer-option:has(:checked) & {
             @apply bg-accent text-white;
-        }
-
-        .answer-option.is-correct & {
-            @apply bg-green-600 text-white;
-        }
-
-        .answer-option.is-wrong & {
-            @apply bg-red-600 text-white;
         }
     }
 

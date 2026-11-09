@@ -56,7 +56,7 @@
 
             {# Übungen sind auch ohne Anmeldung nutzbar; Dienste/Prüfungen leiten zum Login #}
             <nav class="hidden items-center gap-0.5 md:flex" aria-label="Hauptnavigation">
-                <a href="{% url 'home' %}" class="nav-link {% if nav_section == 'home' %}nav-link-active{% endif %}">Start</a>
+                <a href="{% url 'home' %}" class="nav-link {% if nav_section == 'home' %}nav-link-active{% endif %}" {% if nav_section == 'home' %}aria-current="page"{% endif %}>Start</a>
                 {# Üben: Übersicht und Bereiche als Unterpunkte #}
                 <div class="relative" x-data="{ open: false }" @keydown.escape="open = false; $refs.practiceButton.focus()">
                     <button type="button" x-ref="practiceButton" @click="open = !open" :aria-expanded="open.toString()" aria-haspopup="true"
@@ -67,14 +67,14 @@
                         {% include "_practice_menu.html" with item_class="dropdown-item" active_class="bg-accent-soft font-semibold text-accent-ink" %}
                     </div>
                 </div>
-                <a href="{% url 'work' %}" class="nav-link {% if nav_section == 'work' %}nav-link-active{% endif %}">Dienste</a>
-                <a href="{% url 'exam_list' %}" class="nav-link {% if nav_section == 'exam' %}nav-link-active{% endif %}">Prüfungen</a>
+                <a href="{% url 'work' %}" class="nav-link {% if nav_section == 'work' %}nav-link-active{% endif %}" {% if nav_section == 'work' %}aria-current="page"{% endif %}>Dienste</a>
+                <a href="{% url 'exam_list' %}" class="nav-link {% if nav_section == 'exam' %}nav-link-active{% endif %}" {% if nav_section == 'exam' %}aria-current="page"{% endif %}>Prüfungen</a>
             </nav>
 
             <div class="ml-auto flex items-center gap-1 sm:gap-2">
                 {# LA-Stufe wählen #}
                 {% if all_levels %}
-                <div class="relative" x-data="{ open: false }" @keydown.escape="open = false">
+                <div class="relative" x-data="{ open: false }" @keydown.escape="if (open) { open = false; $el.querySelector('button').focus() }">
                     <button type="button" @click="open = !open" :aria-expanded="open" aria-haspopup="true" title="LA-Stufe wählen"
                             class="flex h-10 items-center gap-1.5 rounded-xl border border-line bg-surface px-2 transition hover:bg-surface-2">
                         {% if current_level %}
@@ -107,7 +107,7 @@
                 {% endif %}
 
                 {# Farbschema #}
-                <div class="relative" x-data="themeSwitcher" @keydown.escape="open = false">
+                <div class="relative" x-data="themeSwitcher" @keydown.escape="if (open) { open = false; $el.querySelector('button').focus() }">
                     <button type="button" class="btn btn-ghost btn-icon" aria-label="Farbschema wechseln" @click="open = !open" :aria-expanded="open">
                         <span x-show="choice === 'light'" x-cloak>{% include "icons/sun.html" %}</span>
                         <span x-show="choice === 'dark'" x-cloak>{% include "icons/moon.html" %}</span>
@@ -131,7 +131,7 @@
 
                 {# Konto #}
                 {% if user.is_authenticated %}
-                <div class="relative" x-data="{ open: false }" @keydown.escape="open = false">
+                <div class="relative" x-data="{ open: false }" @keydown.escape="if (open) { open = false; $el.querySelector('button').focus() }">
                     <button type="button" @click="open = !open" :aria-expanded="open" aria-haspopup="true" aria-label="Kontomenü"
                             class="flex size-10 items-center justify-center rounded-full bg-accent text-sm font-bold text-white transition hover:brightness-115">
                         {{ user.first_name|default:user.username|first|upper }}{{ user.last_name|first|upper }}

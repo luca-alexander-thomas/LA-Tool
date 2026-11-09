@@ -11,46 +11,46 @@ Admin-Seiten füllen {% block admin_content %}.
 
     {# Mobil: horizontale Navigation #}
     <nav class="-mx-4 mb-6 flex gap-1 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:hidden" aria-label="Admin-Navigation">
-        <a href="{% url 'admin_index' %}" class="nav-link shrink-0 {% if nav_section == 'admin_home' %}nav-link-active{% endif %}">Übersicht</a>
-        {% if perms.app.manage_users %}<a href="{% url 'admin_users' %}" class="nav-link shrink-0 {% if nav_section == 'admin_users' %}nav-link-active{% endif %}">Benutzer</a>{% endif %}
-        <a href="{% url 'admin_catalog' %}" class="nav-link shrink-0 {% if nav_section == 'admin_catalog' %}nav-link-active{% endif %}">Kataloge</a>
-        {% if perms.app.manage_group_exercises %}<a href="{% url 'admin_group_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_group' %}nav-link-active{% endif %}">Gruppenaufgaben</a>{% endif %}
-        {% if perms.app.manage_theory %}<a href="{% url 'admin_import_questions' %}" class="nav-link shrink-0 {% if nav_section == 'admin_import' %}nav-link-active{% endif %}">Import</a>{% endif %}
-        {% if perms.app.manage_theory %}<a href="{% url 'admin_report_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_report' %}nav-link-active{% endif %}">Meldungen</a>{% endif %}
-        {% if perms.app.view_learning_progress %}<a href="{% url 'admin_learning' %}" class="nav-link shrink-0 {% if nav_section == 'admin_learning' %}nav-link-active{% endif %}">Lernstand</a>{% endif %}
-        {% if perms.app.manage_assignments %}<a href="{% url 'admin_assignment_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_assignment' %}nav-link-active{% endif %}">Lernaufträge</a>{% endif %}
-        <a href="{% url 'admin_exam_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_exam' %}nav-link-active{% endif %}">Prüfungen</a>
-        <a href="{% url 'admin_work_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_work' %}nav-link-active{% endif %}">Dienste</a>
-        {% if perms.app.send_notifications %}<a href="{% url 'admin_push_message' %}" class="nav-link shrink-0 {% if nav_section == 'admin_push' %}nav-link-active{% endif %}">Benachrichtigungen</a>{% endif %}
-        <a href="{% url 'admin_level_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_level' %}nav-link-active{% endif %}">Stufen</a>
-        {% if perms.app.manage_groups %}<a href="{% url 'admin_autogroup_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_autogroup' %}nav-link-active{% endif %}">Autogruppen</a>{% endif %}
-        {% if perms.app.manage_settings %}<a href="{% url 'admin_settings' %}" class="nav-link shrink-0 {% if nav_section == 'admin_settings' %}nav-link-active{% endif %}">Einstellungen</a>{% endif %}
+        <a href="{% url 'admin_index' %}" class="nav-link shrink-0 {% if nav_section == 'admin_home' %}nav-link-active{% endif %}\" {% if nav_section == 'admin_home' %}aria-current=\"page\"{% endif %}>Übersicht</a>
+        {% if perms.app.manage_users %}<a href="{% url 'admin_users' %}" class="nav-link shrink-0 {% if nav_section == 'admin_users' %}nav-link-active{% endif %}\" {% if nav_section == 'admin_users' %}aria-current=\"page\"{% endif %}>Benutzer</a>{% endif %}
+        <a href="{% url 'admin_catalog' %}" class="nav-link shrink-0 {% if nav_section == 'admin_catalog' %}nav-link-active{% endif %}\" {% if nav_section == 'admin_catalog' %}aria-current=\"page\"{% endif %}>Kataloge</a>
+        {% if perms.app.manage_group_exercises %}<a href="{% url 'admin_group_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_group' %}nav-link-active{% endif %}\" {% if nav_section == 'admin_group' %}aria-current=\"page\"{% endif %}>Gruppenaufgaben</a>{% endif %}
+        {% if perms.app.manage_theory %}<a href="{% url 'admin_import_questions' %}" class="nav-link shrink-0 {% if nav_section == 'admin_import' %}nav-link-active{% endif %}\" {% if nav_section == 'admin_import' %}aria-current=\"page\"{% endif %}>Import</a>{% endif %}
+        {% if perms.app.manage_theory %}<a href="{% url 'admin_report_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_report' %}nav-link-active{% endif %}\" {% if nav_section == 'admin_report' %}aria-current=\"page\"{% endif %}>Meldungen</a>{% endif %}
+        {% if perms.app.view_learning_progress %}<a href="{% url 'admin_learning' %}" class="nav-link shrink-0 {% if nav_section == 'admin_learning' %}nav-link-active{% endif %}\" {% if nav_section == 'admin_learning' %}aria-current=\"page\"{% endif %}>Lernstand</a>{% endif %}
+        {% if perms.app.manage_assignments %}<a href="{% url 'admin_assignment_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_assignment' %}nav-link-active{% endif %}\" {% if nav_section == 'admin_assignment' %}aria-current=\"page\"{% endif %}>Lernaufträge</a>{% endif %}
+        <a href="{% url 'admin_exam_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_exam' %}nav-link-active{% endif %}\" {% if nav_section == 'admin_exam' %}aria-current=\"page\"{% endif %}>Prüfungen</a>
+        <a href="{% url 'admin_work_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_work' %}nav-link-active{% endif %}\" {% if nav_section == 'admin_work' %}aria-current=\"page\"{% endif %}>Dienste</a>
+        {% if perms.app.send_notifications %}<a href="{% url 'admin_push_message' %}" class="nav-link shrink-0 {% if nav_section == 'admin_push' %}nav-link-active{% endif %}\" {% if nav_section == 'admin_push' %}aria-current=\"page\"{% endif %}>Benachrichtigungen</a>{% endif %}
+        <a href="{% url 'admin_level_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_level' %}nav-link-active{% endif %}\" {% if nav_section == 'admin_level' %}aria-current=\"page\"{% endif %}>Stufen</a>
+        {% if perms.app.manage_groups %}<a href="{% url 'admin_autogroup_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_autogroup' %}nav-link-active{% endif %}\" {% if nav_section == 'admin_autogroup' %}aria-current=\"page\"{% endif %}>Autogruppen</a>{% endif %}
+        {% if perms.app.manage_settings %}<a href="{% url 'admin_settings' %}" class="nav-link shrink-0 {% if nav_section == 'admin_settings' %}nav-link-active{% endif %}\" {% if nav_section == 'admin_settings' %}aria-current=\"page\"{% endif %}>Einstellungen</a>{% endif %}
     </nav>
 
     {# Desktop: Seitenleiste #}
     <aside class="hidden lg:block">
         <nav class="sticky top-24 space-y-0.5" aria-label="Admin-Navigation">
             <p class="sidebar-heading pt-0">Admin-Bereich</p>
-            <a href="{% url 'admin_index' %}" class="sidebar-link {% if nav_section == 'admin_home' %}sidebar-link-active{% endif %}">{% include "icons/squares-2x2.html" %} Übersicht</a>
-            {% if perms.app.manage_users %}<a href="{% url 'admin_users' %}" class="sidebar-link {% if nav_section == 'admin_users' %}sidebar-link-active{% endif %}">{% include "icons/users.html" %} Benutzer</a>{% endif %}
+            <a href="{% url 'admin_index' %}" class="sidebar-link {% if nav_section == 'admin_home' %}sidebar-link-active{% endif %}\" {% if nav_section == 'admin_home' %}aria-current=\"page\"{% endif %}>{% include "icons/squares-2x2.html" %} Übersicht</a>
+            {% if perms.app.manage_users %}<a href="{% url 'admin_users' %}" class="sidebar-link {% if nav_section == 'admin_users' %}sidebar-link-active{% endif %}\" {% if nav_section == 'admin_users' %}aria-current=\"page\"{% endif %}>{% include "icons/users.html" %} Benutzer</a>{% endif %}
 
             <p class="sidebar-heading">Inhalte</p>
-            <a href="{% url 'admin_catalog' %}" class="sidebar-link {% if nav_section == 'admin_catalog' %}sidebar-link-active{% endif %}">{% include "icons/rectangle-stack.html" %} Kataloge</a>
-            {% if perms.app.manage_group_exercises %}<a href="{% url 'admin_group_list' %}" class="sidebar-link {% if nav_section == 'admin_group' %}sidebar-link-active{% endif %}">{% include "icons/user-group.html" %} Gruppenaufgaben</a>{% endif %}
-            {% if perms.app.manage_theory %}<a href="{% url 'admin_import_questions' %}" class="sidebar-link {% if nav_section == 'admin_import' %}sidebar-link-active{% endif %}">{% include "icons/arrow-up-tray.html" %} Fragen-Import</a>{% endif %}
-            {% if perms.app.manage_theory %}<a href="{% url 'admin_report_list' %}" class="sidebar-link {% if nav_section == 'admin_report' %}sidebar-link-active{% endif %}">{% include "icons/flag.html" %} Meldungen</a>{% endif %}
-            <a href="{% url 'admin_exam_list' %}" class="sidebar-link {% if nav_section == 'admin_exam' %}sidebar-link-active{% endif %}">{% include "icons/clipboard-document-check.html" %} Prüfungen</a>
-            <a href="{% url 'admin_work_list' %}" class="sidebar-link {% if nav_section == 'admin_work' %}sidebar-link-active{% endif %}">{% include "icons/calendar-days.html" %} Dienste</a>
-            {% if perms.app.send_notifications %}<a href="{% url 'admin_push_message' %}" class="sidebar-link {% if nav_section == 'admin_push' %}sidebar-link-active{% endif %}">{% include "icons/paper-airplane.html" %} Benachrichtigungen</a>{% endif %}
+            <a href="{% url 'admin_catalog' %}" class="sidebar-link {% if nav_section == 'admin_catalog' %}sidebar-link-active{% endif %}\" {% if nav_section == 'admin_catalog' %}aria-current=\"page\"{% endif %}>{% include "icons/rectangle-stack.html" %} Kataloge</a>
+            {% if perms.app.manage_group_exercises %}<a href="{% url 'admin_group_list' %}" class="sidebar-link {% if nav_section == 'admin_group' %}sidebar-link-active{% endif %}\" {% if nav_section == 'admin_group' %}aria-current=\"page\"{% endif %}>{% include "icons/user-group.html" %} Gruppenaufgaben</a>{% endif %}
+            {% if perms.app.manage_theory %}<a href="{% url 'admin_import_questions' %}" class="sidebar-link {% if nav_section == 'admin_import' %}sidebar-link-active{% endif %}\" {% if nav_section == 'admin_import' %}aria-current=\"page\"{% endif %}>{% include "icons/arrow-up-tray.html" %} Fragen-Import</a>{% endif %}
+            {% if perms.app.manage_theory %}<a href="{% url 'admin_report_list' %}" class="sidebar-link {% if nav_section == 'admin_report' %}sidebar-link-active{% endif %}\" {% if nav_section == 'admin_report' %}aria-current=\"page\"{% endif %}>{% include "icons/flag.html" %} Meldungen</a>{% endif %}
+            <a href="{% url 'admin_exam_list' %}" class="sidebar-link {% if nav_section == 'admin_exam' %}sidebar-link-active{% endif %}\" {% if nav_section == 'admin_exam' %}aria-current=\"page\"{% endif %}>{% include "icons/clipboard-document-check.html" %} Prüfungen</a>
+            <a href="{% url 'admin_work_list' %}" class="sidebar-link {% if nav_section == 'admin_work' %}sidebar-link-active{% endif %}\" {% if nav_section == 'admin_work' %}aria-current=\"page\"{% endif %}>{% include "icons/calendar-days.html" %} Dienste</a>
+            {% if perms.app.send_notifications %}<a href="{% url 'admin_push_message' %}" class="sidebar-link {% if nav_section == 'admin_push' %}sidebar-link-active{% endif %}\" {% if nav_section == 'admin_push' %}aria-current=\"page\"{% endif %}>{% include "icons/paper-airplane.html" %} Benachrichtigungen</a>{% endif %}
 
             {% if perms.app.view_learning_progress or perms.app.manage_assignments %}<p class="sidebar-heading">Ausbildung</p>{% endif %}
-            {% if perms.app.view_learning_progress %}<a href="{% url 'admin_learning' %}" class="sidebar-link {% if nav_section == 'admin_learning' %}sidebar-link-active{% endif %}">{% include "icons/chart-bar.html" %} Lernstand</a>{% endif %}
-            {% if perms.app.manage_assignments %}<a href="{% url 'admin_assignment_list' %}" class="sidebar-link {% if nav_section == 'admin_assignment' %}sidebar-link-active{% endif %}">{% include "icons/clipboard-document-check.html" %} Lernaufträge</a>{% endif %}
+            {% if perms.app.view_learning_progress %}<a href="{% url 'admin_learning' %}" class="sidebar-link {% if nav_section == 'admin_learning' %}sidebar-link-active{% endif %}\" {% if nav_section == 'admin_learning' %}aria-current=\"page\"{% endif %}>{% include "icons/chart-bar.html" %} Lernstand</a>{% endif %}
+            {% if perms.app.manage_assignments %}<a href="{% url 'admin_assignment_list' %}" class="sidebar-link {% if nav_section == 'admin_assignment' %}sidebar-link-active{% endif %}\" {% if nav_section == 'admin_assignment' %}aria-current=\"page\"{% endif %}>{% include "icons/clipboard-document-check.html" %} Lernaufträge</a>{% endif %}
 
             <p class="sidebar-heading">Konfiguration</p>
-            <a href="{% url 'admin_level_list' %}" class="sidebar-link {% if nav_section == 'admin_level' %}sidebar-link-active{% endif %}">{% include "icons/trophy.html" %} LA-Stufen</a>
-            {% if perms.app.manage_groups %}<a href="{% url 'admin_autogroup_list' %}" class="sidebar-link {% if nav_section == 'admin_autogroup' %}sidebar-link-active{% endif %}">{% include "icons/bolt.html" %} Autogruppen</a>{% endif %}
-            {% if perms.app.manage_settings %}<a href="{% url 'admin_settings' %}" class="sidebar-link {% if nav_section == 'admin_settings' %}sidebar-link-active{% endif %}">{% include "icons/cog-6-tooth.html" %} Einstellungen</a>{% endif %}
+            <a href="{% url 'admin_level_list' %}" class="sidebar-link {% if nav_section == 'admin_level' %}sidebar-link-active{% endif %}\" {% if nav_section == 'admin_level' %}aria-current=\"page\"{% endif %}>{% include "icons/trophy.html" %} LA-Stufen</a>
+            {% if perms.app.manage_groups %}<a href="{% url 'admin_autogroup_list' %}" class="sidebar-link {% if nav_section == 'admin_autogroup' %}sidebar-link-active{% endif %}\" {% if nav_section == 'admin_autogroup' %}aria-current=\"page\"{% endif %}>{% include "icons/bolt.html" %} Autogruppen</a>{% endif %}
+            {% if perms.app.manage_settings %}<a href="{% url 'admin_settings' %}" class="sidebar-link {% if nav_section == 'admin_settings' %}sidebar-link-active{% endif %}\" {% if nav_section == 'admin_settings' %}aria-current=\"page\"{% endif %}>{% include "icons/cog-6-tooth.html" %} Einstellungen</a>{% endif %}
 
             <div class="my-3 h-px bg-line"></div>
             <a href="{% url 'home' %}" class="sidebar-link">{% include "icons/arrow-left.html" %} Zur App</a>

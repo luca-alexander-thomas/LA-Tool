@@ -6,6 +6,7 @@ from django.contrib.auth.views import redirect_to_login
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 import json
+import logging
 import random
 import secrets
 import time
@@ -26,6 +27,8 @@ from .models import (
     Exams, ExamAttempt, ExamResultData, Work, SiteSettings, Levels,
     QuestionBookmark, QuestionReport, LearningAssignment,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _user_exam_filter(user):
@@ -1270,6 +1273,22 @@ def group_detail(request, q_id):
         'question': question,
         'assessment': assessment,
     })
+
+
+# ── BETRIEB ───────────────────────────────────────────────────────────────────
+
+def health(request):
+    """Für Monitoring und Proxy: 200, wenn die Datenbank antwortet, sonst 503. Ohne Login, ohne Details."""
+    from django.db import connection
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT 1')
+    except Exception:
+        logger.exception('Health-Check: Datenbank nicht erreichbar')
+        return JsonResponse({'status': 'error'}, status=503)
+    response = JsonResponse({'status': 'ok'})
+    response['Cache-Control'] = 'no-store'
+    return response
 
 
 # ── LA-FILTER ─────────────────────────────────────────────────────────────────

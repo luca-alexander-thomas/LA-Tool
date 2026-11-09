@@ -13,6 +13,7 @@ urlpatterns = [
     path('manifest.webmanifest', pwa.manifest, name='manifest'),
     path('sw.js', pwa.service_worker, name='service_worker'),
     path('offline/', pwa.offline, name='offline'),
+    path('healthz/', views.health, name='health'),
     path('push/abonnieren/', pwa.push_subscribe, name='push_subscribe'),
     path('push/abbestellen/', pwa.push_unsubscribe, name='push_unsubscribe'),
     path('push/test/', pwa.push_test, name='push_test'),

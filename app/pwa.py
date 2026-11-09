@@ -1,7 +1,6 @@
 """Progressive Web App: Manifest, Service Worker, Offline-Seite und Web-Push-Abos."""
 import json
 from pathlib import Path
-from urllib.parse import urlsplit
 
 from django.conf import settings
 from django.contrib.staticfiles import finders

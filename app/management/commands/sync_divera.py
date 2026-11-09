@@ -7,10 +7,10 @@ from app.models import Work
 
 
 def _divera_pull(access_token, ucr_id=None, timeout=30):
-    url = f'https://app.divera247.com/api/v2/pull/all?accesskey={access_token}'
+    params = {'accesskey': access_token}
     if ucr_id is not None:
-        url += f'&ucr={ucr_id}'
-    resp = requests.get(url, timeout=timeout)
+        params['ucr'] = ucr_id
+    resp = requests.get('https://app.divera247.com/api/v2/pull/all', params=params, timeout=timeout)
     resp.raise_for_status()
     return resp.json()
 

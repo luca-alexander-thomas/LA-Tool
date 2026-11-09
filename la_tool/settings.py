@@ -42,7 +42,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.sites',
     'django_tailwind_cli',
     'app',
     'la_tool_admin',
@@ -104,7 +103,7 @@ SECURE_CSP = {
 # ohne endet die Sitzung beim Schließen des Browsers bzw. der App
 SESSION_COOKIE_AGE = 90 * 24 * 60 * 60
 
-# Authentication Backends für MS Entra ID SSO + lokales Fallback
+# Anmeldung: Divera und Microsoft Entra melden über eigene Views an, Konten liegen lokal (ModelBackend)
 LOGIN_URL = 'login'
 
 AUTHENTICATION_BACKENDS = [
@@ -229,8 +228,6 @@ TAILWIND_CLI_DIST_CSS = 'css/tailwind.css'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
-# Django Sites Framework (benötigt von django-microsoft-auth)
-SITE_ID = 1
 
 
 # Logging: App-Meldungen (Divera, Push, Login) nach stdout → Gunicorn/journald.

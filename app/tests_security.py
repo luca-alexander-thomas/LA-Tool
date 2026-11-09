@@ -132,3 +132,16 @@ class AdminSecurityTests(TestCase):
         response = self.client.post(reverse('admin_import_questions'), {'catalog': catalog.pk, 'file': big})
         self.assertContains(response, 'zu groß')
         self.assertFalse(Questions_Theory.objects.exists())
+
+
+class HealthTests(TestCase):
+    def test_health_ok_without_login(self):
+        response = self.client.get(reverse('health'))
+        self.assertEqual(response.json(), {'status': 'ok'})
+        self.assertEqual(response['Cache-Control'], 'no-store')
+
+    def test_security_headers(self):
+        response = self.client.get(reverse('login'))
+        self.assertIn("frame-ancestors 'none'", response['Content-Security-Policy'])
+        self.assertEqual(response['X-Frame-Options'], 'DENY')
+        self.assertEqual(response['Referrer-Policy'], 'same-origin')
