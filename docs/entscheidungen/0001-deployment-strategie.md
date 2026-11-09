@@ -124,7 +124,7 @@ Bewertung 1 (schlecht) bis 5 (sehr gut), bezogen auf **dieses** Projekt und die 
 - **Rollback und Isolation:** Ein Rollback ist der Wechsel auf den vorigen Image-Tag. Anwendung und Datenbank laufen isoliert, die Datenbank ist nicht im Netz.
 - **Übergabe:** `compose.yaml` dokumentiert die komplette Laufzeit-Infrastruktur, eine Nachfolgerin muss nur Docker kennen.
 - **Geringe Zusatzkomplexität:** keine Orchestrierung, ein Server, der bestehende Proxy bleibt.
-- **Kosten:** keine zusätzlichen. GitHub Actions und GitHub Container Registry sind für das Projektvolumen kostenfrei, bei privatem Repository im Rahmen der Freikontingente.
+- **Kosten:** keine zusätzlichen. Das Repository ist öffentlich; GitHub Actions und öffentliche Pakete in der GitHub Container Registry sind dafür kostenfrei.
 
 **C – PaaS:**
 - Komfortabel, aber für Uploads braucht es zusätzlichen Objektspeicher, und Timer laufen nur über plattformeigene Scheduler.
@@ -426,7 +426,7 @@ Hinweise zu den Entwürfen:
 
 - **Healthcheck:** Der Health-Request braucht einen erlaubten Hostnamen. Dafür entweder `localhost` in `EXTRA_HOSTS` aufnehmen oder `HOSTNAME_HEALTH` auf den Produktions-Hostnamen setzen.
 - **Gunicorn:** `gunicorn` ist bisher nicht in `requirements.txt`, sondern nur auf dem Server installiert. Für das Image ist es im Dockerfile ergänzt. Alternativ in eine eigene `requirements-prod.txt` aufnehmen.
-- **Image-Name:** Der Name in `ghcr.io/…` setzt voraus, dass GHCR für das Repository genutzt wird. Ist das Repository privat, braucht der Server ein Token mit Leserecht `read:packages`.
+- **Image-Name und Sichtbarkeit:** Das Repository ist öffentlich, das Image wird ebenfalls öffentlich (Paket-Sichtbarkeit in GHCR einmalig auf „public“ stellen). Der Server braucht dann keinen Registry-Login. Das Image enthält nur, was ohnehin öffentlich ist: Code und statische Dateien, keine `.env`, keine Daten (siehe `.dockerignore`).
 - **Timer:** `ExecStart=/usr/bin/docker compose -f /srv/la-tool/compose.yaml run --rm app python manage.py sync_divera`.
 - **`deploy.sh`** und **`backup.sh`** sind in Schritt 4 zu schreiben. Ihr Ablauf steht in [Abschnitt 5](#update--und-rollback-verfahren-ziel) und unter [Datenbank und persistente Daten](#datenbank-und-persistente-daten).
 
@@ -445,9 +445,19 @@ Hinweise zu den Entwürfen:
 2. **Produktionsdatenbank:** Läuft schon MySQL oder noch SQLite? (Betrifft Schritt 7.)
 3. **Backup-Ziel:** Gibt es EU-Speicher (z.&nbsp;B. Storage Box) und wer hält das Backup-Passwort?
 4. **Wiederherstellungsziele:** A6 mit den Verantwortlichen bestätigen.
-5. **Repository:** öffentlich oder privat? (Betrifft GHCR-Zugriff und Actions-Kontingent.)
+5. ~~Repository öffentlich oder privat?~~ **Geklärt:** öffentlich, aber nur für die THW-Jugend Gelsenkirchen entwickelt. Folgen siehe [Öffentliches Repository](#öffentliches-repository).
 6. **Zertifikate:** Wie erneuert openresty sie? Setzt es `X-Forwarded-Proto`?
 7. **Zweite Person** mit Zugang für den Notfall?
+
+## Öffentliches Repository
+
+Das Repository ist öffentlich, die Anwendung ist aber nur für die THW-Jugend Gelsenkirchen gedacht (z.&nbsp;B. feste Divera-Standort-ID `20369` und Qualifikations-IDs in `Profile.QUAL_MAP`, Branding). Für den Betrieb bedeutet das:
+
+- **CI und Registry kostenfrei**, das Image ist öffentlich abrufbar, der Server braucht keinen Registry-Zugang.
+- **Nichts Geheimes ins Repository oder Image:** `.env`, `db.env`, Datenbanken, `divera.json` und `media/` sind über `.gitignore` bzw. `.dockerignore` ausgeschlossen. Bei Pull-Requests aus Forks laufen in GitHub Actions keine Secrets; die CI braucht für die Tests auch keine.
+- **Alter `SECRET_KEY`** stand früher in der öffentlichen Git-Historie: in Produktion zwingend einen neuen verwenden.
+- **Image-Push** nur aus `main` im eigenen Repository (Bedingung `github.ref == 'refs/heads/main'` im Entwurf), nicht aus Pull-Requests.
+- Eine Verallgemeinerung für andere Ortsverbände ist ausdrücklich **nicht** Ziel; organisationsspezifische Werte bleiben im Code bzw. in der `.env`.
 
 ## 10. Auswirkungen auf die Dokumentation
 

@@ -55,7 +55,7 @@ flowchart TB
    sudo chown 1000:1000 /srv/la-tool/media          # UID des Benutzers „app“ im Image
    ```
 
-5. **Zugriff auf die Registry** (nur bei privatem Repository): `docker login ghcr.io` mit einem Token mit `read:packages`.
+5. **Registry:** Das Image liegt öffentlich in der GitHub Container Registry; ein Login ist nicht nötig.
 
 ## Konfiguration
 
@@ -197,4 +197,4 @@ Im Browser: Anmeldung mit Divera und Microsoft, ein Training abschließen, Admin
 | „CSRF-Prüfung fehlgeschlagen“ | Aufruf über HTTP oder `Host`/`X-Forwarded-Proto` fehlen |
 | `migrate` meldet fehlende Tabellen oder Konflikte | Migrationsstand des Servers passt nicht zum Repository – nicht weiterarbeiten, Dump einspielen, Abgleich nach [Schritt 2](entscheidungen/0001-deployment-strategie.md#schritt-2-migrationen-versionieren-einmalig) |
 | Uploads schlagen fehl | Rechte auf `/srv/la-tool/media` (UID 1000) oder `client_max_body_size` im Proxy |
-| `docker compose pull` verweigert | Registry-Login fehlt (privates Repository) |
+| `docker compose pull` verweigert | Paket in GHCR nicht öffentlich oder Tag existiert nicht (CI-Lauf für den Commit fehlgeschlagen) |

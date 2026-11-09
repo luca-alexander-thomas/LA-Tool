@@ -3,7 +3,7 @@
 > [!NOTE]
 > In aktiver Entwicklung. Produktion: <https://la-tool.thw-jugend-ge.de>
 
-Web-App zur Vorbereitung auf das **Leistungsabzeichen der THW-Jugend** (Bronze, Silber, Gold): Theorie üben mit Lernkartei, Praxis- und Gruppenaufgaben, Übungsprüfungen, Dienste aus Divera 24/7 und ein Admin-Bereich für Betreuer – als installierbare Progressive Web App.
+Web-App der THW-Jugend Gelsenkirchen zur Vorbereitung auf das **Leistungsabzeichen der THW-Jugend** (Bronze, Silber, Gold): Theorie üben mit Lernkartei, Praxis- und Gruppenaufgaben, Übungsprüfungen, Dienste aus Divera 24/7 und ein Admin-Bereich für Betreuer – als installierbare Progressive Web App.
 
 | Bereich | Technik |
 |---|---|
@@ -13,6 +13,8 @@ Web-App zur Vorbereitung auf das **Leistungsabzeichen der THW-Jugend** (Bronze, 
 | Anmeldung | Divera 24/7, Microsoft Entra ID, lokal |
 | Datenbank | SQLite (Entwicklung), MySQL (Produktion) |
 | Betrieb | Gunicorn + WhiteNoise hinter openresty, systemd-Timer; Ziel: Docker Compose ([Entscheidung](docs/entscheidungen/0001-deployment-strategie.md)) |
+
+Das Repository ist öffentlich, die Anwendung ist aber auf die THW-Jugend Gelsenkirchen zugeschnitten (Divera-Standort, Qualifikationen, Branding) und nicht für den Einsatz in anderen Organisationen vorbereitet.
 
 ## Schnellstart (lokal)
 
