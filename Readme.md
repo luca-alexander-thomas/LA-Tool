@@ -1,172 +1,49 @@
-﻿# LA Tool der THW-Jugend Gelsenkirchen
+﻿# LA-Tool der THW-Jugend Gelsenkirchen
 
-> [!WARNING]  
-> In Aktiver Entwicklung!
+> [!NOTE]
+> In aktiver Entwicklung. Produktion: <https://la-tool.thw-jugend-ge.de>
 
-# Beschreibung
-
-Dieses Projekt bietet eine Plattform zum lernen und Abfragen von Theorie und Praxis Aufgaben für das Leistungsabzeichen der THW-Jugend angepasst auf die THW-Jugend Gelsenkirchen
-
-# Technik
+Web-App zur Vorbereitung auf das **Leistungsabzeichen der THW-Jugend** (Bronze, Silber, Gold): Theorie üben mit Lernkartei, Praxis- und Gruppenaufgaben, Übungsprüfungen, Dienste aus Divera 24/7 und ein Admin-Bereich für Betreuer – als installierbare Progressive Web App.
 
 | Bereich | Technik |
 |---|---|
-| Backend | Python 3.13, Django 6 |
-| Frontend | Django-Templates, Tailwind CSS v4 (über `django-tailwind-cli`, kein Node.js nötig), Alpine.js |
-| App | Progressive Web App: installierbar, Offline-Hinweisseite |
-| Anmeldung | Lokal, DIVERA 24/7, Microsoft Entra ID |
+| Backend | Python 3.13, Django 6.0 |
+| Oberfläche | Django-Templates, Tailwind CSS v4 (`django-tailwind-cli`, ohne Node.js), Alpine.js |
+| App | PWA mit Offline-Funktionen und Web Push |
+| Anmeldung | Divera 24/7, Microsoft Entra ID, lokal |
 | Datenbank | SQLite (Entwicklung), MySQL (Produktion) |
+| Betrieb | Gunicorn + WhiteNoise hinter openresty, systemd-Timer |
 
-Das Design-System (Farben, Komponenten-Klassen, Muster) ist in [DESIGN.md](DESIGN.md) beschrieben.
-
-# Lokale Entwicklung
+## Schnellstart (lokal)
 
 ```bash
 python -m venv venv
-venv\Scripts\activate            # Linux/macOS: source venv/bin/activate
+venv\Scripts\activate                 # Linux/macOS: source venv/bin/activate
 pip install -r requirements.txt
-copy .env.example .env           # Linux/macOS: cp .env.example .env – Werte eintragen
-python manage.py makemigrations app la_tool_admin   # Migrationsdateien sind (noch) nicht im Repository
+copy .env.example .env                # Linux/macOS: cp .env.example .env (enthält DEBUG=True)
+python manage.py makemigrations app la_tool_admin   # Migrationen sind nicht im Repository
 python manage.py migrate
 python manage.py createsuperuser
-python manage.py tailwind runserver
+python manage.py tailwind runserver   # http://127.0.0.1:8000, Admin unter /admin/
 ```
 
-`tailwind runserver` startet Django und baut das Stylesheet bei Template-Änderungen automatisch neu.
-Beim ersten Aufruf wird die Tailwind-Binary nach `.django_tailwind_cli/` geladen.
+Tests: `python manage.py test`
 
-# Deployment
+Ausführlich: [Entwicklung](docs/entwicklung.md).
 
-Nach jedem Update auf dem Server:
+## Dokumentation
 
-```bash
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py tailwind build    # Stylesheet bauen (assets/css/tailwind.css)
-python manage.py collectstatic --noinput
-sudo systemctl restart <gunicorn-dienst>
-```
+| Thema | |
+|---|---|
+| Aufbau, Komponenten, Datenmodell, Anmeldung | [Architektur](docs/architektur.md) |
+| Einrichten, Entwickeln, Testen, Konventionen | [Entwicklung](docs/entwicklung.md) · [Design-System](docs/design-system.md) |
+| Installation und Updates auf dem Server | [Deployment](docs/deployment.md) |
+| Timer, Logs, Backups, Fehlersuche | [Betrieb](docs/betrieb.md) |
+| Rechte, Sicherheit, Datenschutz, Löschkonzept | [Sicherheit und Datenschutz](docs/sicherheit-datenschutz.md) |
+| Umgebungsvariablen, Befehle, Endpunkte, Modelle | [Referenz](docs/README.md#referenz) |
 
-Für die PWA muss die Seite über HTTPS laufen. Der Service Worker liegt unter `/sw.js` und wird von Django ausgeliefert.
+Übersicht aller Dokumente: [docs/README.md](docs/README.md).
 
-**Statische Dateien:** WhiteNoise liefert `/static/` aus Gunicorn heraus aus – gzip-komprimiert und mit Dateinamen mit Inhalts-Hash (ein Jahr Browser-Cache). `collectstatic` ist deshalb Pflicht: ohne `staticfiles/staticfiles.json` bricht jede Seite mit `Missing staticfiles manifest entry` ab. Liefert der Reverse-Proxy `/static/` selbst aus, sollte er für diese Dateien ebenfalls `Cache-Control: public, max-age=31536000, immutable` setzen. `/media/` (hochgeladene Dateien) muss weiterhin der Proxy ausliefern.
+## Mitwirken
 
-**Icons:** Hochgeladene Stufen-Icons werden automatisch auf max. 160 px verkleinert und als WebP gespeichert. Vorhandene Icons einmalig umwandeln:
-
-```bash
-python manage.py optimize_icons
-```
-
-## Push-Benachrichtigungen
-
-Einmalig ein VAPID-Schlüsselpaar erzeugen und in die `.env` eintragen (privaten Schlüssel nie ins Repository):
-
-```bash
-python manage.py generate_vapid_keys
-```
-
-- Nutzer aktivieren Push pro Gerät unter **Mein Konto → Benachrichtigungen** (iPhone/iPad: nur in der installierten App).
-- Admins können beim Anlegen einer Prüfung und beim Freigeben eines Ergebnisses „Push-Benachrichtigung“ anhaken.
-- Freie Nachrichten an alle oder einzelne Gruppen: **Admin → Benachrichtigungen** (Recht „Benachrichtigungen senden“).
-- Neue Schlüssel machen bestehende Abos ungültig; Nutzer müssen Push dann neu aktivieren.
-
-## Dienste automatisch aus DIVERA abgleichen
-
-`python manage.py sync_divera` legt Dienste aus DIVERA an bzw. aktualisiert sie (dasselbe wie der Button im Admin-Bereich).
-Für einen regelmäßigen Abgleich einen systemd-Timer einrichten (Pfade und Benutzer anpassen):
-
-`/etc/systemd/system/la-tool-sync.service`
-```ini
-[Unit]
-Description=LA-Tool: Dienste aus DIVERA abgleichen
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=oneshot
-User=la-tool
-WorkingDirectory=/srv/la-tool/la_tool
-ExecStart=/srv/la-tool/venv/bin/python manage.py sync_divera
-```
-
-`/etc/systemd/system/la-tool-sync.timer`
-```ini
-[Unit]
-Description=LA-Tool: Dienste-Abgleich stündlich
-
-[Timer]
-OnCalendar=*-*-* 06..22:07:00
-Persistent=true
-RandomizedDelaySec=120
-
-[Install]
-WantedBy=timers.target
-```
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now la-tool-sync.timer
-journalctl -u la-tool-sync.service -n 20
-```
-
-In DIVERA gelöschte Termine werden beim Abgleich nicht entfernt.
-
-## Konten, Gruppen und Berechtigungen
-
-- **Divera-Konten** werden über die feste Divera-ID (UCR) zugeordnet, nicht über den Benutzernamen. Ein Divera-Login übernimmt nie ein bestehendes lokales oder Entra-Konto mit gleichem Namen.
-- Divera-Konten melden sich **immer gegen Divera** an. Das lokal gespeicherte Passwort gilt nur, wenn Divera nicht erreichbar ist.
-- Wer nicht mehr im Divera-Standort ist, wird beim Login bzw. beim nächtlichen Abgleich **gesperrt** (und bei Rückkehr automatisch entsperrt). Von Admins gesperrte Konten bleiben gesperrt.
-- **Gruppen** kommen aus den Identity-Providern: Auto-Gruppen-Regeln (Divera-Qualifikationen, Entra-Gruppen) und `AZURE_GROUPS_MAPPING`. Unter **Admin → Nutzer → Berechtigungen** lassen sich Mitgliedschaften **festsetzen** – festgesetzte Gruppen entfernt der Abgleich nie. Manuell hinzugefügte Gruppen und „Admin machen“ sind automatisch festgesetzt. Direkt vergebene Einzelrechte werden vom Abgleich nie verändert.
-
-Nächtlicher Abgleich der Divera-Konten (zuerst mit `--dry-run` prüfen):
-
-```bash
-python manage.py sync_divera_users --dry-run
-python manage.py sync_divera_users
-```
-
-Als Timer analog zu oben, z.B. `OnCalendar=*-*-* 03:17:00` mit `ExecStart=… manage.py sync_divera_users`.
-
-## Lernen: Wiederholung, Erinnerungen, Lernaufträge
-
-- **Heute lernen** stellt eine Runde ohne Einstellungen zusammen: zuerst fällige Wiederholungen, dann neue Fragen Katalog für Katalog; Fragen offener Lernaufträge gehen vor. Wiederholt wird nach Lernkartei (richtig: nach 1, 3, 7, 14, 30 Tagen; falsch: sofort wieder), siehe `app/learning.py`.
-- **Mein Lernstand** (`/uebungen/theorie/lernstand/`) zeigt Verlauf, Tage in Folge, Kataloge und alle Fragen mit Status; die Ampel „Bereit fürs LA“ vergleicht den Lernerfolg mit der Prüfungs-Bestehensgrenze der Stufe.
-- Fragen lassen sich **merken** (eigene Übungsart) und **als fehlerhaft melden** (Admin → Meldungen, Recht „Theoriefragen verwalten“).
-- **Lernstand** der Jugendlichen (Admin → Lernstand) braucht das Recht „Lernstand einsehen“, **Lernaufträge** das Recht „Lernaufträge verwalten“. Die Jugendlichen sollten wissen, dass Ausbilder ihren Lernstand sehen.
-
-Wöchentliche Push-Erinnerung an fällige Wiederholungen (abschaltbar im Profil, je Person höchstens alle 6 Tage):
-
-```bash
-python manage.py send_learning_reminders --dry-run
-python manage.py send_learning_reminders
-```
-
-Als Timer analog zu oben, z.B. `OnCalendar=Sun *-*-* 17:53:00` mit `ExecStart=… manage.py send_learning_reminders`.
-
-## Datenschutz und Löschkonzept
-
-- Rechtstexte unter `/datenschutz/`, `/nutzungsbedingungen/`, `/impressum/`. Fehlende Angaben in `app/legal_info.py` ergänzen (Platzhalter `[BITTE ERGÄNZEN …]`); die Texte sind Entwürfe und sollten rechtlich geprüft werden.
-- Unter **Mein Konto → Meine Daten** können Nutzer alle eigenen Daten herunterladen und ihre Lerndaten löschen.
-- Fristen (in `app/legal_info.py`, `RETENTION`): Trainings 2 Jahre, Prüfungsergebnisse 3 Jahre, Benachrichtigungen 90 Tage, erledigte Fehlermeldungen 1 Jahr, Konten ausgetretener Mitglieder 1 Jahr nach dem Austritt.
-- Persönliche Divera-Accesskeys werden nicht gespeichert. Der nächtliche Abgleich (`sync_divera_users`) arbeitet nur mit dem Admin-Key und frischt auch die Qualifikationen von Microsoft-Konten mit Divera-Verknüpfung auf. Gesperrt wird, wer schon einmal in der Personenliste stand und jetzt fehlt – nach dem Update erst ab dem zweiten Lauf.
-- Admins mit verknüpftem Microsoft-Konto können sich nur noch mit „Mit Microsoft anmelden“ anmelden.
-
-Löschen nach Fristablauf (täglich, zuerst mit `--dry-run`), dazu abgelaufene Sitzungen entfernen:
-
-```bash
-python manage.py cleanup_data --dry-run
-python manage.py cleanup_data
-python manage.py clearsessions
-```
-
-Als Timer analog zu oben, z.B. `OnCalendar=*-*-* 03:41:00`.
-
-## App (PWA)
-
-- **Benachrichtigungen** werden bei jedem Push auch gespeichert (Glocke in der Kopfzeile, Seite `/benachrichtigungen/`, 90 Tage). Die Zahl am App-Symbol zeigt die ungelesenen.
-- **Ohne Netz:** Trainings werden auf dem Gerät gespeichert und automatisch gesendet, sobald wieder Verbindung besteht. „Fragen nachschlagen“ funktioniert mit dem zuletzt geladenen Stand (ohne persönliche Daten); beim Abmelden wird er vom Gerät gelöscht.
-- **Startbilder (iOS)** liegen unter `app/static/pwa/startup/`, **Screenshots** für den Installationsdialog unter `app/static/pwa/screenshots/` (aus einem Demo-Konto erzeugt). Bei größeren Design-Änderungen neu erzeugen.
-
-# Mitwirken
-
-Im aktuellen Entwicklungsstadium können über GitHub Issues Feature Requests eingereicht werden.
+Feature-Wünsche und Fehler bitte als GitHub-Issue melden. Hinweise zu Arbeitsweise und Konventionen: [Entwicklung](docs/entwicklung.md#arbeitsweise-und-konventionen).
