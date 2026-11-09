@@ -298,3 +298,11 @@ class AdminQueryCountTests(TestCase):
         with CaptureQueriesContext(connection) as ctx:
             self.client.get(reverse(name))
         return len(ctx.captured_queries)
+
+
+class AdminNavTests(TestCase):
+    def test_current_page_marked(self):
+        self.client.force_login(User.objects.create_superuser('chef2', password='pw'))
+        html = self.client.get(reverse('admin_users')).content.decode()
+        self.assertIn('nav-link-active" aria-current="page">Benutzer', html)
+        self.assertNotIn('\\"', html)
