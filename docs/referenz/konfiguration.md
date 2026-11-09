@@ -62,6 +62,17 @@ Benötigte delegierte Berechtigung: `User.Read`.
 
 Fehlt einer der drei Werte, ist Push abgeschaltet; Benachrichtigungen erscheinen trotzdem in der App (Glocke).
 
+## Zielarchitektur (Docker Compose)
+
+Zusätzlich zur `.env` gelten mit der [Zielarchitektur](../deployment.md) (noch nicht umgesetzt):
+
+| Wert | Ort | Bedeutung |
+|---|---|---|
+| `APP_TAG` | Shell bzw. `deploy.sh` | Image-Tag (Git-SHA) der auszurollenden Version |
+| `DATABASE_TYPE=mysql`, `DB_MYSQL_HOST=db` | `compose.yaml` | Datenbank-Container statt Host-Datenbank |
+| `EXTRA_HOSTS=localhost` | `.env` | erlaubt den Healthcheck im Container (`/healthz/` über `127.0.0.1`) |
+| `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD` | `/srv/la-tool/db.env` | Initialisierung des MySQL-Containers; Benutzer und Passwort wie `DB_MYSQL_*` |
+
 ## Feste Einstellungen im Code
 
 Nicht über die `.env` änderbar, aber für Betrieb und Fehlersuche relevant:

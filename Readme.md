@@ -12,7 +12,7 @@ Web-App zur Vorbereitung auf das **Leistungsabzeichen der THW-Jugend** (Bronze, 
 | App | PWA mit Offline-Funktionen und Web Push |
 | Anmeldung | Divera 24/7, Microsoft Entra ID, lokal |
 | Datenbank | SQLite (Entwicklung), MySQL (Produktion) |
-| Betrieb | Gunicorn + WhiteNoise hinter openresty, systemd-Timer |
+| Betrieb | Gunicorn + WhiteNoise hinter openresty, systemd-Timer; Ziel: Docker Compose ([Entscheidung](docs/entscheidungen/0001-deployment-strategie.md)) |
 
 ## Schnellstart (lokal)
 
@@ -37,7 +37,7 @@ Ausführlich: [Entwicklung](docs/entwicklung.md).
 |---|---|
 | Aufbau, Komponenten, Datenmodell, Anmeldung | [Architektur](docs/architektur.md) |
 | Einrichten, Entwickeln, Testen, Konventionen | [Entwicklung](docs/entwicklung.md) · [Design-System](docs/design-system.md) |
-| Installation und Updates auf dem Server | [Deployment](docs/deployment.md) |
+| Installation und Updates auf dem Server | [Deployment](docs/deployment.md) · [Übergangsbetrieb](docs/deployment-uebergang.md) |
 | Timer, Logs, Backups, Fehlersuche | [Betrieb](docs/betrieb.md) |
 | Rechte, Sicherheit, Datenschutz, Löschkonzept | [Sicherheit und Datenschutz](docs/sicherheit-datenschutz.md) |
 | Umgebungsvariablen, Befehle, Endpunkte, Modelle | [Referenz](docs/README.md#referenz) |

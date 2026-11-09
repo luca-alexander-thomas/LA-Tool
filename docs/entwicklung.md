@@ -35,7 +35,7 @@ Mit `DEBUG=True` darf `SECRET_KEY` fehlen (dann gilt ein fester Entwicklungsschl
 
 ## Datenbank
 
-Migrationsdateien sind **nicht im Repository** und werden lokal erzeugt:
+Migrationsdateien sind derzeit **nicht im Repository** und werden lokal erzeugt (die Umstellung auf versionierte Migrationen ist beschlossen, [Entscheidung 0001](entscheidungen/0001-deployment-strategie.md#schritt-2-migrationen-versionieren-einmalig); danach entfällt `makemigrations` hier und neue Migrationen werden mit committet):
 
 ```bash
 python manage.py makemigrations app la_tool_admin
@@ -99,7 +99,7 @@ python manage.py test la_tool_admin.tests.AdminQueryCountTests
 | `la_tool_admin/tests.py` | Rechte im Admin-Bereich, Push, Abfragezahl der Listen |
 | `la_tool_admin/tests_idp.py` | Divera-Login, Gruppenabgleich, `sync_divera_users`, Admin-Filter |
 
-Externe Dienste (Divera, Graph, Web Push) werden in Tests gemockt. Es gibt **keine** JavaScript-Tests, keinen Linter und keine CI; Oberflächenänderungen im Browser prüfen.
+Externe Dienste (Divera, Graph, Web Push) werden in Tests gemockt. Es gibt **keine** JavaScript-Tests und keinen Linter; eine CI (GitHub Actions) ist beschlossen, aber noch nicht eingerichtet. Oberflächenänderungen im Browser prüfen.
 
 Vor einem Commit mindestens:
 

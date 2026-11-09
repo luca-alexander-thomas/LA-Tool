@@ -1,124 +1,81 @@
 # Deployment
 
-Bereitstellung auf dem Produktivserver. Laufender Betrieb (Timer, Logs, Backups): [Betrieb](betrieb.md). Alle Variablen: [Konfiguration](referenz/konfiguration.md).
+Bereitstellung im Produktivbetrieb nach der beschlossenen Zielarchitektur: **Docker Compose auf einem Linux-VPS hinter openresty**. Begründung und Alternativen: [Entscheidung 0001](entscheidungen/0001-deployment-strategie.md). Laufender Betrieb: [Betrieb](betrieb.md). Variablen: [Konfiguration](referenz/konfiguration.md).
 
-> **Stand der Automatisierung:** Es gibt keine CI/CD-Pipeline, keine Container und keine Staging-Umgebung. Das Deployment erfolgt **manuell** per SSH auf einem VPS. Abschnitte mit „Beispiel“ zeigen eine mögliche Einrichtung; die tatsächlichen Pfade, Dienstnamen und Proxy-Konfiguration des Servers sind nicht im Repository hinterlegt und müssen angepasst werden.
+> **Status:** Zielarchitektur beschlossen, **Umsetzung ausstehend**. `Dockerfile`, `compose.yaml`, `deploy/` und die CI existieren noch nicht im Repository; ihre Entwürfe stehen in der [Entscheidung](entscheidungen/0001-deployment-strategie.md#entwurf-der-container-dateien-schritt-4-ungetestet). Bis zur Umstellung gilt der [Übergangsbetrieb](deployment-uebergang.md).
 
-## Zielarchitektur
+## Umgebungen
+
+| Umgebung | Zweck | Laufzeit | Datenbank |
+|---|---|---|---|
+| Entwicklung | Programmieren | venv, `runserver` ([Entwicklung](entwicklung.md)) | SQLite |
+| Test | automatische Prüfung jedes Commits | GitHub Actions | SQLite (frisch je Lauf) |
+| Staging (optional) | Update mit echten Daten erproben | zweites Compose-Projekt auf dem VPS | Kopie aus dem letzten Backup |
+| Produktion | https://la-tool.thw-jugend-ge.de | Compose-Projekt `la-tool` | MySQL 8.4 (Container) |
+
+## Architektur
 
 ```mermaid
-flowchart LR
-    I((Internet)) -->|HTTPS 443| P[openresty<br>TLS, Weiterleitung HTTP→HTTPS]
-    P -->|/media/ direkt aus dem Dateisystem| M[(media/)]
-    P -->|alles andere, HTTP| G[Gunicorn<br>la_tool.wsgi, 2 sync-Worker]
-    G --> D[Django + WhiteNoise<br>liefert /static/ aus staticfiles/]
-    D --> DB[(MySQL)]
-    T[systemd-Timer] -->|manage.py …| D
+flowchart TB
+    U[Browser / PWA] -->|HTTPS 443| P
+    subgraph VPS["VPS – Firewall: 22, 80, 443"]
+        P[openresty<br>TLS, HTTP→HTTPS]
+        P -->|/media/| MED[/srv/la-tool/media/]
+        P -->|HTTP 127.0.0.1:8000| APP
+        subgraph Compose["docker compose: la-tool"]
+            APP[app<br>Gunicorn, Django, WhiteNoise]
+            DB[(db: MySQL 8.4<br>Volume db-data)]
+        end
+        APP --> DB
+        APP --> MED
+        TIM[systemd-Timer] -->|docker compose run| APP
+        TIM -->|Backup| OFF[(Offsite, restic)]
+    end
+    CI[GitHub Actions] -->|Image| REG[ghcr.io]
+    REG -->|docker pull| APP
 ```
 
-| Umgebung | Zweck | Konfiguration |
-|---|---|---|
-| Lokal | Entwicklung, Tests | `DEBUG=True`, SQLite, `runserver` – siehe [Entwicklung](entwicklung.md) |
-| Produktion | https://la-tool.thw-jugend-ge.de (VPS) | `DEBUG=False`, MySQL, Gunicorn hinter openresty |
+| Komponente | Aufgabe |
+|---|---|
+| openresty (Host) | TLS-Zertifikate, Weiterleitung HTTP→HTTPS, Auslieferung von `/media/`, Weiterleitung an `127.0.0.1:8000` |
+| `app` (Container) | Image `ghcr.io/luca-alexander-thomas/la-tool:<git-sha>`: Python 3.13, Gunicorn (2 Worker), Django, statische Dateien über WhiteNoise; läuft ohne Root |
+| `db` (Container) | MySQL 8.4, nur im internen Compose-Netz erreichbar, Daten im Volume `db-data` |
+| `/srv/la-tool/` (Host) | `compose.yaml`, `.env`, `db.env`, `media/`, Skripte |
+| systemd-Timer (Host) | Management-Befehle und Backup |
 
-Test-/Staging-Umgebung: keine. Größere Änderungen vorher lokal mit einer Kopie der Produktionsdaten testen (`DB_SQLITE_FILE` bzw. eigene MySQL-Datenbank).
+## Server vorbereiten (einmalig)
 
-## Voraussetzungen auf dem Server
+1. **Betriebssystem** aktuell halten: `unattended-upgrades` aktivieren.
+2. **Firewall:** eingehend nur 22, 80, 443 (z.&nbsp;B. `ufw allow OpenSSH; ufw allow 80,443/tcp; ufw enable`). SSH nur mit Schlüssel, `PermitRootLogin no`.
+3. **Docker Engine** und Compose-Plugin aus dem offiziellen Docker-Repository installieren; `docker compose version` prüfen.
+4. **Verzeichnisse:**
 
-- Python 3.13 mit `venv`
-- MySQL- bzw. MariaDB-Server und die Client-Bibliotheken für `mysqlclient` (Debian/Ubuntu: `default-libmysqlclient-dev`, `build-essential`, `pkg-config`)
-- openresty oder nginx mit TLS-Zertifikat
-- systemd
+   ```bash
+   sudo mkdir -p /srv/la-tool/media
+   sudo chown 1000:1000 /srv/la-tool/media          # UID des Benutzers „app“ im Image
+   ```
 
-## Gunicorn
+5. **Zugriff auf die Registry** (nur bei privatem Repository): `docker login ghcr.io` mit einem Token mit `read:packages`.
 
-Die verwendete Konfiguration liegt **außerhalb des Repositorys** (`gunicorn.conf.py` im Verzeichnis über `la_tool/`):
+## Konfiguration
 
-```python
-bind = "0.0.0.0:8000"
-workers = 2
-worker_class = "sync"
-timeout = 120
-accesslog = "-"
-errorlog = "-"
-loglevel = "info"
-```
-
-Läuft der Proxy auf demselben Server, genügt `bind = "127.0.0.1:8000"` – Port 8000 sollte nicht von außen erreichbar sein.
-
-Beispiel für einen systemd-Dienst (`/etc/systemd/system/la-tool.service`, Pfade anpassen):
-
-```ini
-[Unit]
-Description=LA-Tool (Gunicorn)
-After=network-online.target mysql.service
-Wants=network-online.target
-
-[Service]
-User=la-tool
-WorkingDirectory=/srv/la-tool/la_tool
-ExecStart=/srv/la-tool/venv/bin/gunicorn -c /srv/la-tool/gunicorn.conf.py la_tool.wsgi
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-```
-
-## Reverse-Proxy
-
-Anforderungen an openresty/nginx:
-
-1. HTTPS mit gültigem Zertifikat (die PWA – Service Worker, Push – funktioniert nur über HTTPS).
-2. Weiterleitung von HTTP auf HTTPS (oder in Django `SECURE_SSL_REDIRECT=True`, nicht beides nötig).
-3. Header `Host`, `X-Forwarded-Proto` und `X-Forwarded-For` an Gunicorn weitergeben.
-4. `/media/` direkt ausliefern – Django liefert Uploads nur mit `DEBUG=True` aus.
-5. `/static/` kann Django (WhiteNoise) selbst ausliefern; liefert der Proxy es aus, dann aus `staticfiles/` mit `Cache-Control: public, max-age=31536000, immutable`.
-
-Beispiel (nginx/openresty-Syntax, Pfade anpassen):
-
-```nginx
-server {
-    listen 443 ssl;
-    server_name la-tool.thw-jugend-ge.de;
-    # ssl_certificate … / ssl_certificate_key …
-
-    client_max_body_size 20m;              # Datei-Uploads (PDF/Bild), Fragen-Import max. 5 MB
-
-    location /media/ {
-        alias /srv/la-tool/la_tool/media/;
-    }
-
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
-}
-```
-
-Erst wenn der Proxy `X-Forwarded-Proto: https` setzt, in der `.env` `TRUST_X_FORWARDED_PROTO=True` eintragen. Dann erkennt Django HTTPS-Anfragen (HSTS, sichere Weiterleitungen) und nimmt für die Login-Drosselung den letzten Eintrag aus `X-Forwarded-For` als Client-IP.
-
-## Produktions-Konfiguration (`.env`)
-
-Die `.env` liegt auf dem Server neben `manage.py` und gehört nie ins Repository. Mindestens:
+`/srv/la-tool/.env` (Besitzer root, `chmod 600`) – Variablen siehe [Konfiguration](referenz/konfiguration.md):
 
 ```ini
 DEBUG=False
-SECRET_KEY=<neu erzeugt, siehe unten>
+SECRET_KEY=<python -c "import secrets; print(secrets.token_urlsafe(50))">
 HOSTNAME=la-tool.thw-jugend-ge.de
-TRUST_X_FORWARDED_PROTO=True          # erst nach Prüfung des Proxys
+EXTRA_HOSTS=localhost                  # für den Container-Healthcheck
+TRUST_X_FORWARDED_PROTO=True           # openresty setzt X-Forwarded-Proto
 
-DATABASE_TYPE=mysql
-DB_MYSQL_HOST=localhost
 DB_MYSQL_PORT=3306
 DB_MYSQL_USER=la_tool
-DB_MYSQL_PASSWORD=<geheim>
+DB_MYSQL_PASSWORD=<geheim, gleich wie in db.env>
 DB_MYSQL_NAME=la_tool
 
 AZURE_CLIENT_ID=…
 AZURE_CLIENT_SECRET=…
-AZURE_TENANT_ID=<Tenant-GUID, nicht „common“>
+AZURE_TENANT_ID=<Tenant-GUID>
 AZURE_REDIRECT_URI=https://la-tool.thw-jugend-ge.de/microsoft-callback/
 AZURE_GROUP_ADMINS_ID=…
 AZURE_GROUP_USERS_ID=…
@@ -132,123 +89,112 @@ VAPID_PRIVATE_KEY=…
 VAPID_SUBJECT=mailto:<kontakt-adresse>
 ```
 
-Geheimnisse erzeugen:
+`DATABASE_TYPE=mysql` und `DB_MYSQL_HOST=db` setzt `compose.yaml`.
 
-```bash
-python -c "import secrets; print(secrets.token_urlsafe(50))"      # SECRET_KEY
-python manage.py generate_vapid_keys                                # VAPID-Schlüsselpaar
+`/srv/la-tool/db.env` (`chmod 600`) für den Datenbank-Container:
+
+```ini
+MYSQL_DATABASE=la_tool
+MYSQL_USER=la_tool
+MYSQL_PASSWORD=<wie DB_MYSQL_PASSWORD>
+MYSQL_ROOT_PASSWORD=<eigenes Geheimnis>
 ```
 
-Wirkung von `DEBUG=False`: Ohne `SECRET_KEY` startet Django nicht; nur `HOSTNAME`/`EXTRA_HOSTS` sind erlaubt (sonst „400 Bad Request“); Cookies nur über HTTPS; HSTS (1 Jahr) bei HTTPS-Anfragen.
+Das Image enthält keine Geheimnisse; beide Dateien gehören ins verschlüsselte Backup.
 
-**Microsoft Entra (App-Registrierung):** Redirect-URI wie `AZURE_REDIRECT_URI`; delegierte Berechtigung `User.Read` genügt.
+**Reverse-Proxy** (openresty/nginx, Ausschnitt):
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name la-tool.thw-jugend-ge.de;
+    client_max_body_size 20m;
+
+    location /media/ { alias /srv/la-tool/media/; }
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+```
+
+**Microsoft Entra (App-Registrierung):** Redirect-URI wie `AZURE_REDIRECT_URI`, delegierte Berechtigung `User.Read`.
+
+## Release-Prozess
+
+1. Änderungen per Pull-Request nach `main`; die CI führt `check`, `makemigrations --check`, Tests und `pip-audit` aus.
+2. Nach grüner CI baut sie das Image und lädt es als `ghcr.io/luca-alexander-thomas/la-tool:<git-sha>` hoch.
+3. Das Deployment wird **manuell** auf dem Server mit diesem Tag ausgelöst (siehe [Update](#update)).
+
+Migrationsdateien sind ab der Umstellung **versioniert** und im Image enthalten; auf dem Server wird `makemigrations` nicht mehr ausgeführt.
 
 ## Erstinstallation
 
 ```bash
-# als Dienst-Benutzer, Pfade anpassen
 cd /srv/la-tool
-git clone https://github.com/luca-alexander-thomas/LA-Tool.git la_tool
-python3.13 -m venv venv
-source venv/bin/activate
-cd la_tool
-pip install -r requirements.txt
-pip install "mysqlclient>=2.2.0"
-cp .env.example .env            # dann Werte wie oben eintragen
-
-python manage.py makemigrations app la_tool_admin
-python manage.py migrate
-python manage.py createsuperuser        # lokaler Notfall-Admin (ohne Microsoft-Verknüpfung)
-python manage.py tailwind build
-python manage.py collectstatic --noinput
-python manage.py check --deploy
-
-sudo systemctl enable --now la-tool.service
+# compose.yaml und deploy/ aus dem Repository hierher kopieren
+export APP_TAG=<git-sha>
+docker compose pull
+docker compose up -d db
+docker compose run --rm app python manage.py migrate
+docker compose run --rm app python manage.py createsuperuser   # Notfall-Admin ohne Microsoft-Verknüpfung
+docker compose run --rm app python manage.py check --deploy
+docker compose up -d app
 ```
 
-Danach die [Timer](betrieb.md#wiederkehrende-aufgaben-timer) einrichten und die [Verifikation](#verifikation-nach-dem-deployment) durchführen.
+Danach Timer und Backup einrichten ([Betrieb](betrieb.md#wiederkehrende-aufgaben-timer)) und [verifizieren](#verifikation).
+
+Umzug aus dem [Übergangsbetrieb](deployment-uebergang.md): Datenbank-Dump in den `db`-Container einspielen (`docker compose exec -T db mysql -u root -p la_tool < dump.sql`), `media/` nach `/srv/la-tool/media` kopieren, Migrationen wie in [Entscheidung 0001, Schritt 2](entscheidungen/0001-deployment-strategie.md#schritt-2-migrationen-versionieren-einmalig) abgleichen, openresty-Upstream umstellen, alten Dienst stoppen.
 
 ## Update
 
-Ablauf bei jeder neuen Version:
-
-1. **Backup** von Datenbank und `media/` ([Backup](betrieb.md#backup-und-wiederherstellung)).
-2. Aktuellen Stand merken (für ein Rollback): `git rev-parse HEAD > ../vorher.txt` und `pip freeze > ../vorher-requirements.txt`.
-3. Code und Abhängigkeiten:
-
-   ```bash
-   cd /srv/la-tool/la_tool && source ../venv/bin/activate
-   git pull
-   pip install -r requirements.txt
-   ```
-
-4. Neue Variablen aus `.env.example` in die Server-`.env` übernehmen (`diff .env.example .env`).
-5. Migrationen erzeugen, **prüfen**, anwenden (siehe [Migrationen](#migrationen)):
-
-   ```bash
-   python manage.py makemigrations app la_tool_admin
-   python manage.py migrate --plan
-   python manage.py migrate
-   ```
-
-6. Statische Dateien und Neustart:
-
-   ```bash
-   python manage.py tailwind build
-   python manage.py collectstatic --noinput
-   python manage.py check --deploy
-   sudo systemctl restart la-tool.service
-   ```
-
-7. [Verifikation](#verifikation-nach-dem-deployment).
-
-`collectstatic` ist Pflicht: WhiteNoise nutzt Dateinamen mit Inhalts-Hash; fehlt das Manifest `staticfiles/staticfiles.json`, bricht jede Seite mit `Missing staticfiles manifest entry` ab.
-
-Beim Neustart gehen keine Sitzungen verloren (Datenbank-Sitzungen). Laufende Prüfungen bleiben erhalten (`ExamAttempt`), die Zeit läuft während des Neustarts weiter.
-
-## Migrationen
-
-Migrationsdateien sind nicht versioniert (`*/migrations/` in `.gitignore`); jede Umgebung erzeugt ihre eigenen mit `makemigrations`. Daraus folgt:
-
-- **Vor `migrate` prüfen**, was `makemigrations` erzeugt hat (`python manage.py migrate --plan`, Dateien in `app/migrations/` und `la_tool_admin/migrations/` ansehen). Entfernte Felder oder Modelle löschen beim `migrate` Spalten bzw. Tabellen samt Daten.
-- **Kein Zurückmigrieren über Git:** Die Migrationsdateien des Servers kennt nur der Server. Ein Rollback einer Version mit Modelländerungen erfolgt über das **Datenbank-Backup**.
-- **Datenanpassungen** (Werte umrechnen, nicht nur Felder anlegen) stehen nicht in Migrationen, sondern in `post_migrate`-Hooks (`app/apps.py`), die bei jedem `migrate` laufen und idempotent sein müssen.
-- `migrate` legt auch die Berechtigungen (`SiteSettings.Meta.permissions`) an.
-
-## Verifikation nach dem Deployment
+Über `deploy/deploy.sh <git-sha>` (Teil der Umsetzung). Das Skript führt diese Schritte aus, die auch von Hand gelten:
 
 ```bash
-curl -fsS https://la-tool.thw-jugend-ge.de/healthz/          # {"status": "ok"}
-curl -sI https://la-tool.thw-jugend-ge.de/login/ | grep -iE "strict-transport|content-security|x-frame"
-sudo systemctl status la-tool.service
-journalctl -u la-tool.service -n 50
+cd /srv/la-tool
+NEW=<git-sha>; OLD=$(cat current-tag)
+
+./deploy/backup.sh db-only "vor-$NEW"                          # Dump vor jeder Migration
+APP_TAG=$NEW docker compose pull app
+APP_TAG=$NEW docker compose run --rm app python manage.py migrate --plan   # prüfen
+APP_TAG=$NEW docker compose run --rm app python manage.py migrate
+APP_TAG=$NEW docker compose up -d app
+# warten, bis der Container „healthy“ ist, sonst Rollback auf $OLD
+echo $NEW > current-tag
 ```
 
-Im Browser:
+Laufende Prüfungen und Sitzungen überstehen das Update (sie liegen in der Datenbank); die Zeit läuft während des Neustarts weiter.
 
-1. Anmeldung mit Divera und mit Microsoft (Gruppen und Rechte korrekt?).
-2. Ein Training starten und abschließen.
-3. Admin-Bereich öffnen.
-4. Bei neuer Version: Hinweis „Neue Version“ erscheint in geöffneten Apps.
+## Verifikation
+
+```bash
+docker compose ps                                              # app und db „healthy“
+curl -fsS https://la-tool.thw-jugend-ge.de/healthz/            # {"status": "ok"}
+curl -sI https://la-tool.thw-jugend-ge.de/login/ | grep -iE "strict-transport|content-security"
+journalctl CONTAINER_NAME=la-tool-app-1 -n 50
+```
+
+Im Browser: Anmeldung mit Divera und Microsoft, ein Training abschließen, Admin-Bereich öffnen.
 
 ## Rollback
 
-1. Dienst stoppen: `sudo systemctl stop la-tool.service`
-2. Code zurücksetzen: `git checkout $(cat ../vorher.txt)` und `pip install -r ../vorher-requirements.txt`
-3. Hatte das Update Modelländerungen: **Datenbank aus dem Backup wiederherstellen** ([Backup und Wiederherstellung](betrieb.md#backup-und-wiederherstellung)) und die auf dem Server erzeugten neuen Migrationsdateien durch die gesicherten ersetzen.
-4. `python manage.py tailwind build && python manage.py collectstatic --noinput`
-5. `sudo systemctl start la-tool.service` und verifizieren.
+| Fall | Vorgehen |
+|---|---|
+| Ohne Schemaänderung | `APP_TAG=<voriger-sha> docker compose up -d app`, `current-tag` zurücksetzen |
+| Mit umkehrbarer Migration | im **neuen** Image zurückmigrieren: `APP_TAG=<neu> docker compose run --rm app python manage.py migrate <app> <vorige_migration>`, dann wie oben das alte Image starten |
+| Mit nicht umkehrbarer Migration oder Datenfehlern | `app` stoppen, Dump „vor-<sha>“ einspielen ([Wiederherstellung](betrieb.md#backup-und-wiederherstellung)), altes Image starten |
 
-## Fehler während des Deployments
+## Fehler beim Deployment
 
 | Symptom | Ursache und Lösung |
 |---|---|
-| `ImproperlyConfigured: SECRET_KEY fehlt` | `.env` fehlt oder `SECRET_KEY` leer bei `DEBUG=False` |
-| „400 Bad Request“ für alle Seiten | `HOSTNAME`/`EXTRA_HOSTS` passt nicht zum aufgerufenen Hostnamen |
-| `Missing staticfiles manifest entry` | `collectstatic` nicht ausgeführt |
-| Seiten ohne Styles | `tailwind build` vergessen oder Proxy liefert alten `/static/`-Stand |
-| Endlose Weiterleitung | `SECURE_SSL_REDIRECT=True`, aber der Proxy setzt `X-Forwarded-Proto` nicht (oder `TRUST_X_FORWARDED_PROTO=False`) |
-| „CSRF-Prüfung fehlgeschlagen“ beim Login | Seite über HTTP aufgerufen (Cookies sind nur über HTTPS gültig) oder Proxy gibt `Host` nicht weiter |
-| `mysqlclient` lässt sich nicht installieren | Build-Pakete und MySQL-Client-Header fehlen (siehe Voraussetzungen) |
-| `makemigrations` will Felder entfernen | erwartet, wenn die Version Felder entfernt (steht in den Release-Notizen bzw. Commit) – sonst abbrechen und klären |
-| Microsoft-Login „State stimmt nicht überein“ | Login über eine andere Adresse als `AZURE_REDIRECT_URI` gestartet oder Sitzungs-Cookie blockiert |
+| `app` wird nicht „healthy“ | `docker compose logs app`; häufig `.env` unvollständig (`SECRET_KEY`), `localhost` fehlt in `EXTRA_HOSTS` (Healthcheck „400“) oder `db` nicht erreichbar |
+| „400 Bad Request“ von außen | `HOSTNAME`/`EXTRA_HOSTS` passt nicht zum Hostnamen; openresty gibt `Host` nicht weiter |
+| Endlose Weiterleitung | `SECURE_SSL_REDIRECT=True`, aber `X-Forwarded-Proto` fehlt bzw. `TRUST_X_FORWARDED_PROTO=False` |
+| „CSRF-Prüfung fehlgeschlagen“ | Aufruf über HTTP oder `Host`/`X-Forwarded-Proto` fehlen |
+| `migrate` meldet fehlende Tabellen oder Konflikte | Migrationsstand des Servers passt nicht zum Repository – nicht weiterarbeiten, Dump einspielen, Abgleich nach [Schritt 2](entscheidungen/0001-deployment-strategie.md#schritt-2-migrationen-versionieren-einmalig) |
+| Uploads schlagen fehl | Rechte auf `/srv/la-tool/media` (UID 1000) oder `client_max_body_size` im Proxy |
+| `docker compose pull` verweigert | Registry-Login fehlt (privates Repository) |
