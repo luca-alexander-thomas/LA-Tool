@@ -68,7 +68,7 @@
                             {% endif %}
                         </button>
                     </form>
-                    <form method="post" action="{% url 'admin_exam_toggle' item.exam.pk 'closed' %}">{% csrf_token %}
+                    <form method="post" action="{% url 'admin_exam_toggle' item.exam.pk 'closed' %}"{% if not item.exam.closed %} onsubmit="return confirm('Prüfung sperren? Laufende Versuche werden mit dem letzten Zwischenstand beendet.')"{% endif %}>{% csrf_token %}
                         <button type="submit" class="btn btn-sm {% if item.exam.closed %}btn-danger{% else %}btn-secondary{% endif %}" title="{% if item.exam.closed %}Entsperren{% else %}Sperren{% endif %}">
                             {% include "icons/lock-closed.html" with cls="size-4" %}
                             {% if item.exam.closed %}Entsperren{% else %}Sperren{% endif %}

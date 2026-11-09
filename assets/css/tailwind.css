@@ -801,6 +801,9 @@
   .cursor-pointer {
     cursor: pointer;
   }
+  .scroll-mt-24 {
+    scroll-margin-top: calc(var(--spacing) * 24);
+  }
   .scroll-mt-40 {
     scroll-margin-top: calc(var(--spacing) * 40);
   }

@@ -590,7 +590,7 @@ TRAINING_MODES = ('random', 'hard', 'new', 'saved')
 
 def _visible_assignments(user):
     """Lernaufträge des Nutzers: direkt oder über eine Gruppe zugewiesen; ohne Zuweisung gelten sie für alle."""
-    if not user.is_authenticated:
+    if not user.is_authenticated or not user.is_active:
         return LearningAssignment.objects.none()
     return LearningAssignment.objects.filter(level__is_draft=False).filter(
         Q(assigned_users=user) | Q(assigned_groups__in=user.groups.all())
@@ -607,10 +607,10 @@ def _assignment_question_ids(assignment):
     return [qid for c in catalogs for qid in ids[c.pk]]
 
 
-def assignment_status(assignment, history, today=None):
+def assignment_status(assignment, history, today=None, question_ids=None):
     """Fortschritt eines Nutzers bei einem Lernauftrag (history: learning.user_history)."""
     today = today or timezone.localdate()
-    ids = _assignment_question_ids(assignment)
+    ids = question_ids if question_ids is not None else _assignment_question_ids(assignment)
     progress = learning.summary(ids, history)
     deadline = assignment.deadline
     return {

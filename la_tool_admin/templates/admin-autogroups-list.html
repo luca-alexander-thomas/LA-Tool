@@ -50,7 +50,7 @@
                     <span class="text-ink-3">–</span>
                     {% endif %}
                 </td>
-                <td class="text-xs whitespace-nowrap text-ink-2">{{ rule.group.user_set.count }} Nutzer</td>
+                <td class="text-xs whitespace-nowrap text-ink-2">{{ rule.member_count }} Nutzer</td>
                 {% if perms.app.manage_groups %}
                 <td class="text-right">
                     <a href="{% url 'admin_autogroup_edit' rule.group.pk %}" class="btn btn-sm btn-secondary">{% include "icons/pencil-square.html" with cls="size-4" %} Bearbeiten</a>

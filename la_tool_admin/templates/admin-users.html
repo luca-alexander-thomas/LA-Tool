@@ -34,7 +34,7 @@
             </tr>
         </thead>
         {% for u in users %}
-        <tbody x-data="{ perms: false }">
+        <tbody id="user-{{ u.pk }}" class="scroll-mt-24" x-data="{ perms: {% if u.pk == open_user %}true{% else %}false{% endif %} }">
             <tr>
                 <td>
                     <div class="flex flex-wrap items-center gap-1.5">
@@ -152,7 +152,7 @@
                             <input type="hidden" name="user_id" value="{{ u.pk }}">
                             <input type="hidden" name="action" value="toggle_perm">
                             <input type="hidden" name="perm_codename" value="{{ codename }}">
-                            <button type="submit" class="btn btn-sm {% if codename in u.la_perms_direct %}btn-success{% else %}btn-secondary{% endif %}">
+                            <button type="submit" aria-pressed="{% if codename in u.la_perms_direct %}true{% else %}false{% endif %}" class="btn btn-sm {% if codename in u.la_perms_direct %}btn-success{% else %}btn-secondary{% endif %}">
                                 {% if codename in u.la_perms_direct %}{% include "icons/check.html" with cls="size-4" %}{% endif %}
                                 {{ label }}
                             </button>

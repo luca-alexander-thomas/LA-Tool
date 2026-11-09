@@ -81,7 +81,7 @@ class AdminPermissionTests(TestCase):
     def test_user_manager_can_reset_member_password(self):
         self.login(self.user_manager)
         response = self.client.post(reverse('admin_users'), {'user_id': self.member.pk, 'action': 'reset_password'})
-        self.assertRedirects(response, reverse('admin_users'), fetch_redirect_response=False)
+        self.assertRedirects(response, f"{reverse('admin_users')}?offen={self.member.pk}#user-{self.member.pk}", fetch_redirect_response=False)
         self.assertFalse(User.objects.get(pk=self.member.pk).check_password('pw'))
 
 
@@ -265,3 +265,36 @@ class PushTests(TestCase):
         grant(viewer, 'access_admin')
         self.login(viewer)
         self.assertEqual(self.client.post(reverse('admin_push_test')).status_code, 403)
+
+
+class AdminQueryCountTests(TestCase):
+    """Admin-Listen: Abfragen wachsen nicht mit der Zahl der Einträge."""
+
+    def setUp(self):
+        self.admin = User.objects.create_superuser('chef', password='pw')
+        self.client.force_login(self.admin)
+
+    def test_user_list_constant_queries(self):
+        group = Group.objects.create(name='Jugend')
+        group.permissions.add(Permission.objects.get(codename='access_admin'))
+        User.objects.create_user('u0').groups.add(group)
+        self._count('admin_users')  # Caches (Stufen, Zähler) füllen
+        few = self._count('admin_users')
+        for i in range(1, 10):
+            User.objects.create_user(f'u{i}').groups.add(group)
+        self.assertEqual(self._count('admin_users'), few)  # 10 statt 1 Konto: gleich viele Abfragen
+
+    def test_inherited_permission_shown(self):
+        group = Group.objects.create(name='Ausbilder')
+        group.permissions.add(Permission.objects.get(codename='view_learning_progress'))
+        member = User.objects.create_user('ausbilder')
+        member.groups.add(group)
+        users = {u.pk: u for u in self.client.get(reverse('admin_users')).context['users']}
+        self.assertIn('view_learning_progress', users[member.pk].la_perms_group)
+
+    def _count(self, name):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+        with CaptureQueriesContext(connection) as ctx:
+            self.client.get(reverse(name))
+        return len(ctx.captured_queries)

@@ -9,7 +9,7 @@ from django.core.exceptions import PermissionDenied
 from functools import wraps
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
-from django.db.models import Count, Exists, OuterRef, Q
+from django.db.models import Count, Exists, OuterRef, Prefetch, Q
 from django.utils import timezone
 from app import learning
 from app.models import (
@@ -17,7 +17,7 @@ from app.models import (
     Questions_GroupExercise, Exams, ExamResultData, Work, SiteSettings, Levels,
     QuestionReport, LearningAssignment, TrainingResultData,
 )
-from app.views import assignment_status, review_rows
+from app.views import _assignment_question_ids, _visible_assignments, assignment_status, review_rows
 from app.login_function import apply_remember, post_login_setup, safe_next_url
 from .forms import CatalogForm, TheoryQuestionForm, PracticalForm, GroupExerciseForm, ExamForm, WorkForm, WorkCreateForm, ImportQuestionForm, LevelForm, PushMessageForm, LearningAssignmentForm
 from .models import PinnedGroup, Profile, PushSubscription
@@ -357,6 +357,10 @@ def microsoft_callback(request):
 
 # ── NUTZERVERWALTUNG ─────────────────────────────────────────────────────────
 
+def target_name(user):
+    return user.get_full_name() or user.username
+
+
 @admin_permission_required('app.manage_users')
 def admin_users(request):
     admin_group = Group.objects.filter(name='LA-Tool-Admins').first()
@@ -382,18 +386,28 @@ def admin_users(request):
                 pin_group(target, group, by=request.user)
                 target.is_staff = True
                 target.save()
+                messages.success(request, f'{target_name(target)} ist jetzt Admin.')
             elif action == 'remove_admin':
                 if admin_group:
                     unpin_group(target, admin_group, remove=True)
                 target.is_staff = False
                 target.save()
+                messages.success(request, f'{target_name(target)} ist kein Admin mehr.')
             elif action in ('pin_group', 'unpin_group', 'add_group', 'remove_group'):
                 group = get_object_or_404(Group, pk=request.POST.get('group_id'))
                 if action in ('pin_group', 'add_group'):
                     pin_group(target, group, by=request.user)
                 else:
                     unpin_group(target, group, remove=(action == 'remove_group'))
-            elif action == 'reset_password' and target.has_usable_password():
+                messages.success(request, {
+                    'pin_group': f'Gruppe „{group.name}“ für {target_name(target)} festgesetzt.',
+                    'add_group': f'{target_name(target)} zur Gruppe „{group.name}“ hinzugefügt.',
+                    'unpin_group': f'Gruppe „{group.name}“ für {target_name(target)} gelöst.',
+                    'remove_group': f'{target_name(target)} aus der Gruppe „{group.name}“ entfernt.',
+                }[action])
+            elif action == 'reset_password' and not target.has_usable_password():
+                messages.warning(request, f'{target_name(target)} meldet sich über Divera oder Microsoft an und hat kein lokales Passwort.')
+            elif action == 'reset_password':
                 alphabet = string.ascii_letters + string.digits + '!@#$%&*'
                 pw = ''.join(secrets.choice(alphabet) for _ in range(12))
                 target.set_password(pw)
@@ -403,7 +417,9 @@ def admin_users(request):
                     'password': pw,
                 }
             elif action == 'delete_user':
+                name = target_name(target)
                 target.delete()
+                messages.success(request, f'Konto {name} gelöscht.')
             elif action == 'toggle_perm':
                 perm_codename = request.POST.get('perm_codename', '')
                 if perm_codename in [c for c, _ in APP_PERMISSIONS]:
@@ -414,6 +430,9 @@ def admin_users(request):
                             target.user_permissions.remove(perm)
                         else:
                             target.user_permissions.add(perm)
+                        label = dict(APP_PERMISSIONS)[perm_codename]
+                        messages.success(request, f'„{label}“ für {target_name(target)} '
+                                                  + ('entzogen.' if has_direct else 'vergeben.'))
                         # Clear Django's per-instance permission cache so the next
                         # request reflects the change immediately
                         for attr in ('_perm_cache', '_user_perm_cache'):
@@ -422,7 +441,10 @@ def admin_users(request):
                     except Permission.DoesNotExist:
                         pass
 
-        return redirect('admin_users')
+        # Zurück zur bearbeiteten Person (aufgeklapptes Rechte-Feld bleibt offen)
+        if action == 'delete_user':
+            return redirect('admin_users')
+        return redirect(f"{reverse('admin_users')}?offen={target.pk}#user-{target.pk}")
 
     temp_pw_info = request.session.pop('temp_pw_info', None)
 
@@ -441,20 +463,29 @@ def admin_users(request):
                     group_id=admin_group.pk,
                 )
             )
-        ).order_by('last_name', 'first_name').prefetch_related('groups')
+        ).order_by('last_name', 'first_name')
     else:
-        users = base_qs.order_by('last_name', 'first_name').prefetch_related('groups')
+        users = base_qs.order_by('last_name', 'first_name')
+    # Rechte einmal vorladen (vorher 3 Abfragen je Person über has_perm)
+    app_perms = Permission.objects.filter(content_type__app_label='app').only('codename')
+    users = users.prefetch_related(
+        Prefetch('user_permissions', queryset=app_perms, to_attr='app_perms'),
+        Prefetch('groups', queryset=Group.objects.prefetch_related(
+            Prefetch('permissions', queryset=app_perms, to_attr='app_perms'))),
+    )
 
-    # Annotate each user: direct permissions and group-inherited ones (for correct button state)
+    # Je Person: direkte Rechte und über Gruppen geerbte (für den richtigen Knopfzustand)
+    all_codes = {c for c, _ in APP_PERMISSIONS}
     users_list = list(users)
     for u in users_list:
-        u.la_perms_direct = set(
-            u.user_permissions.filter(content_type__app_label='app').values_list('codename', flat=True)
-        )
-        u.la_perms_group = {
-            c for c, _ in APP_PERMISSIONS
-            if c not in u.la_perms_direct and u.has_perm(f'app.{c}')
-        }
+        u.la_perms_direct = {p.codename for p in u.app_perms}
+        if u.is_superuser:
+            inherited = all_codes
+        elif u.is_active:  # wie has_perm: gesperrte Konten erben nichts
+            inherited = {p.codename for g in u.groups.all() for p in g.app_perms}
+        else:
+            inherited = set()
+        u.la_perms_group = (inherited & all_codes) - u.la_perms_direct
         u.has_admin_access = u.is_superuser or 'access_admin' in u.la_perms_direct | u.la_perms_group
 
     pinned = {}
@@ -471,6 +502,7 @@ def admin_users(request):
         'admin_group': admin_group,
         'temp_pw_info': temp_pw_info,
         'app_permissions': APP_PERMISSIONS,
+        'open_user': int(request.GET['offen']) if request.GET.get('offen', '').isdigit() else None,
     })
 
 
@@ -617,6 +649,7 @@ def admin_catalog_delete(request, catalog_id):
     catalog = get_object_or_404(Questions_Catalogs, pk=catalog_id)
     if request.method == 'POST':
         catalog.delete()
+        messages.success(request, f'Katalog „{catalog.title}“ gelöscht.')
         return redirect('admin_catalog')
     return redirect('admin_catalog_detail', catalog_id=catalog_id)
 
@@ -692,6 +725,7 @@ def admin_theory_delete(request, catalog_id, q_id):
     question = get_object_or_404(Questions_Theory, pk=q_id, catalog_id=catalog_id)
     if request.method == 'POST':
         question.delete()
+        messages.success(request, 'Theoriefrage gelöscht.')
     return redirect('admin_catalog_detail', catalog_id=catalog_id)
 
 
@@ -1088,6 +1122,7 @@ def admin_practical_delete(request, catalog_id, q_id):
     question = get_object_or_404(Questions_Practical, pk=q_id, catalog_id=catalog_id)
     if request.method == 'POST':
         question.delete()
+        messages.success(request, 'Praktische Aufgabe gelöscht.')
     return redirect('admin_catalog_detail', catalog_id=catalog_id)
 
 
@@ -1190,6 +1225,7 @@ def admin_group_delete(request, q_id):
     question = get_object_or_404(Questions_GroupExercise, pk=q_id)
     if request.method == 'POST':
         question.delete()
+        messages.success(request, 'Gruppenaufgabe gelöscht.')
     return redirect('admin_group_list')
 
 
@@ -1295,12 +1331,16 @@ def admin_exam_list(request):
     active_exams = Exams.objects.filter(archived=False).order_by('-pk')
     archived_exams = Exams.objects.filter(archived=True).order_by('-pk')
 
+    # Ergebnisse aller Prüfungen auf einmal zählen (vorher 2 Abfragen je Prüfung)
+    counts = {}
+    for exam_id, meta in ExamResultData.objects.filter(exam__isnull=False).values_list('exam_id', 'meta_reference'):
+        total, passed = counts.get(exam_id, (0, 0))
+        counts[exam_id] = (total + 1, passed + bool((meta or {}).get('passed', False)))
+
     def _annotate(exams_qs):
         result = []
         for exam in exams_qs:
-            results = ExamResultData.objects.filter(exam=exam)
-            total_count = results.count()
-            passed_count = sum(1 for r in results if (r.meta_reference or {}).get('passed', False))
+            total_count, passed_count = counts.get(exam.pk, (0, 0))
             result.append({'exam': exam, 'total': total_count, 'passed': passed_count, 'failed': total_count - passed_count})
         return result
 
@@ -1311,9 +1351,20 @@ def admin_exam_list(request):
     })
 
 
+def _exam_catalog_data():
+    """Kataloge mit ihren Theoriefragen für die Fragenauswahl (eine Abfrage für alle Fragen)."""
+    catalogs = Questions_Catalogs.objects.select_related('level').prefetch_related(
+        Prefetch('questions_theory_set', queryset=Questions_Theory.objects.order_by('number', 'pk'), to_attr='question_list'),
+    ).order_by('level__order', 'order', 'title')
+    return [{'catalog': c, 'questions': c.question_list} for c in catalogs]
+
+
+def _posted_ids(request, name):
+    return {int(x) for x in request.POST.getlist(name) if x.isdigit()}
+
+
 @admin_permission_required('app.manage_exams')
 def admin_exam_create(request):
-    catalogs = Questions_Catalogs.objects.prefetch_related('questions_theory_set').order_by('level__order', 'order', 'title')
     all_users = User.objects.order_by('last_name', 'first_name')
     all_groups = Group.objects.order_by('name')
     form = ExamForm(request.POST or None)
@@ -1353,10 +1404,7 @@ def admin_exam_create(request):
             ))
         return redirect('admin_exam_list')
 
-    catalog_data = []
-    for c in catalogs:
-        qs = Questions_Theory.objects.filter(catalog=c).order_by('number', 'pk')
-        catalog_data.append({'catalog': c, 'questions': list(qs)})
+    catalog_data = _exam_catalog_data()
 
     level_defaults = {
         str(l.pk): {'pass_pct': l.default_exam_pass_pct, 'count': l.default_exam_count}
@@ -1369,9 +1417,10 @@ def admin_exam_create(request):
         'catalog_data': catalog_data,
         'all_users': all_users,
         'all_groups': all_groups,
-        'selected_user_ids': set(),
-        'selected_group_ids': set(),
-        'selected_question_ids': set(),
+        # Nach einem Formularfehler die getroffene Auswahl behalten
+        'selected_user_ids': _posted_ids(request, 'user_ids'),
+        'selected_group_ids': _posted_ids(request, 'group_ids'),
+        'selected_question_ids': _posted_ids(request, 'question_ids'),
         'level_defaults_json': json.dumps(level_defaults),
         'title': 'Neue Prüfung',
     })
@@ -1380,7 +1429,6 @@ def admin_exam_create(request):
 @admin_permission_required('app.manage_exams')
 def admin_exam_edit(request, exam_id):
     exam = get_object_or_404(Exams, pk=exam_id)
-    catalogs = Questions_Catalogs.objects.order_by('level__order', 'order', 'title')
     all_users = User.objects.order_by('last_name', 'first_name')
     all_groups = Group.objects.order_by('name')
 
@@ -1398,14 +1446,16 @@ def admin_exam_edit(request, exam_id):
     else:
         form = ExamForm(instance=exam)
 
-    selected_user_ids = set(exam.assigned_users.values_list('pk', flat=True))
-    selected_group_ids = set(exam.assigned_groups.values_list('pk', flat=True))
-    selected_question_ids = set(exam.questions.values_list('pk', flat=True))
+    if request.method == 'POST':  # Formularfehler: Auswahl aus dem Formular behalten
+        selected_user_ids = _posted_ids(request, 'user_ids')
+        selected_group_ids = _posted_ids(request, 'group_ids')
+        selected_question_ids = _posted_ids(request, 'question_ids')
+    else:
+        selected_user_ids = set(exam.assigned_users.values_list('pk', flat=True))
+        selected_group_ids = set(exam.assigned_groups.values_list('pk', flat=True))
+        selected_question_ids = set(exam.questions.values_list('pk', flat=True))
 
-    catalog_data = []
-    for c in catalogs:
-        qs = Questions_Theory.objects.filter(catalog=c).order_by('number', 'pk')
-        catalog_data.append({'catalog': c, 'questions': list(qs)})
+    catalog_data = _exam_catalog_data()
 
     level_defaults = {
         str(l.pk): {'pass_pct': l.default_exam_pass_pct, 'count': l.default_exam_count}
@@ -1432,6 +1482,7 @@ def admin_exam_delete(request, exam_id):
     exam = get_object_or_404(Exams, pk=exam_id)
     if request.method == 'POST':
         exam.delete()
+        messages.success(request, f'Prüfung „{exam.name}“ gelöscht.')
     return redirect('admin_exam_list')
 
 
@@ -1443,6 +1494,11 @@ def admin_exam_toggle(request, exam_id, field):
     if field in ('visible', 'closed', 'archived'):
         setattr(exam, field, not getattr(exam, field))
         exam.save()
+        state = {
+            'visible': ('sichtbar', 'ausgeblendet'), 'closed': ('gesperrt', 'freigegeben'),
+            'archived': ('archiviert', 'aus dem Archiv geholt'),
+        }[field][0 if getattr(exam, field) else 1]
+        messages.success(request, f'Prüfung „{exam.name}“ {state}.')
     return redirect('admin_exam_list')
 
 
@@ -1525,7 +1581,7 @@ def admin_exam_result_release(request, exam_id, result_id):
 
 @admin_required
 def admin_work_list(request):
-    works = Work.objects.all().order_by('-date')
+    works = Work.objects.select_related('level').order_by('-date')
     return render(request, 'admin-work.html', {'works': works})
 
 
@@ -1551,7 +1607,7 @@ def admin_work_edit(request, work_id):
     catalogs = Questions_Catalogs.objects.prefetch_related(
         'questions_theory_set'
     ).order_by('level__order', 'order', 'title')
-    all_practical = Questions_Practical.objects.select_related('catalog').order_by('catalog__level__order', 'pk')
+    all_practical = Questions_Practical.objects.select_related('catalog__level').order_by('catalog__level__order', 'pk')
     all_group = Questions_GroupExercise.objects.select_related('level').order_by('level__order', 'number', 'pk')
 
     all_groups = Group.objects.order_by('name')
@@ -1587,6 +1643,7 @@ def admin_work_delete(request, work_id):
     if request.method == 'POST':
         work = get_object_or_404(Work, pk=work_id)
         work.delete()
+        messages.success(request, f'Dienst „{work.title}“ gelöscht.')
     return redirect('admin_work_list')
 
 
@@ -1711,6 +1768,7 @@ def admin_level_delete(request, level_id):
     level = get_object_or_404(Levels, pk=level_id)
     if request.method == 'POST':
         level.delete()
+        messages.success(request, f'Stufe „{level.name}“ gelöscht.')
         return redirect('admin_level_list')
     return render(request, 'admin-levels-edit.html', {
         'user': request.user,
@@ -1726,7 +1784,7 @@ def admin_level_delete(request, level_id):
 @admin_permission_required('app.manage_groups')
 def admin_autogroup_list(request):
     from .models import AutoGroupRule
-    rules = AutoGroupRule.objects.select_related('group').order_by('group__name')
+    rules = AutoGroupRule.objects.select_related('group').annotate(member_count=Count('group__user')).order_by('group__name')
     return render(request, 'admin-autogroups-list.html', {
         'user': request.user,
         'rules': rules,
@@ -1816,6 +1874,7 @@ def admin_autogroup_delete(request, group_id):
             pass
         if delete_group:
             group.delete()
+        messages.success(request, f'Regel für „{group.name}“ gelöscht' + (' (Gruppe ebenfalls).' if delete_group else '.'))
         return redirect('admin_autogroup_list')
     return redirect('admin_autogroup_edit', group_id=group_id)
 
@@ -1934,8 +1993,8 @@ def admin_learning_user(request, user_id):
     weak = [qid for qid in question_ids if history.get(qid) and learning.mastery(history[qid]) < learning.MASTERED]
     weak.sort(key=lambda qid: learning.mastery(history[qid]))
     q_map = Questions_Theory.objects.select_related('catalog').in_bulk(weak[:20])
-    assignments = [assignment_status(a, history) for a in LearningAssignment.objects.select_related('level', 'work')
-                   .prefetch_related('catalogs') if a.recipients().filter(pk=learner.pk).exists()]
+    assignments = [assignment_status(a, history)
+                   for a in _visible_assignments(learner).select_related('level', 'work').prefetch_related('catalogs')]
     return render(request, 'admin-learning-user.html', {
         'learner': learner,
         'levels': levels,
@@ -1951,21 +2010,30 @@ def admin_learning_user(request, user_id):
 
 # ── Lernaufträge ──────────────────────────────────────────────────────────────
 
-def _assignment_progress(assignment):
-    """[(Nutzer, Status)] aller Empfänger eines Lernauftrags, unerfüllte und schwächste zuerst."""
-    users = list(assignment.recipients().order_by('last_name', 'first_name', 'username'))
-    attempts = learning.attempts_by_user([u.pk for u in users])
-    result = [(u, assignment_status(assignment, learning.scores_only(attempts.get(u.pk, {})))) for u in users]
+def _assignment_progress(assignment, attempts=None, users=None):
+    """[(Nutzer, Status)] aller Empfänger eines Lernauftrags, unerfüllte und schwächste zuerst.
+
+    attempts: optional vorab geladene learning.attempts_by_user (für Listen mehrerer Aufträge).
+    """
+    if users is None:
+        users = list(assignment.recipients().order_by('last_name', 'first_name', 'username'))
+    if attempts is None:
+        attempts = learning.attempts_by_user([u.pk for u in users])
+    question_ids = _assignment_question_ids(assignment)  # einmal je Auftrag statt je Person
+    result = [(u, assignment_status(assignment, learning.scores_only(attempts.get(u.pk, {})), question_ids=question_ids))
+              for u in users]
     return sorted(result, key=lambda pair: (pair[1]['done'], pair[1]['progress']['score']))
 
 
 @admin_permission_required('app.manage_assignments')
 def admin_assignment_list(request):
-    assignments = LearningAssignment.objects.select_related('level', 'work').prefetch_related('catalogs')
+    assignments = list(LearningAssignment.objects.select_related('level', 'work').prefetch_related('catalogs'))
     today = timezone.localdate()
+    recipients = {a.pk: list(a.recipients()) for a in assignments}
+    attempts = learning.attempts_by_user({u.pk for users in recipients.values() for u in users})  # einmal für alle
     entries = []
     for a in assignments:
-        progress = _assignment_progress(a)
+        progress = _assignment_progress(a, attempts, recipients[a.pk])
         entries.append({
             'assignment': a,
             'recipients': len(progress),
@@ -1978,7 +2046,8 @@ def admin_assignment_list(request):
     })
 
 
-def _assignment_form_context(form, assignment=None):
+def _assignment_form_context(form, assignment=None, request=None):
+    posted = request is not None and request.method == 'POST'
     return {
         'form': form,
         'assignment': assignment,
@@ -1986,9 +2055,12 @@ def _assignment_form_context(form, assignment=None):
                     .order_by('level__order', 'order', 'title'),
         'all_users': User.objects.filter(is_active=True).order_by('last_name', 'first_name'),
         'all_groups': Group.objects.order_by('name'),
-        'selected_catalog_ids': set(assignment.catalogs.values_list('pk', flat=True)) if assignment else set(),
-        'selected_user_ids': set(assignment.assigned_users.values_list('pk', flat=True)) if assignment else set(),
-        'selected_group_ids': set(assignment.assigned_groups.values_list('pk', flat=True)) if assignment else set(),
+        'selected_catalog_ids': _posted_ids(request, 'catalog_ids') if posted else (
+            set(assignment.catalogs.values_list('pk', flat=True)) if assignment else set()),
+        'selected_user_ids': _posted_ids(request, 'user_ids') if posted else (
+            set(assignment.assigned_users.values_list('pk', flat=True)) if assignment else set()),
+        'selected_group_ids': _posted_ids(request, 'group_ids') if posted else (
+            set(assignment.assigned_groups.values_list('pk', flat=True)) if assignment else set()),
     }
 
 
@@ -2019,7 +2091,7 @@ def admin_assignment_create(request):
             ))
         messages.success(request, 'Lernauftrag angelegt.')
         return redirect('admin_assignment_detail', assignment_id=assignment.pk)
-    return render(request, 'admin-assignment-edit.html', {**_assignment_form_context(form), 'title': 'Neuer Lernauftrag'})
+    return render(request, 'admin-assignment-edit.html', {**_assignment_form_context(form, request=request), 'title': 'Neuer Lernauftrag'})
 
 
 @admin_permission_required('app.manage_assignments')
@@ -2032,7 +2104,7 @@ def admin_assignment_edit(request, assignment_id):
         messages.success(request, 'Lernauftrag gespeichert.')
         return redirect('admin_assignment_detail', assignment_id=assignment.pk)
     return render(request, 'admin-assignment-edit.html', {
-        **_assignment_form_context(form, assignment), 'title': 'Lernauftrag bearbeiten'})
+        **_assignment_form_context(form, assignment, request), 'title': 'Lernauftrag bearbeiten'})
 
 
 @admin_permission_required('app.manage_assignments')
