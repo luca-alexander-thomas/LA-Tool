@@ -366,6 +366,7 @@
                     if (cfg.offlineQueue) {
                         // Training: Antworten auf dem Gerät aufheben und senden, sobald wieder Netz da ist
                         queueTraining({
+                            user: document.body.dataset.user,
                             url: this.$refs.form.action,
                             run_id: cfg.offlineQueue.runId,
                             question_ids: this.questions.map((q) => q.id),
@@ -602,7 +603,9 @@
     async function flushTrainings() {
         const token = document.querySelector('[name=csrfmiddlewaretoken]');
         if (flushing || !navigator.onLine || !token) return;
-        const list = pendingTrainings();
+        // Nur Abgaben des angemeldeten Kontos senden (geteiltes Gerät, abgelaufene Sitzung)
+        const user = document.body.dataset.user;
+        const list = pendingTrainings().filter((item) => user && item.user === user);
         if (!list.length) return;
         flushing = true;
         const onRunPage = (run_id) => document.querySelector(`[data-training-run="${run_id}"]`);

@@ -39,7 +39,7 @@
 
 <body class="flex min-h-dvh flex-col pb-[calc(4.25rem+env(safe-area-inset-bottom))] md:pb-0"
       data-service-worker="{% url 'service_worker' %}"
-      {% if user.is_authenticated %}data-unread="{{ unread_notifications }}" data-offline-data="{% url 'theory_offline_data' %}"{% endif %}>
+      {% if user.is_authenticated %}data-user="{{ user.pk }}" data-unread="{{ unread_notifications }}" data-offline-data="{% url 'theory_offline_data' %}"{% endif %}>
     <div id="page-progress" class="page-progress" aria-hidden="true"></div>
     <a href="#inhalt" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2 focus:shadow-lg">Zum Inhalt springen</a>
 

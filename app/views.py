@@ -136,10 +136,15 @@ def login(request):
     if request.user.is_authenticated:
         return redirect(next_url or 'home')
     if request.method == "POST":
-        username = request.POST.get("username")
+        username = request.POST.get("username") or ''
         password = request.POST.get("password")
 
+        if login_func.login_blocked(request, username):
+            return render(request, "login.html", {
+                "error": 'Zu viele fehlgeschlagene Anmeldeversuche. Bitte warte 15 Minuten.', "next": next_url,
+            }, status=429)
         user = login_func.login(username, password, request)
+        login_func.record_login_attempt(request, username, success=user is not None)
 
         # auth_user = auth.authenticate(request, username=username, password=password)
         if user is not None:
@@ -273,6 +278,30 @@ def _selected_texts(q, letters):
     return texts
 
 
+def review_rows(question_ids, answers):
+    """Je Frage: Antworten, gewählte und richtige Texte, richtig/falsch – für die Ergebnisansichten."""
+    q_map = {q.pk: q for q in Questions_Theory.objects.select_related('catalog').filter(pk__in=question_ids)}
+    rows = []
+    for q_id in question_ids:
+        q = q_map.get(q_id)
+        if not q:
+            continue
+        raw = answers.get(str(q_id), '')
+        user_letters = raw if isinstance(raw, list) else ([raw] if raw else [])
+        user_texts = _selected_texts(q, user_letters)
+        correct_texts = q.correct_answers
+        rows.append({
+            'question': q,
+            'labeled_choices': _labeled_choices(q),
+            'user_letters': user_letters,
+            'user_texts': user_texts,
+            'correct_texts': correct_texts,
+            'is_correct': set(user_texts) == set(correct_texts),
+            'is_multi_answer': q.is_multi_answer,
+        })
+    return rows
+
+
 def _question_payload(q):
     """Frage für den Browser – bewusst ohne Lösung."""
     label = ' · '.join(x for x in (q.catalog.short_title if q.catalog else '', q.number or '') if x)
@@ -310,6 +339,27 @@ def _ordered_questions(question_ids):
 EXAM_SUBMIT_GRACE_SEC = 30
 
 
+def _running_exam(user):
+    """Laufender, noch nicht abgelaufener Prüfungsversuch des Nutzers (oder None)."""
+    if not user.is_authenticated:
+        return None
+    for attempt in ExamAttempt.objects.select_related('exam').filter(
+            user=user, exam__visible=True, exam__archived=False, exam__closed=False):
+        limit = (attempt.exam.time_in_min or 30) * 60 + EXAM_SUBMIT_GRACE_SEC
+        if (timezone.now() - attempt.started_at).total_seconds() < limit:
+            return attempt
+    return None
+
+
+def _exam_lock(request):
+    """Während einer Prüfung keine Lösungen und kein Training: Umleitung zurück zur Prüfung, sonst None."""
+    attempt = _running_exam(request.user)
+    if attempt is None:
+        return None
+    messages.warning(request, 'Während deiner Prüfung sind Training und Nachschlagen gesperrt.')
+    return redirect('exam_run', exam_id=attempt.exam_id)
+
+
 def _startable_exams(user):
     """Prüfungen, die der Nutzer starten/fortsetzen darf: zugewiesen, sichtbar, nicht archiviert."""
     return Exams.objects.filter(_user_exam_filter(user), visible=True, archived=False).distinct()
@@ -339,11 +389,12 @@ def exam_run(request, exam_id):
     questions = _ordered_questions(question_ids)
     time_limit_sec = (exam.time_in_min or 30) * 60
     elapsed = int((timezone.now() - attempt.started_at).total_seconds())
-    in_time = elapsed < time_limit_sec + EXAM_SUBMIT_GRACE_SEC
+    # „Gesperrt“ beendet auch laufende Versuche: ab dann zählt nur der letzte Zwischenstand
+    in_time = elapsed < time_limit_sec + EXAM_SUBMIT_GRACE_SEC and not exam.closed
 
     if is_save:
         if not in_time:
-            return JsonResponse({'error': 'Zeit abgelaufen.'}, status=409)
+            return JsonResponse({'error': 'Die Prüfung wurde gesperrt.' if exam.closed else 'Zeit abgelaufen.'}, status=409)
         attempt.answers = _answers_from_post(request, questions)
         attempt.save(update_fields=['answers'])
         return JsonResponse({'ok': True})
@@ -355,12 +406,7 @@ def exam_run(request, exam_id):
             deleted, _ = ExamAttempt.objects.filter(pk=attempt.pk).delete()
             if not deleted:
                 return redirect('exam_result', exam_id=exam_id)
-            result = _save_exam_result(request.user, exam, question_ids, answers)
-        # Bei Bestehen den LA-Filter auf die nächste Stufe setzen
-        if (result.meta_reference or {}).get('passed', False) and exam.level:
-            next_level = exam.level.next_level
-            if next_level:
-                request.session['la_filter'] = next_level.slug
+            _save_exam_result(request.user, exam, question_ids, answers)
         return redirect('exam_result', exam_id=exam_id)
 
     total = len(question_ids)
@@ -418,38 +464,16 @@ def exam_result(request, exam_id):
     is_passed = meta.get('passed', False)
     is_released = result.state == 'published'
 
-    question_ids = result.questions or []
-    answers = result.answers or {}
-    questions_data = []
-    if is_released:
-        q_map = {q.pk: q for q in Questions_Theory.objects.select_related('catalog').filter(pk__in=question_ids)}
-        for q_id in question_ids:
-            q = q_map.get(q_id)
-            if not q:
-                continue
-            choices = q.answer_choice or []
-            labeled = [(chr(ord('a') + i), t) for i, t in enumerate(choices) if t]
+    questions_data = review_rows(result.questions or [], result.answers or {}) if is_released else []
 
-            raw_answer = answers.get(str(q_id), '')
-            user_letters = raw_answer if isinstance(raw_answer, list) else ([raw_answer] if raw_answer else [])
-            user_texts = []
-            for letter in user_letters:
-                idx = ord(letter) - ord('a') if letter and len(letter) == 1 else -1
-                if 0 <= idx < len(choices) and choices[idx]:
-                    user_texts.append(choices[idx])
-
-            correct_set = set(q.correct_answers)
-            is_correct = set(user_texts) == correct_set
-
-            questions_data.append({
-                'question': q,
-                'labeled_choices': labeled,
-                'user_letters': user_letters,
-                'user_texts': user_texts,
-                'correct_texts': list(correct_set),
-                'is_correct': is_correct,
-                'is_multi_answer': q.is_multi_answer,
-            })
+    # Bestanden: LA-Filter einmalig auf die nächste Stufe – erst nach der Freigabe, sonst verriete der
+    # Stufenwechsel das Ergebnis vorab
+    advanced = request.session.get('exam_level_advanced', [])
+    if is_released and is_passed and exam.level and result.pk not in advanced:
+        next_level = exam.level.next_level
+        if next_level:
+            request.session['la_filter'] = next_level.slug
+        request.session['exam_level_advanced'] = (advanced + [result.pk])[-50:]
 
     pass_count = exam.pass_threshold
     pass_pct = round(pass_count / total * 100) if total else 0
@@ -645,6 +669,8 @@ def _bookmarked_ids(user):
 
 
 def training_config(request):
+    if (locked := _exam_lock(request)):
+        return locked
     overview = _learning_overview(request)
     catalogs = overview['catalogs']
     level = overview['current_level']
@@ -709,6 +735,8 @@ def training_today(request):
     """
     if not request.user.is_authenticated:
         return redirect_to_login(reverse('training_config'))
+    if (locked := _exam_lock(request)):
+        return locked
     overview = _learning_overview(request)
     level = overview['current_level']
     count = level.default_training_count if level else 10
@@ -819,6 +847,8 @@ def _late_training_submit(request):
     Läuft inzwischen ein anderer Durchgang (oder keiner mehr), kommen die Fragen aus dem Formular
     (nur freigegebene, höchstens 100). Ein bereits abgegebener Durchgang wird nicht doppelt gespeichert.
     """
+    if not request.user.is_authenticated:
+        return redirect('training_config')
     run_id = request.POST.get('run_id', '')
     for done_id, result_id in request.session.get('training_finished_runs', []):
         if done_id == run_id:
@@ -843,6 +873,8 @@ def training_run(request):
     """Ganzer Durchgang in einer Seite: Blättern läuft im Browser, nur die Abgabe geht an den Server."""
     if request.method == 'POST' and request.POST.get('run_id') and request.POST['run_id'] != request.session.get('training_run_id'):
         return _late_training_submit(request)
+    if request.method == 'GET' and (locked := _exam_lock(request)):
+        return locked
     question_ids = request.session.get('training_question_ids')
     if not question_ids:
         return redirect('training_config')
@@ -893,28 +925,10 @@ def training_result(request, result_id):
     answers = result.answers or {}
     meta = result.meta_reference or {}
 
-    q_map = {q.pk: q for q in Questions_Theory.objects.select_related('catalog').filter(pk__in=question_ids)}
     saved_ids = _bookmarked_ids(request.user)
-    questions_data = []
-    for q_id in question_ids:
-        q = q_map.get(q_id)
-        if not q:
-            continue
-        user_answer = answers.get(str(q_id), '')
-        user_letters = user_answer if isinstance(user_answer, list) else ([user_answer] if user_answer else [])
-        user_texts = _selected_texts(q, user_letters)
-        correct_texts = q.correct_answers
-
-        questions_data.append({
-            'question': q,
-            'labeled_choices': _labeled_choices(q),
-            'user_letters': user_letters,
-            'user_texts': user_texts,
-            'correct_texts': correct_texts,
-            'is_correct': set(user_texts) == set(correct_texts),
-            'is_multi_answer': q.is_multi_answer,
-            'saved': q.pk in saved_ids,
-        })
+    questions_data = review_rows(question_ids, answers)
+    for d in questions_data:
+        d['saved'] = d['question'].pk in saved_ids
     wrong = [d for d in questions_data if not d['is_correct']]
     right = [d for d in questions_data if d['is_correct']]
 
@@ -1062,6 +1076,8 @@ def _by_catalog(items, catalog_of=lambda item: item.catalog):
 # ── THEORIE NACHSCHLAGEN ──────────────────────────────────────────────────────
 
 def theory_lookup(request):
+    if (locked := _exam_lock(request)):
+        return locked
     """Alle Theoriefragen der aktiven Stufe mit Lösungen zum Nachlesen, gruppiert nach Katalog."""
     if not request.user.is_authenticated:
         return redirect_to_login(request.get_full_path())
@@ -1101,6 +1117,8 @@ def theory_offline_data(request):
     """
     if not request.user.is_authenticated:
         return JsonResponse({'error': 'Bitte melde dich an.'}, status=403)
+    if _running_exam(request.user):
+        return JsonResponse({'error': 'Während einer Prüfung nicht verfügbar.'}, status=403)
     questions = list(_published(Questions_Theory).select_related('catalog__level'))
     questions.sort(key=lambda q: (learning.natural_key(q.number), q.pk))
     levels = {}

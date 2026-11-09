@@ -281,3 +281,13 @@ class AdminLearningTests(LearningBase):
         self.client.force_login(other)
         self.assertNotContains(self.client.get(reverse('excercise')), 'Nur für Jule')
         self.assertEqual(self.client.post(reverse('training_today'), {'assignment': assignment.pk}).status_code, 404)
+
+
+class ChartLocalizationTests(LearningBase):
+    def test_svg_coordinates_use_dot(self):
+        self.train({self.qa[0]: True}, days_ago=3)
+        self.train({self.qa[1]: True}, days_ago=0)
+        html = self.client.get(reverse('learning_stats')).content.decode()
+        svg = html[html.index('<svg viewBox'):html.index('</svg>')]
+        import re
+        self.assertFalse(re.search(r'(cx|cy|y1|y2)="\d+,\d', svg), svg[:300])

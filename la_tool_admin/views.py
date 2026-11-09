@@ -8,6 +8,7 @@ from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 from functools import wraps
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 from django.db.models import Count, Exists, OuterRef, Q
 from django.utils import timezone
 from app import learning
@@ -16,7 +17,7 @@ from app.models import (
     Questions_GroupExercise, Exams, ExamResultData, Work, SiteSettings, Levels,
     QuestionReport, LearningAssignment, TrainingResultData,
 )
-from app.views import assignment_status
+from app.views import assignment_status, review_rows
 from app.login_function import apply_remember, post_login_setup, safe_next_url
 from .forms import CatalogForm, TheoryQuestionForm, PracticalForm, GroupExerciseForm, ExamForm, WorkForm, WorkCreateForm, ImportQuestionForm, LevelForm, PushMessageForm, LearningAssignmentForm
 from .models import PinnedGroup, Profile, PushSubscription
@@ -134,7 +135,9 @@ def send_divera_notification(user_profile, subject, message):
 def index(request):
     user = request.user
     from django.utils import timezone as tz
-    recent_results = ExamResultData.objects.select_related('user', 'exam').order_by('-meta_time')[:5]
+    # Namen und Punkte Minderjähriger nur für Personen mit Recht „Prüfungsergebnisse einsehen“
+    recent_results = (ExamResultData.objects.select_related('user', 'exam').order_by('-meta_time')[:5]
+                      if user.has_perm('app.view_exam_results') else [])
     unreleased_count = ExamResultData.objects.filter(state='hidden').count()
     total_users = User.objects.filter(is_active=True).count()
     active_exams = Exams.objects.filter(visible=True, archived=False).count()
@@ -211,6 +214,34 @@ def microsoft_login(request):
     return redirect(auth_url)
 
 
+def _entra_refusal(claims, user_info):
+    """Fehlertext, wenn das Microsoft-Konto nicht anmelden darf; sonst None.
+
+    Nur Konten des eigenen Tenants und keine Gastkonten (#EXT#): deren Mail-Attribut könnte die Adresse
+    eines bestehenden LA-Tool-Kontos tragen und es so übernehmen.
+    """
+    tenant = (settings.MICROSOFT_AUTH_TENANT_ID or '').lower()
+    if tenant and tenant not in ('common', 'organizations', 'consumers') and (claims.get('tid') or '').lower() != tenant:
+        logger.warning('Entra-Login abgelehnt: fremder Tenant %s', claims.get('tid'))
+        return 'Dieses Microsoft-Konto gehört nicht zur THW-Jugend Gelsenkirchen.'
+    if '#EXT#' in (user_info.get('userPrincipalName') or '').upper():
+        logger.warning('Entra-Login abgelehnt: Gastkonto %s', user_info.get('userPrincipalName'))
+        return 'Gastkonten können sich nicht anmelden. Bitte an einen Admin wenden.'
+    return None
+
+
+def _entra_user(microsoft_id, email, first_name, last_name):
+    """Konto zum Microsoft-Login: zuerst über die feste Entra-ID, sonst über die Mail (ohne Groß/klein)."""
+    if microsoft_id:
+        profile = Profile.objects.select_related('user').filter(entra_oid=microsoft_id).first()
+        if profile:
+            return profile.user
+    user = User.objects.filter(username__iexact=email).first()
+    if user is None:
+        user = User.objects.create(username=email, email=email, first_name=first_name, last_name=last_name)
+    return user
+
+
 def microsoft_callback(request):
     """Verarbeitet den OAuth Callback von Microsoft Entra ID"""
     # State validieren
@@ -282,16 +313,11 @@ def microsoft_callback(request):
                 'error': 'E-Mail-Adresse konnte nicht abgerufen werden'
             })
 
-        # Django User erstellen oder abrufen
-        user, created = User.objects.get_or_create(
-            username=email,
-            defaults={
-                'email': email,
-                'first_name': first_name,
-                'last_name': last_name,
-            }
-        )
+        refusal = _entra_refusal(token_result.get('id_token_claims') or {}, user_info)
+        if refusal:
+            return render(request, 'login.html', {'error': refusal})
 
+        user = _entra_user(microsoft_id, email, first_name, last_name)
         profile, _ = Profile.objects.get_or_create(user=user)
         # Gleiche Mail, anderes Entra-Konto: nicht übernehmen
         if profile.entra_oid and microsoft_id and profile.entra_oid != microsoft_id:
@@ -679,6 +705,11 @@ def _is_truthy(val):
     return str(val).strip().lower() in ('true', '1', 'ja', 'yes', 'x', 'wahr')
 
 
+# Obergrenzen für den Fragen-Import (Schutz vor versehentlich riesigen Dateien)
+IMPORT_MAX_BYTES = 5 * 1024 * 1024
+IMPORT_MAX_ROWS = 2000
+
+
 def _parse_import_file(file_obj, filename):
     """Parse uploaded XLSX, CSV, or JSON file. Returns list of dicts:
     number, question, choices (list), correct (list of texts), help.
@@ -713,7 +744,7 @@ def _parse_import_file(file_obj, filename):
 
     elif fn.endswith('.xlsx'):
         import openpyxl
-        wb = openpyxl.load_workbook(io.BytesIO(raw), data_only=True)
+        wb = openpyxl.load_workbook(io.BytesIO(raw), data_only=True, read_only=True)
         ws = wb.active
         header_row = next(ws.iter_rows(min_row=1, max_row=1, values_only=True), None)
         if not header_row:
@@ -841,54 +872,62 @@ def admin_import_questions(request):
             update_existing = form.cleaned_data.get('update_existing', True)
             uploaded = request.FILES['file']
 
-            try:
-                rows = _parse_import_file(uploaded, uploaded.name)
-            except Exception as e:
-                form.add_error('file', f'Datei konnte nicht gelesen werden: {e}')
+            rows = []
+            if uploaded.size > IMPORT_MAX_BYTES:
+                form.add_error('file', f'Datei ist zu groß (höchstens {IMPORT_MAX_BYTES // (1024 * 1024)} MB).')
+            else:
+                try:
+                    rows = _parse_import_file(uploaded, uploaded.name)
+                except Exception as e:
+                    form.add_error('file', f'Datei konnte nicht gelesen werden: {e}')
+            if len(rows) > IMPORT_MAX_ROWS:
+                form.add_error('file', f'Zu viele Zeilen ({len(rows)}); höchstens {IMPORT_MAX_ROWS} pro Import.')
                 rows = []
 
             created = updated = skipped = 0
             errors = []
 
-            for i, row in enumerate(rows, start=1):
-                if not row['question']:
-                    errors.append(f'Zeile {i}: Fragetext fehlt.')
-                    skipped += 1
-                    continue
-                if len(row['choices']) < 2:
-                    errors.append(f'Zeile {i} ({row["number"] or "?"}): Weniger als 2 Antwortoptionen.')
-                    skipped += 1
-                    continue
-                if not row['correct']:
-                    errors.append(f'Zeile {i} ({row["number"] or "?"}): Keine korrekte Antwort angegeben.')
-                    skipped += 1
-                    continue
+            # Alles oder nichts: bricht der Import mittendrin ab, bleibt der Katalog unverändert
+            with transaction.atomic():
+                for i, row in enumerate(rows, start=1):
+                    if not row['question']:
+                        errors.append(f'Zeile {i}: Fragetext fehlt.')
+                        skipped += 1
+                        continue
+                    if len(row['choices']) < 2:
+                        errors.append(f'Zeile {i} ({row["number"] or "?"}): Weniger als 2 Antwortoptionen.')
+                        skipped += 1
+                        continue
+                    if not row['correct']:
+                        errors.append(f'Zeile {i} ({row["number"] or "?"}): Keine korrekte Antwort angegeben.')
+                        skipped += 1
+                        continue
 
-                existing = None
-                if update_existing and row['number']:
-                    existing = Questions_Theory.objects.filter(
-                        catalog=catalog, number=row['number']
-                    ).first()
+                    existing = None
+                    if update_existing and row['number']:
+                        existing = Questions_Theory.objects.filter(
+                            catalog=catalog, number=row['number']
+                        ).first()
 
-                if existing and update_existing:
-                    existing.question = row['question']
-                    existing.answer_choice = row['choices']
-                    existing.answer_correct = row['correct']
-                    existing.answer_text = row['correct'][0]
-                    existing.help_reference = row['help']
-                    existing.save()
-                    updated += 1
-                else:
-                    Questions_Theory.objects.create(
-                        catalog=catalog,
-                        number=row['number'],
-                        question=row['question'],
-                        answer_choice=row['choices'],
-                        answer_correct=row['correct'],
-                        answer_text=row['correct'][0],
-                        help_reference=row['help'],
-                    )
-                    created += 1
+                    if existing and update_existing:
+                        existing.question = row['question']
+                        existing.answer_choice = row['choices']
+                        existing.answer_correct = row['correct']
+                        existing.answer_text = row['correct'][0]
+                        existing.help_reference = row['help']
+                        existing.save()
+                        updated += 1
+                    else:
+                        Questions_Theory.objects.create(
+                            catalog=catalog,
+                            number=row['number'],
+                            question=row['question'],
+                            answer_choice=row['choices'],
+                            answer_correct=row['correct'],
+                            answer_text=row['correct'][0],
+                            help_reference=row['help'],
+                        )
+                        created += 1
 
             results = {
                 'created': created,
@@ -1301,7 +1340,7 @@ def admin_exam_create(request):
                         ),
                     )
                 except Exception:
-                    pass
+                    logger.exception('Divera-Nachricht zur Prüfung %s an %s fehlgeschlagen', exam.pk, u.pk)
         if request.POST.get('notify_push'):
             recipients = User.objects.filter(
                 Q(pk__in=user_ids) | Q(groups__pk__in=group_ids)
@@ -1433,36 +1472,8 @@ def admin_exam_result_user(request, exam_id, result_id):
     result = get_object_or_404(ExamResultData, pk=result_id, exam=exam)
     score, total, is_passed = _compute_exam_score(result)
 
-    question_ids = result.questions or []
-    answers = result.answers or {}
-    q_map = {q.pk: q for q in Questions_Theory.objects.filter(pk__in=question_ids)}
-    questions_data = []
-    for q_id in question_ids:
-        q = q_map.get(q_id)
-        if not q:
-            continue
-        choices = q.answer_choice or []
-        while len(choices) < 4:
-            choices.append('')
-        labeled = [(l, t) for l, t in zip('abcd', choices) if t]
-        user_answer = answers.get(str(q_id), '')
-        user_letters = user_answer if isinstance(user_answer, list) else ([user_answer] if user_answer else [])
-        user_texts = []
-        for letter in user_letters:
-            if letter in 'abcd':
-                idx = 'abcd'.index(letter)
-                if idx < len(choices):
-                    user_texts.append(choices[idx])
-        correct_texts = q.correct_answers
-        is_correct = set(user_texts) == set(correct_texts)
-        questions_data.append({
-            'question': q,
-            'labeled_choices': labeled,
-            'user_letters': user_letters,
-            'user_texts': user_texts,
-            'correct_texts': correct_texts,
-            'is_correct': is_correct,
-        })
+    # Gleiche Auswertung wie für die Teilnehmenden (beliebig viele Antworten, Mehrfachauswahl)
+    questions_data = review_rows(result.questions or [], result.answers or {})
 
     return render(request, 'admin-exam-summary-user.html', {
         'user': request.user,

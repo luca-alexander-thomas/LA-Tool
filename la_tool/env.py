@@ -16,6 +16,18 @@ if not SECRET_KEY:
     SECRET_KEY = 'nur-fuer-die-lokale-entwicklung'
 
 HOSTNAME = os.getenv('HOSTNAME', 'localhost')
+# Weitere erlaubte Hostnamen, durch Komma getrennt (z.B. www-Variante)
+EXTRA_HOSTS = [h.strip() for h in os.getenv('EXTRA_HOSTS', '').split(',') if h.strip()]
+
+
+def _flag(name, default='False'):
+    return os.getenv(name, default).strip().lower() in ('1', 'true', 'yes', 'on')
+
+
+# Hinter einem HTTPS-Proxy (openresty/nginx), der „X-Forwarded-Proto: https“ setzt.
+# Erst einschalten, wenn der Proxy den Header wirklich setzt – sonst Weiterleitungsschleife mit SSL_REDIRECT.
+TRUST_X_FORWARDED_PROTO = _flag('TRUST_X_FORWARDED_PROTO')
+SECURE_SSL_REDIRECT = _flag('SECURE_SSL_REDIRECT')
 
 DATABASE = {
     'Type': os.getenv('DATABASE_TYPE', 'sqlite3'),

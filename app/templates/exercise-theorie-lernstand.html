@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load l10n %}
 
 {% block page_title %}Mein Lernstand{% endblock %}
 
@@ -47,6 +48,8 @@
                 <div class="card-header"><h2 class="section-title">Lernerfolg im Verlauf</h2></div>
                 <div class="card-body">
                     {% if chart %}
+                    {# SVG-Koordinaten mit Punkt statt deutschem Komma #}
+                    {% localize off %}
                     <div class="overflow-x-auto">
                         <svg viewBox="0 0 {{ chart.width }} {{ chart.height }}" class="h-auto w-full min-w-[20rem] text-accent" role="img"
                              aria-label="Lernerfolg von {{ chart.start_label|date:'d.m.' }} bis {{ chart.end_label|date:'d.m.' }}: zuletzt {{ chart.last.value }} Prozent">
@@ -68,6 +71,7 @@
                             <text x="{{ chart.right }}" y="{{ chart.height|add:'-6' }}" text-anchor="end" class="fill-ink-3 text-[11px]">{{ chart.end_label|date:"d.m." }}</text>
                         </svg>
                     </div>
+                    {% endlocalize %}
                     <details class="mt-2 text-xs text-ink-3">
                         <summary class="cursor-pointer">Als Tabelle</summary>
                         <table class="mt-2 w-full max-w-xs text-left">

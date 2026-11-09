@@ -11,7 +11,7 @@
      x-data="questionRun({
          questions: JSON.parse(document.getElementById('training-data').textContent),
          storageKey: 'training:{{ run_id }}', storagePrefix: 'training:',
-         offlineQueue: { runId: '{{ run_id }}' },
+         {% if user.is_authenticated %}offlineQueue: { runId: '{{ run_id }}' },{% endif %}
          {% if user.is_authenticated %}urls: { bookmark: '{% url 'question_bookmark' 0 %}', report: '{% url 'question_report' 0 %}' },{% endif %}
      })">
     <form method="post" action="{% url 'training_run' %}" x-ref="form" @submit.prevent="next()">

@@ -29,7 +29,8 @@ SECRET_KEY = env.SECRET_KEY
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.DEBUG
 
-ALLOWED_HOSTS = ['*', env.HOSTNAME]
+# Nur der eigene Hostname (HOSTNAME, EXTRA_HOSTS in der .env); in der Entwicklung alles (Dev Tunnels)
+ALLOWED_HOSTS = [env.HOSTNAME, *env.EXTRA_HOSTS] + (['*'] if DEBUG else [])
 
 
 # Application definition
@@ -58,9 +59,46 @@ MIDDLEWARE = [
     'app.middleware.SlidingSessionMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.csp.ContentSecurityPolicyMiddleware',
 ]
 
 ROOT_URLCONF = 'la_tool.urls'
+
+# ── HTTP-Sicherheit ──────────────────────────────────────────────────────────
+# Produktion läuft nur über HTTPS (Proxy davor): Cookies nur verschlüsselt senden.
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+if env.TRUST_X_FORWARDED_PROTO:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = env.SECURE_SSL_REDIRECT
+# HSTS sendet Django nur bei HTTPS-Anfragen (also erst mit TRUST_X_FORWARDED_PROTO hinter dem Proxy)
+SECURE_HSTS_SECONDS = 0 if DEBUG else 365 * 24 * 60 * 60
+SECURE_REFERRER_POLICY = 'same-origin'
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
+X_FRAME_OPTIONS = 'DENY'
+
+# Content Security Policy: nur eigene Quellen. 'unsafe-inline' wegen der Inline-Skripte/-Styles in den
+# Templates, 'unsafe-eval' für Alpine.js (wertet x-data-Ausdrücke aus). Verhindert trotzdem das Nachladen
+# fremder Skripte, Datenabfluss an fremde Server (connect-src) und Einbetten in fremde Seiten.
+from django.utils.csp import CSP  # noqa: E402
+SECURE_CSP = {
+    'default-src': [CSP.SELF],
+    'script-src': [CSP.SELF, CSP.UNSAFE_INLINE, CSP.UNSAFE_EVAL],
+    'style-src': [CSP.SELF, CSP.UNSAFE_INLINE],
+    'img-src': [CSP.SELF, 'data:', 'blob:'],
+    'font-src': [CSP.SELF],
+    'connect-src': [CSP.SELF],
+    'worker-src': [CSP.SELF, 'blob:'],
+    'manifest-src': [CSP.SELF],
+    'frame-src': [CSP.NONE],
+    'object-src': [CSP.NONE],
+    'base-uri': [CSP.SELF],
+    'frame-ancestors': [CSP.NONE],
+    # Microsoft-Login ist ein Link (GET), kein Formular – Formulare nur an die eigene Seite
+    'form-action': [CSP.SELF],
+}
 
 # Anmeldung: mit „Angemeldet bleiben“ 90 Tage, bei Nutzung täglich verlängert (app.middleware);
 # ohne endet die Sitzung beim Schließen des Browsers bzw. der App

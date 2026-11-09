@@ -309,3 +309,48 @@ def apply_remember(request, remember):
     """Nach auth.login aufrufen: dauerhafte Sitzung (SESSION_COOKIE_AGE) oder bis zum Schließen des Browsers."""
     request.session['remember'] = bool(remember)
     request.session.set_expiry(None if remember else 0)
+
+
+# ── Schutz vor Durchprobieren von Passwörtern ────────────────────────────────
+# Zähler im Django-Cache (LocMem: je Gunicorn-Worker, die Grenze gilt also je Worker).
+LOGIN_WINDOW = 15 * 60
+LOGIN_MAX_PER_USER = 5     # Fehlversuche je Benutzername
+LOGIN_MAX_PER_IP = 30      # Fehlversuche je IP (mehrere Personen hinter einem Router)
+
+
+def client_ip(request):
+    """IP des Aufrufers; hinter dem eigenen HTTPS-Proxy der von ihm angehängte letzte X-Forwarded-For-Eintrag."""
+    from django.conf import settings
+    if getattr(settings, 'SECURE_PROXY_SSL_HEADER', None):
+        forwarded = request.META.get('HTTP_X_FORWARDED_FOR', '')
+        if forwarded:
+            return forwarded.split(',')[-1].strip()
+    return request.META.get('REMOTE_ADDR', '')
+
+
+def _login_keys(request, username):
+    import hashlib
+    name = hashlib.sha256(username.strip().lower().encode()).hexdigest()[:32]
+    return f'login-fail:user:{name}', f'login-fail:ip:{client_ip(request)}'
+
+
+def login_blocked(request, username):
+    from django.core.cache import cache
+    user_key, ip_key = _login_keys(request, username)
+    return cache.get(user_key, 0) >= LOGIN_MAX_PER_USER or cache.get(ip_key, 0) >= LOGIN_MAX_PER_IP
+
+
+def record_login_attempt(request, username, success):
+    from django.core.cache import cache
+    user_key, ip_key = _login_keys(request, username)
+    if success:
+        cache.delete(user_key)
+        return
+    for key in (user_key, ip_key):
+        if cache.add(key, 1, LOGIN_WINDOW):
+            continue
+        try:
+            cache.incr(key)
+        except ValueError:
+            cache.set(key, 1, LOGIN_WINDOW)
+    logger.warning('Fehlgeschlagene Anmeldung (IP %s)', client_ip(request))

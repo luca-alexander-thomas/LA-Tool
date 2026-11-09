@@ -48,8 +48,11 @@ def unread_count(user):
 
 
 def safe_internal_url(url):
-    """Nur Pfade dieser Seite (kein //host, kein Schema)."""
-    return url if isinstance(url, str) and url.startswith('/') and not url.startswith('//') else '/'
+    """Nur Pfade dieser Seite (kein //host, kein /\\host, kein Schema)."""
+    from django.utils.http import url_has_allowed_host_and_scheme
+    if isinstance(url, str) and url.startswith('/') and url_has_allowed_host_and_scheme(url, allowed_hosts=None):
+        return url
+    return '/'
 
 
 def send_push(users, title, body, url='/', actions=None):
