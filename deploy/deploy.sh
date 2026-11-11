@@ -15,7 +15,7 @@ if docker image inspect la-tool-app:latest >/dev/null 2>&1; then
 fi
 
 docker compose build app
-docker compose up -d db
+docker compose up -d --wait db
 
 # Backup vor der Migration (nur wenn schon eine App lief)
 if docker image inspect la-tool-app:previous >/dev/null 2>&1; then
