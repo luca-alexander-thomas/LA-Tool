@@ -44,6 +44,8 @@ class Profile(models.Model):
     entra_group_ids = models.JSONField(blank=True, null=True)
     # Wöchentliche Push-Erinnerung an fällige Wiederholungen (Befehl send_learning_reminders)
     learning_reminders = models.BooleanField(default=True)
+    # Divera-Verknüpfung wurde schon einmal angeboten (Wizard nur beim ersten Mal, danach Kachel auf der Startseite)
+    divera_prompt_seen = models.BooleanField(default=False)
     last_learning_reminder_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
