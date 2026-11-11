@@ -1,0 +1,11 @@
+[Unit]
+Description=LA-Tool: Abgelaufene Sitzungen löschen (täglich)
+
+[Timer]
+OnCalendar=*-*-* 04:00
+Unit=la-tool-task@clearsessions.service
+Persistent=true
+RandomizedDelaySec=2min
+
+[Install]
+WantedBy=timers.target

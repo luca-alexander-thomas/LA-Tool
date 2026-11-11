@@ -1,0 +1,16 @@
+# Geheimnisse und lokale Daten gehören nicht ins Image
+.env
+.env.*
+!.env.example
+db.sqlite3
+divera.json
+media/
+staticfiles/
+backups/
+old/
+.git/
+.github/
+.django_tailwind_cli/
+**/__pycache__/
+*.pyc
+Konzept LA-Tool.pdf

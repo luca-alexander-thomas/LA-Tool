@@ -1,0 +1,56 @@
+name: Deploy
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+  workflow_dispatch:
+
+# Erforderliche GitHub-Secrets (Settings → Secrets → Actions, Environment "production"):
+#
+#   SSH_HOST      – Hostname oder IP-Adresse des Servers
+#   SSH_USER      – SSH-Benutzername (root, weil deploy.sh systemd-Timer einspielt)
+#   SSH_KEY       – Inhalt des privaten SSH-Schlüssels
+#   SSH_PORT      – SSH-Port (optional, Standard: 22)
+#   DEPLOY_PATH   – Projektverzeichnis auf dem Server (/home/compose/la-tool)
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python manage.py makemigrations --check --dry-run
+        env: { DEBUG: "True" }
+      - run: python manage.py test
+        env: { DEBUG: "True" }
+
+  deploy:
+    name: Deploy via SSH
+    runs-on: ubuntu-latest
+    needs: test          # nur deployen, wenn die Tests grün sind
+    environment: production
+    concurrency: production
+
+    steps:
+      - name: Auf Server deployen
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host:     ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key:      ${{ secrets.SSH_KEY }}
+          port:     ${{ secrets.SSH_PORT || 22 }}
+          command_timeout: 20m
+          script: |
+            set -e
+            cd "${{ secrets.DEPLOY_PATH }}"
+            git pull --ff-only
+            bash deploy/deploy.sh

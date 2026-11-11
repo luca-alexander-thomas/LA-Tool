@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Abhängigkeiten installieren
+        run: pip install -r requirements.txt pip-audit
+      - name: Konfiguration prüfen
+        run: python manage.py check
+        env: { DEBUG: "True" }
+      - name: Migrationen vollständig
+        run: python manage.py makemigrations --check --dry-run
+        env: { DEBUG: "True" }
+      - name: Tests
+        run: python manage.py test
+        env: { DEBUG: "True" }
+      - name: Bekannte Sicherheitslücken in Abhängigkeiten
+        run: pip-audit -r requirements.txt
+
+  image:
+    name: Docker-Image bauen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Image bauen (ohne Veröffentlichung)
+        run: docker build -t la-tool-app:ci .

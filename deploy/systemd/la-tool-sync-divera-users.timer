@@ -1,0 +1,11 @@
+[Unit]
+Description=LA-Tool: Konten mit Divera abgleichen (nachts)
+
+[Timer]
+OnCalendar=*-*-* 03:15
+Unit=la-tool-task@sync_divera_users.service
+Persistent=true
+RandomizedDelaySec=2min
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,51 @@
+# Produktivbetrieb: Projektverzeichnis = Git-Klon, Konfiguration in .env (siehe .env.example, Abschnitt Produktion).
+# Start und Updates über deploy/deploy.sh (ruft der Deploy-Workflow auf).
+name: la-tool
+
+services:
+  app:
+    build: .
+    image: la-tool-app:latest
+    container_name: la-tool-app
+    env_file: .env
+    environment:
+      DATABASE_TYPE: mysql
+      DB_MYSQL_HOST: db
+      DB_MYSQL_PORT: "3306"
+    ports:
+      - "127.0.0.1:8001:8000"
+    volumes:
+      - ./media:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  db:
+    image: mysql:8.4
+    container_name: la-tool-db
+    environment:
+      MYSQL_DATABASE: ${DB_MYSQL_NAME:?DB_MYSQL_NAME in .env setzen}
+      MYSQL_USER: ${DB_MYSQL_USER:?DB_MYSQL_USER in .env setzen}
+      MYSQL_PASSWORD: ${DB_MYSQL_PASSWORD:?DB_MYSQL_PASSWORD in .env setzen}
+      MYSQL_ROOT_PASSWORD: ${DB_MYSQL_ROOT_PASSWORD:?DB_MYSQL_ROOT_PASSWORD in .env setzen}
+    # Kleiner Server: Speicherbedarf begrenzen
+    command: ["--innodb-buffer-pool-size=128M", "--performance-schema=OFF", "--skip-name-resolve"]
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+    logging: *logging
+
+volumes:
+  db-data:

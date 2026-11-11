@@ -1,0 +1,9 @@
+[Unit]
+Description=LA-Tool: manage.py %i
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=@DIR@
+ExecStart=/usr/bin/docker compose exec -T app python manage.py %i

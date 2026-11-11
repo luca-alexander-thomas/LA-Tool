@@ -1,0 +1,11 @@
+[Unit]
+Description=LA-Tool: Lern-Erinnerungen senden (So 18 Uhr)
+
+[Timer]
+OnCalendar=Sun *-*-* 18:00
+Unit=la-tool-task@send_learning_reminders.service
+Persistent=true
+RandomizedDelaySec=2min
+
+[Install]
+WantedBy=timers.target

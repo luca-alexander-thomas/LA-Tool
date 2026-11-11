@@ -1,0 +1,11 @@
+[Unit]
+Description=LA-Tool: Dienste aus Divera abgleichen (stündlich 6–22 Uhr)
+
+[Timer]
+OnCalendar=*-*-* 06..22:05
+Unit=la-tool-task@sync_divera.service
+Persistent=true
+RandomizedDelaySec=2min
+
+[Install]
+WantedBy=timers.target

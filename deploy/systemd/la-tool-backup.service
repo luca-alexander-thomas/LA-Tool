@@ -1,0 +1,9 @@
+[Unit]
+Description=LA-Tool: Backup (Datenbank-Dump und Uploads)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=@DIR@
+ExecStart=/usr/bin/bash @DIR@/deploy/backup.sh

@@ -1,0 +1,4 @@
+# Zusätzlich für den Produktivbetrieb im Container (Dockerfile)
+-r requirements.txt
+gunicorn==27.0.0
+mysqlclient==2.3.1

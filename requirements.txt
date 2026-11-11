@@ -9,5 +9,4 @@ python-dotenv==1.2.2
 requests==2.34.2
 whitenoise==6.9.0
 
-# Fuer MySQL in Produktion (zusaetzlich installieren):
-# mysqlclient>=2.2.0
+# Produktion (Gunicorn, mysqlclient): requirements-prod.txt

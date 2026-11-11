@@ -1,0 +1,11 @@
+[Unit]
+Description=LA-Tool: Löschkonzept anwenden (täglich)
+
+[Timer]
+OnCalendar=*-*-* 03:45
+Unit=la-tool-task@cleanup_data.service
+Persistent=true
+RandomizedDelaySec=2min
+
+[Install]
+WantedBy=timers.target

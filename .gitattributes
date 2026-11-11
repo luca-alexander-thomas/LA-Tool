@@ -1,0 +1,4 @@
+# Skripte und Units laufen auf Linux
+*.sh text eol=lf
+deploy/systemd/* text eol=lf
+Dockerfile text eol=lf

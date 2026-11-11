@@ -1,0 +1,11 @@
+[Unit]
+Description=LA-Tool: Backup (täglich)
+
+[Timer]
+OnCalendar=*-*-* 02:30
+Unit=la-tool-backup.service
+Persistent=true
+RandomizedDelaySec=2min
+
+[Install]
+WantedBy=timers.target
