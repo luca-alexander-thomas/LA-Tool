@@ -42,12 +42,11 @@ def index(request):
 
     user = request.user
 
-    # First-Run-Wizard: once per session for users without Divera link
-    try:
-        has_divera = bool(user.profile.divera_ucr)
-    except Exception:
-        has_divera = True
-    if not has_divera and not request.session.get('first_run_done'):
+    # Ohne Divera-Verknüpfung: Wizard nur beim ersten Mal, danach dezente Kachel auf der Startseite
+    profile = getattr(user, 'profile', None)
+    divera_missing = profile is not None and not profile.divera_ucr
+    if divera_missing and not profile.divera_prompt_seen and not request.session.get('first_run_done'):
+        type(profile).objects.filter(pk=profile.pk).update(divera_prompt_seen=True)
         return redirect('first_run_wizard')
 
     training_results = TrainingResultData.objects.filter(
@@ -70,6 +69,7 @@ def index(request):
         'open_exams_count': open_exams_count,
         'unreleased_results': unreleased_results,
         'next_work': next_work,
+        'divera_missing': divera_missing,
     })
 
 

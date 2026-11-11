@@ -17,6 +17,17 @@
 
     <div class="mb-4">{% include "_install_card.html" with dismiss_key="install-card-dismissed" %}</div>
 
+    {% if divera_missing %}
+    <a href="{% url 'first_run_wizard' %}" class="card-link card-body mb-4 flex items-center gap-3 py-3">
+        {% include "icons/link.html" with cls="size-5 shrink-0 text-ink-3" %}
+        <span class="min-w-0 flex-1 text-sm text-ink-2">
+            <span class="font-semibold text-ink">Divera verknüpfen</span>
+            <span class="block sm:inline"><span class="hidden sm:inline"> · </span>für Qualifikationen, Gruppen und Dienste</span>
+        </span>
+        {% include "icons/chevron-right.html" with cls="size-4 shrink-0 text-ink-3" %}
+    </a>
+    {% endif %}
+
     {# Schnellzugriff #}
     <div class="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <a href="{% url 'training_config' %}" class="card-link card-body flex flex-col gap-3">
