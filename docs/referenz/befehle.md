@@ -17,7 +17,7 @@ Projekteigene Management-Befehle (`app/management/commands/`) und die im Projekt
 
 | Befehl | Wann |
 |---|---|
-| `makemigrations app la_tool_admin` | nach Modelländerungen und bei jedem Deployment (Migrationen sind nicht versioniert) |
+| `makemigrations app la_tool_admin` | nach Modelländerungen (lokal; Migration mit committen) |
 | `migrate` / `migrate --plan` | Datenbank aktualisieren / Plan vorher ansehen |
 | `createsuperuser` | erster Admin bzw. Notfall-Admin ohne Microsoft-Verknüpfung |
 | `collectstatic --noinput` | bei jedem Deployment (WhiteNoise-Manifest) |

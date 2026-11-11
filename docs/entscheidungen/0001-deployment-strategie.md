@@ -2,11 +2,31 @@
 
 | | |
 |---|---|
-| Status | **Beschlossen (Empfehlung), Umsetzung ausstehend** |
+| Status | **Umgesetzt** am 11.11.2026, mit Abweichungen (siehe [Umsetzung](#umsetzung-11112026)) |
 | Datum | 09.11.2026 |
-| Betrifft | [Deployment](../deployment.md), [Betrieb](../betrieb.md), [Übergangsbetrieb](../deployment-uebergang.md) |
+| Betrifft | [Deployment](../deployment.md), [Betrieb](../betrieb.md) |
 
 **Kurzfassung:** Das LA-Tool läuft künftig mit **Docker Compose auf dem vorhandenen Linux-VPS**, hinter dem bestehenden openresty. Dazu kommen versionierte Migrationen, eine GitHub-Actions-Pipeline (Tests, Image-Build), ein Deploy-Skript mit Rollback auf das vorherige Image sowie automatische, verschlüsselte Offsite-Backups. Kubernetes, PaaS und Managed-Container-Plattformen bringen für ein Ein-Personen-Ehrenamtsprojekt mit 30–50 Nutzern keinen Mehrwert, der ihre Kosten, Komplexität oder Datenschutzfragen rechtfertigt.
+
+
+## Umsetzung (11.11.2026)
+
+Die tatsächliche Umsetzung beschreibt [Deployment](../deployment.md). Abweichungen von den Entwürfen unten:
+
+| Thema | Entwurf | Umgesetzt | Grund |
+|---|---|---|---|
+| Ist-Stand vorher | nativer Gunicorn-Dienst mit Daten | 1Panel-Python-Runtime mit `runserver`; Datenbank **ohne App-Tabellen und Konten** | – |
+| Migrationen | Abgleich mit der Produktionsdatenbank (Schritt 2) | neu erzeugte `0001_initial` je App, kein Abgleich nötig | Produktionsdatenbank war leer |
+| Build und Auslieferung | Image in der CI bauen, nach GHCR, Server zieht per Tag | Server baut das Image aus dem Git-Klon; Deploy per SSH aus GitHub Actions nach gemergtem Pull-Request (wie beim Projekt ConvertX-Frontend-M365 auf demselben Server) | einheitliches Verfahren auf dem Server, keine Registry nötig; die CI baut das Image trotzdem zur Prüfung |
+| Pfad | `/srv/la-tool` | `/home/compose/la-tool` (Git-Klon) | Konvention auf dem Server |
+| Port | `127.0.0.1:8000` | `127.0.0.1:8001` | 8000 belegt die alte Runtime bis zur Umstellung |
+| Compose-Projekt | `la-tool` | `thw-la-tool` | 1Panel nutzt `la-tool` für die Runtime; gleiche Namen entfernen gegenseitig Container als „verwaist“ |
+| `/media/` | liefert openresty aus | liefert Django aus | openresty (1Panel-Container) sieht das Projektverzeichnis nicht |
+| Konfiguration | `.env` und `db.env` | nur `.env`; Compose initialisiert MySQL aus `DB_MYSQL_*` | eine Datei weniger |
+| Logs | journald | Docker `json-file`, rotiert | wie die übrigen Container auf dem Server |
+| Backup | restic offsite | lokal nach `backups/`, 14 Tage, täglich und vor jedem Deploy | **Offsite-Ziel fehlt noch** (offener Punkt) |
+
+Die folgenden Abschnitte bleiben als Begründung der Entscheidung unverändert.
 
 ---
 
@@ -464,7 +484,7 @@ Das Repository ist öffentlich, die Anwendung ist aber nur für die THW-Jugend G
 | Dokument | Änderung |
 |---|---|
 | [Deployment](../deployment.md) | beschreibt die Zielarchitektur (Compose), mit Status-Hinweis |
-| [Übergangsbetrieb](../deployment-uebergang.md) | **neu:** bisheriges natives Verfahren, gilt bis Schritt 7, danach löschen |
+| Übergangsbetrieb (Dokument entfallen) | **neu:** bisheriges natives Verfahren, gilt bis Schritt 7, danach löschen |
 | [Betrieb](../betrieb.md) | Befehlsaufruf je Umgebung, Backup mit restic, Monitoring |
 | [Architektur](../architektur.md) | Verweis auf diese Entscheidung; Migrationen werden versioniert (ab Schritt 2) |
 | [Konfiguration](../referenz/konfiguration.md) | Compose-spezifische Werte (`APP_TAG`, `db.env`) |

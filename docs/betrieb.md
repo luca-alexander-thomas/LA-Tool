@@ -8,8 +8,7 @@ Management-Befehle (`manage.py …`) laufen je nach Umgebung unterschiedlich. Ü
 
 | Umgebung | Aufruf |
 |---|---|
-| Zielarchitektur (Compose) | `docker compose -f /srv/la-tool/compose.yaml run --rm app python manage.py <befehl>` |
-| [Übergangsbetrieb](deployment-uebergang.md) | `cd /srv/la-tool/la_tool && ../venv/bin/python manage.py <befehl>` |
+| Produktion | `cd /home/compose/la-tool && docker compose exec app python manage.py <befehl>` |
 | Entwicklung | `python manage.py <befehl>` im aktivierten venv |
 
 ## Wiederkehrende Aufgaben (Timer)
@@ -24,44 +23,23 @@ Alle Aufgaben sind Management-Befehle (Details: [Befehle](referenz/befehle.md)).
 | `clearsessions` | täglich | abgelaufene Sitzungen aus der Datenbank entfernen (Django-Befehl) |
 | `send_learning_reminders` | wöchentlich, z.&nbsp;B. So 18 Uhr | Push-Erinnerung an fällige Wiederholungen (je Person höchstens alle 6 Tage) |
 
-Beispiel für einen Timer (Pfade und Benutzer anpassen). Für jeden Befehl ein Paar aus `.service` und `.timer`:
+Die Timer liegen im Repository unter `deploy/systemd/`; `deploy/deploy.sh` spielt sie bei jedem Deployment nach `/etc/systemd/system/` ein und aktiviert sie. Eine Vorlage `la-tool-task@.service` führt `docker compose exec -T app python manage.py %i` aus; je Befehl gibt es einen Timer:
 
-`/etc/systemd/system/la-tool-sync.service`
+| Timer | Zeitplan | Befehl |
+|---|---|---|
+| `la-tool-sync-divera.timer` | stündlich 06–22 Uhr (:05) | `sync_divera` |
+| `la-tool-sync-divera-users.timer` | täglich 03:15 | `sync_divera_users` |
+| `la-tool-cleanup-data.timer` | täglich 03:45 | `cleanup_data` |
+| `la-tool-clearsessions.timer` | täglich 04:00 | `clearsessions` |
+| `la-tool-learning-reminders.timer` | So 18:00 | `send_learning_reminders` |
+| `la-tool-backup.timer` | täglich 02:30 | `deploy/backup.sh` |
 
-```ini
-[Unit]
-Description=LA-Tool: Dienste aus DIVERA abgleichen
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=oneshot
-WorkingDirectory=/srv/la-tool
-ExecStart=/usr/bin/docker compose -f /srv/la-tool/compose.yaml run --rm app python manage.py sync_divera
-```
-
-`/etc/systemd/system/la-tool-sync.timer`
-
-```ini
-[Unit]
-Description=LA-Tool: Dienste-Abgleich stündlich
-
-[Timer]
-OnCalendar=*-*-* 06..22:07:00
-Persistent=true
-RandomizedDelaySec=120
-
-[Install]
-WantedBy=timers.target
-```
-
-Weitere Zeitpläne: `sync_divera_users` mit `OnCalendar=*-*-* 03:17:00`, `cleanup_data` und `clearsessions` mit `OnCalendar=*-*-* 03:41:00`, `send_learning_reminders` mit `OnCalendar=Sun *-*-* 17:53:00`.
+Zeitpläne nur im Repository ändern (sonst überschreibt das nächste Deployment sie).
 
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now la-tool-sync.timer
-systemctl list-timers 'la-tool*'
-journalctl -u la-tool-sync.service -n 20
+systemctl list-timers 'la-tool-*'
+systemctl start la-tool-task@cleanup_data.service       # sofort ausführen
+journalctl -u la-tool-task@sync_divera.service -n 20
 ```
 
 **Hinweise zu `sync_divera_users`:**
@@ -89,14 +67,14 @@ Bei Prüfung und Ergebnis-Freigabe kann zusätzlich eine private Divera-Nachrich
 
 ## Logging
 
-- Gunicorn schreibt Zugriffs- und Fehlerlog nach stdout/stderr (`accesslog = "-"`). Mit dem Docker-Logtreiber `journald` landet alles im Journal: `journalctl CONTAINER_NAME=la-tool-app-1` (Übergangsbetrieb: `journalctl -u <gunicorn-dienst>`).
+- Gunicorn schreibt Zugriffs- und Fehlerlog nach stdout/stderr (`accesslog = "-"`). Docker speichert die Logs rotierend (3 × 10 MB): `docker compose logs app`.
 - Django-Logger `app` und `la_tool_admin` (Level INFO, Format `Zeit Level Logger: Meldung`) landen ebenfalls dort. Protokolliert werden u.&nbsp;a. Divera-Fehler, Push-Fehler, fehlgeschlagene Anmeldungen (mit IP), gesperrte Konten.
 - Accesskeys und Tokens werden nicht geloggt (`divera_error_text` lässt URLs weg).
 - Es gibt kein externes Fehler-Tracking (z.&nbsp;B. Sentry) und keine E-Mail bei Fehlern (`ADMINS` nicht gesetzt).
 
 ```bash
-journalctl CONTAINER_NAME=la-tool-app-1 --since "1 hour ago" | grep -E "ERROR|WARNING"
-journalctl CONTAINER_NAME=la-tool-app-1 | grep "Fehlgeschlagene Anmeldung"
+docker compose logs --since 1h app | grep -E "ERROR|WARNING"
+docker compose logs app | grep "Fehlgeschlagene Anmeldung"
 ```
 
 ## Monitoring
@@ -109,40 +87,25 @@ journalctl CONTAINER_NAME=la-tool-app-1 | grep "Fehlgeschlagene Anmeldung"
 
 ## Backup und Wiederherstellung
 
-Zu sichern sind **Datenbank**, **`media/`** (Uploads, Stufen-Icons) und die Konfiguration (**`.env`**, **`db.env`**, `compose.yaml`). Migrationen sind Teil des Images bzw. Repositorys.
+Zu sichern sind **Datenbank**, **`media/`** (Uploads, Stufen-Icons) und die **`.env`**. Migrationen und `compose.yaml` liegen im Repository.
 
-**Verfahren (Ziel, Skript `deploy/backup.sh` aus der Umsetzung):** täglich per systemd-Timer
+**Ist-Stand:** `deploy/backup.sh` schreibt täglich (Timer 02:30) und vor jedem Deployment einen Dump (`backups/db-<zeit>.sql.gz`) und ein Archiv von `media/` nach `/home/compose/la-tool/backups/` (`700`, nur root). Dateien älter als 14 Tage werden gelöscht.
 
-1. Datenbank-Dump aus dem Container,
-2. Dump, `media/` und Konfiguration mit **restic** verschlüsselt in einen EU-Speicher außerhalb des Servers,
-3. Aufbewahrung 7 tägliche, 4 wöchentliche, 6 monatliche Stände (`restic forget --prune`),
-4. Erfolg oder Fehlschlag an die Überwachung melden.
+> **Offen:** Diese Sicherungen liegen auf demselben Server. Gegen Ausfall oder Verlust des Servers hilft nur eine **Offsite-Kopie** (Ziel, siehe [Entscheidung 0001](entscheidungen/0001-deployment-strategie.md)): `backups/` und `.env` mit **restic** verschlüsselt in einen EU-Speicher, Aufbewahrung 7 tägliche, 4 wöchentliche, 6 monatliche Stände, Fehlschlag an die Überwachung melden. Das restic-Passwort zusätzlich offline aufbewahren.
 
-```bash
-# Kern des Backups
-docker compose -f /srv/la-tool/compose.yaml exec -T db     sh -c 'mysqldump --single-transaction -u root -p"$MYSQL_ROOT_PASSWORD" la_tool'     > /srv/la-tool/backup/db.sql
-restic backup /srv/la-tool/backup /srv/la-tool/media /srv/la-tool/.env /srv/la-tool/db.env /srv/la-tool/compose.yaml
-restic forget --keep-daily 7 --keep-weekly 4 --keep-monthly 6 --prune
-```
-
-Das restic-Repository-Passwort liegt auf dem Server (für den Timer) **und** offline bei der verantwortlichen Person – ohne es sind die Backups unbrauchbar.
-
-**Wiederherstellen:**
+**Wiederherstellen** (im Projektverzeichnis):
 
 ```bash
-restic restore latest --target /tmp/restore
-docker compose -f /srv/la-tool/compose.yaml stop app
-docker compose -f /srv/la-tool/compose.yaml exec -T db     sh -c 'mysql -u root -p"$MYSQL_ROOT_PASSWORD" la_tool' < /tmp/restore/srv/la-tool/backup/db.sql
-rsync -a /tmp/restore/srv/la-tool/media/ /srv/la-tool/media/
-docker compose -f /srv/la-tool/compose.yaml start app
+docker compose stop app
+gunzip -c backups/db-<zeit>.sql.gz | docker compose exec -T db sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysql -u "$MYSQL_USER" "$MYSQL_DATABASE"'
+tar -xzf backups/media-<zeit>.tar.gz          # stellt media/ wieder her
+docker compose start app
 curl -fsS https://la-tool.thw-jugend-ge.de/healthz/
 ```
 
-**Wiederherstellung auf einem neuen Server:** Server vorbereiten ([Deployment](deployment.md#server-vorbereiten-einmalig)), Konfiguration aus dem Backup zurückholen, `docker compose up -d db`, Dump einspielen, `media/` zurückkopieren, `app` mit dem zuletzt genutzten Tag starten.
+**Wiederherstellung auf einem neuen Server:** Docker installieren, Repository klonen ([Erstinstallation](deployment.md#erstinstallation)), `.env` aus dem Backup zurückholen, `docker compose up -d --wait db`, Dump einspielen, `media/` zurückkopieren, `bash deploy/deploy.sh`.
 
-Die Wiederherstellung einmal im Quartal in Staging oder lokal üben. Gelöschte Daten (Löschkonzept) sind erst nach Ablauf der Backup-Aufbewahrung (max. 6 Monate) auch aus den Backups verschwunden.
-
-**Übergangsbetrieb:** dasselbe Verfahren, nur mit `mysqldump` direkt auf dem Host bzw. einer Kopie der SQLite-Datei bei gestopptem Dienst; die auf dem Server erzeugten Migrationsdateien (`app/migrations/`, `la_tool_admin/migrations/`) mitsichern.
+Die Wiederherstellung einmal im Quartal üben. Gelöschte Daten (Löschkonzept) sind erst nach Ablauf der Backup-Aufbewahrung auch aus den Backups verschwunden.
 
 ## Wartung
 
@@ -155,7 +118,7 @@ python -m venv /tmp/audit && /tmp/audit/bin/pip install pip-audit
 /tmp/audit/bin/pip-audit -r requirements.txt
 ```
 
-Nach Updates: Tests lokal und in der CI, dann regulärer [Update-Ablauf](deployment.md#update). `cryptography` ist wegen `msal` auf `<51` begrenzt. Ziel: Dependabot meldet Updates für `requirements.txt`, Dockerfile und GitHub Actions; das Image wird mindestens monatlich neu gebaut, damit Sicherheitsupdates des Basis-Images ankommen.
+Nach Updates: Tests lokal und in der CI, dann regulärer [Release-Prozess](deployment.md#release-prozess). `cryptography` ist wegen `msal` auf `<51` begrenzt. Ziel: Dependabot meldet Updates für `requirements.txt`, Dockerfile und GitHub Actions; das Image wird mindestens monatlich neu gebaut, damit Sicherheitsupdates des Basis-Images ankommen.
 
 ### Geheimnisse wechseln
 
@@ -165,7 +128,7 @@ Nach Updates: Tests lokal und in der CI, dann regulärer [Update-Ablauf](deploym
 | `VAPID_*` | alle Push-Abos ungültig; Nutzer müssen Push neu einschalten |
 | `DIVERA_ADMIN_USER_API_KEY` | nur in der `.env` tauschen; betrifft `sync_divera` und `sync_divera_users` |
 | `AZURE_CLIENT_SECRET` | in Entra neu erzeugen, in der `.env` tauschen, `app` neu starten |
-| Datenbank-Passwort | in `db.env` und `.env` gleichzeitig ändern; im laufenden MySQL per `ALTER USER` setzen, dann `app` neu starten |
+| Datenbank-Passwort | im laufenden MySQL per `ALTER USER` setzen, dann in der `.env` ändern und `app` neu starten (die `MYSQL_*`-Werte wirken nur beim ersten Start des Volumes) |
 
 ### Datenbank
 
@@ -181,8 +144,8 @@ Startbilder (`app/static/pwa/startup/`) und Screenshots für den Installationsdi
 
 | Symptom | Prüfen |
 |---|---|
-| `/healthz/` liefert 503 | Datenbank erreichbar (`docker compose ps db`)? Zugangsdaten in `.env`/`db.env` gleich? Log zeigt „Health-Check: Datenbank nicht erreichbar“ |
-| Seite nicht erreichbar, `/healthz/` ohne Antwort | `docker compose ps`, `docker compose logs app`; openresty-Upstream `127.0.0.1:8000` |
+| `/healthz/` liefert 503 | Datenbank erreichbar (`docker compose ps db`)? `DB_MYSQL_*` in der `.env` passend zum Volume? Log zeigt „Health-Check: Datenbank nicht erreichbar“ |
+| Seite nicht erreichbar, `/healthz/` ohne Antwort | `docker compose ps`, `docker compose logs app`; Proxy-Ziel `127.0.0.1:8001` |
 | Divera-Anmeldung schlägt für alle fehl | Divera erreichbar? Bei Ausfall gilt das lokal gespeicherte Passwort (Hash) als Notfall-Login – außer für Admins mit Microsoft-Konto |
 | „Zu viele fehlgeschlagene Anmeldeversuche“ | Sperre 15 Minuten; zählt je Gunicorn-Worker. Neustart von `app` leert die Zähler |
 | Admin kann sich nicht mit Passwort anmelden | Admins mit verknüpftem Microsoft-Konto müssen „Mit Microsoft anmelden“ nutzen; Notfall: lokaler Superuser ohne Microsoft-Verknüpfung |

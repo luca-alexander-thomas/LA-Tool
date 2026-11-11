@@ -23,7 +23,6 @@ python -m venv venv
 venv\Scripts\activate                 # Linux/macOS: source venv/bin/activate
 pip install -r requirements.txt
 copy .env.example .env                # Linux/macOS: cp .env.example .env (enthält DEBUG=True)
-python manage.py makemigrations app la_tool_admin   # Migrationen sind nicht im Repository
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py tailwind runserver   # http://127.0.0.1:8000, Admin unter /admin/
@@ -39,7 +38,7 @@ Ausführlich: [Entwicklung](docs/entwicklung.md).
 |---|---|
 | Aufbau, Komponenten, Datenmodell, Anmeldung | [Architektur](docs/architektur.md) |
 | Einrichten, Entwickeln, Testen, Konventionen | [Entwicklung](docs/entwicklung.md) · [Design-System](docs/design-system.md) |
-| Installation und Updates auf dem Server | [Deployment](docs/deployment.md) · [Übergangsbetrieb](docs/deployment-uebergang.md) |
+| Installation und Updates auf dem Server | [Deployment](docs/deployment.md) |
 | Timer, Logs, Backups, Fehlersuche | [Betrieb](docs/betrieb.md) |
 | Rechte, Sicherheit, Datenschutz, Löschkonzept | [Sicherheit und Datenschutz](docs/sicherheit-datenschutz.md) |
 | Umgebungsvariablen, Befehle, Endpunkte, Modelle | [Referenz](docs/README.md#referenz) |

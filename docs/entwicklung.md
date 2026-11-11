@@ -35,15 +35,16 @@ Mit `DEBUG=True` darf `SECRET_KEY` fehlen (dann gilt ein fester Entwicklungsschl
 
 ## Datenbank
 
-Migrationsdateien sind derzeit **nicht im Repository** und werden lokal erzeugt (die Umstellung auf versionierte Migrationen ist beschlossen, [Entscheidung 0001](entscheidungen/0001-deployment-strategie.md#schritt-2-migrationen-versionieren-einmalig); danach entfällt `makemigrations` hier und neue Migrationen werden mit committet):
+Migrationsdateien sind im Repository (`app/migrations/`, `la_tool_admin/migrations/`):
 
 ```bash
-python manage.py makemigrations app la_tool_admin
 python manage.py migrate
 python manage.py createsuperuser
 ```
 
-Nach jeder Modelländerung erneut `makemigrations` und `migrate` ausführen. Die Stufen Bronze, Silber, Gold und Inhalte legt man im Admin-Bereich an (`/admin/`) oder importiert Fragen unter Admin → Fragen-Import (XLSX/CSV/JSON; Beispieldateien dort zum Herunterladen).
+Nach jeder Modelländerung `makemigrations app la_tool_admin` und `migrate` ausführen und die neue Migration mit committen (die CI prüft das mit `makemigrations --check`).
+
+Eine lokale Datenbank aus der Zeit vor dem 11.11.2026 kennt noch die alten Migrationsnamen. Abgleich (Schema ist gleich): Einträge von `app` und `la_tool_admin` aus `django_migrations` löschen, dann `python manage.py migrate --fake app` und `python manage.py migrate --fake la_tool_admin`. Die Stufen Bronze, Silber, Gold und Inhalte legt man im Admin-Bereich an (`/admin/`) oder importiert Fragen unter Admin → Fragen-Import (XLSX/CSV/JSON; Beispieldateien dort zum Herunterladen).
 
 Eine andere Datenbankdatei (z.&nbsp;B. eine Kopie zum Testen) wählt `DB_SQLITE_FILE`:
 

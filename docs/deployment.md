@@ -1,8 +1,8 @@
 # Deployment
 
-Bereitstellung im Produktivbetrieb nach der beschlossenen Zielarchitektur: **Docker Compose auf einem Linux-VPS hinter openresty**. Begründung und Alternativen: [Entscheidung 0001](entscheidungen/0001-deployment-strategie.md). Laufender Betrieb: [Betrieb](betrieb.md). Variablen: [Konfiguration](referenz/konfiguration.md).
+Bereitstellung im Produktivbetrieb: **Docker Compose auf dem VPS `webserver.thw-jugend-ge.de` hinter dem openresty von 1Panel**. Begründung und Alternativen: [Entscheidung 0001](entscheidungen/0001-deployment-strategie.md). Laufender Betrieb: [Betrieb](betrieb.md). Variablen: [Konfiguration](referenz/konfiguration.md).
 
-> **Status:** Zielarchitektur beschlossen, **Umsetzung ausstehend**. `Dockerfile`, `compose.yaml`, `deploy/` und die CI existieren noch nicht im Repository; ihre Entwürfe stehen in der [Entscheidung](entscheidungen/0001-deployment-strategie.md#entwurf-der-container-dateien-schritt-4-ungetestet). Bis zur Umstellung gilt der [Übergangsbetrieb](deployment-uebergang.md).
+> **Status (11.11.2026):** Umgesetzt und auf dem Server gestartet. Der Reverse-Proxy in 1Panel zeigt noch auf die alte 1Panel-Python-Runtime (`127.0.0.1:8000`, `/home/LA-Tool`); die Umstellung auf `127.0.0.1:8001` steht aus (siehe [Umstellung](#umstellung-von-der-1panel-runtime)).
 
 ## Umgebungen
 
@@ -10,171 +10,133 @@ Bereitstellung im Produktivbetrieb nach der beschlossenen Zielarchitektur: **Doc
 |---|---|---|---|
 | Entwicklung | Programmieren | venv, `runserver` ([Entwicklung](entwicklung.md)) | SQLite |
 | Test | automatische Prüfung jedes Commits | GitHub Actions | SQLite (frisch je Lauf) |
-| Staging (optional) | Update mit echten Daten erproben | zweites Compose-Projekt auf dem VPS | Kopie aus dem letzten Backup |
-| Produktion | https://la-tool.thw-jugend-ge.de | Compose-Projekt `la-tool` | MySQL 8.4 (Container) |
+| Produktion | https://la-tool.thw-jugend-ge.de | Compose-Projekt `thw-la-tool` in `/home/compose/la-tool` | MySQL 8.4 (Container) |
 
 ## Architektur
 
 ```mermaid
 flowchart TB
     U[Browser / PWA] -->|HTTPS 443| P
-    subgraph VPS["VPS – Firewall: 22, 80, 443"]
-        P[openresty<br>TLS, HTTP→HTTPS]
-        P -->|/media/| MED[/srv/la-tool/media/]
-        P -->|HTTP 127.0.0.1:8000| APP
-        subgraph Compose["docker compose: la-tool"]
-            APP[app<br>Gunicorn, Django, WhiteNoise]
-            DB[(db: MySQL 8.4<br>Volume db-data)]
+    subgraph VPS["VPS webserver.thw-jugend-ge.de"]
+        P[openresty 1Panel<br>TLS, HTTP→HTTPS]
+        P -->|HTTP 127.0.0.1:8001| APP
+        subgraph Compose["docker compose: thw-la-tool (/home/compose/la-tool)"]
+            APP[la-tool-app<br>Gunicorn, Django, WhiteNoise]
+            DB[(la-tool-db: MySQL 8.4<br>Volume db-data)]
         end
         APP --> DB
-        APP --> MED
-        TIM[systemd-Timer] -->|docker compose run| APP
-        TIM -->|Backup| OFF[(Offsite, restic)]
+        APP --> MED[/media/ Bind-Mount/]
+        TIM[systemd-Timer] -->|docker compose exec| APP
+        TIM -->|backup.sh| BK[/backups/ lokal/]
     end
-    CI[GitHub Actions] -->|Image| REG[ghcr.io]
-    REG -->|docker pull| APP
+    GH[GitHub Actions] -->|SSH: git pull, deploy.sh| VPS
 ```
 
 | Komponente | Aufgabe |
 |---|---|
-| openresty (Host) | TLS-Zertifikate, Weiterleitung HTTP→HTTPS, Auslieferung von `/media/`, Weiterleitung an `127.0.0.1:8000` |
-| `app` (Container) | Image `ghcr.io/luca-alexander-thomas/la-tool:<git-sha>`: Python 3.13, Gunicorn (2 Worker), Django, statische Dateien über WhiteNoise; läuft ohne Root |
-| `db` (Container) | MySQL 8.4, nur im internen Compose-Netz erreichbar, Daten im Volume `db-data` |
-| `/srv/la-tool/` (Host) | `compose.yaml`, `.env`, `db.env`, `media/`, Skripte |
-| systemd-Timer (Host) | Management-Befehle und Backup |
+| openresty (1Panel) | TLS-Zertifikate, Weiterleitung HTTP→HTTPS, Weiterleitung an `127.0.0.1:8001` |
+| `la-tool-app` | Image `la-tool-app:latest`, auf dem Server aus dem Git-Stand gebaut: Python 3.13, Gunicorn (2 Worker), Django, statische Dateien über WhiteNoise, Uploads unter `/media/`; läuft ohne Root |
+| `la-tool-db` | MySQL 8.4, nur im internen Compose-Netz erreichbar, Daten im Volume `thw-la-tool_db-data` |
+| `/home/compose/la-tool/` | Git-Klon des Repositorys plus `.env` (`600`), `media/`, `backups/` (nicht im Repository) |
+| systemd-Timer | Management-Befehle und Backup (Units aus `deploy/systemd/`, von `deploy.sh` eingespielt) |
 
-## Server vorbereiten (einmalig)
+Der Compose-Projektname ist `thw-la-tool`, weil 1Panel den Namen `la-tool` schon für seine Python-Runtime verwendet. Gleiche Namen führen dazu, dass ein Projekt die Container des anderen als „verwaist“ entfernt.
 
-1. **Betriebssystem** aktuell halten: `unattended-upgrades` aktivieren.
-2. **Firewall:** eingehend nur 22, 80, 443 (z.&nbsp;B. `ufw allow OpenSSH; ufw allow 80,443/tcp; ufw enable`). SSH nur mit Schlüssel, `PermitRootLogin no`.
-3. **Docker Engine** und Compose-Plugin aus dem offiziellen Docker-Repository installieren; `docker compose version` prüfen.
-4. **Verzeichnisse:**
+## Dateien im Repository
 
-   ```bash
-   sudo mkdir -p /srv/la-tool/media
-   sudo chown 1000:1000 /srv/la-tool/media          # UID des Benutzers „app“ im Image
-   ```
-
-5. **Registry:** Das Image liegt öffentlich in der GitHub Container Registry; ein Login ist nicht nötig.
+| Datei | Inhalt |
+|---|---|
+| `Dockerfile` | Multi-Stage-Build (mysqlclient kompilieren, Laufzeit ohne Build-Werkzeuge), `collectstatic`, Healthcheck auf `/healthz/` |
+| `.dockerignore` | hält `.env`, Datenbanken, `media/`, `divera.json`, `backups/` aus dem Image |
+| `requirements-prod.txt` | `requirements.txt` plus Gunicorn und mysqlclient |
+| `compose.yaml` | Dienste `app` und `db`, Port `127.0.0.1:8001`, Log-Rotation |
+| `deploy/gunicorn.conf.py` | Gunicorn-Einstellungen |
+| `deploy/deploy.sh` | Update-Ablauf mit Backup, Migration, Healthcheck und Rollback |
+| `deploy/backup.sh` | Datenbank-Dump und `media/` nach `backups/` |
+| `deploy/systemd/` | Timer für Management-Befehle und Backup (`@DIR@` ersetzt `deploy.sh` durch das Projektverzeichnis) |
+| `.github/workflows/ci.yml` | bei jedem Push: `check`, `makemigrations --check`, Tests, `pip-audit`, Image-Build |
+| `.github/workflows/deploy.yml` | nach gemergtem Pull-Request auf `main` oder manuell: Tests, dann Deploy per SSH |
 
 ## Konfiguration
 
-`/srv/la-tool/.env` (Besitzer root, `chmod 600`) – Variablen siehe [Konfiguration](referenz/konfiguration.md):
+`/home/compose/la-tool/.env` (Besitzer root, `chmod 600`). Variablen siehe [Konfiguration](referenz/konfiguration.md); Produktionswerte:
 
 ```ini
+SECRET_KEY=<python3 -c "import secrets; print(secrets.token_urlsafe(50))">
 DEBUG=False
-SECRET_KEY=<python -c "import secrets; print(secrets.token_urlsafe(50))">
 HOSTNAME=la-tool.thw-jugend-ge.de
-EXTRA_HOSTS=localhost                  # für den Container-Healthcheck
-TRUST_X_FORWARDED_PROTO=True           # openresty setzt X-Forwarded-Proto
+TRUST_X_FORWARDED_PROTO=True        # der Proxy setzt X-Forwarded-Proto und X-Forwarded-For
 
-DB_MYSQL_PORT=3306
-DB_MYSQL_USER=la_tool
-DB_MYSQL_PASSWORD=<geheim, gleich wie in db.env>
-DB_MYSQL_NAME=la_tool
+DB_MYSQL_NAME=latool
+DB_MYSQL_USER=latool
+DB_MYSQL_PASSWORD=<geheim>
+DB_MYSQL_ROOT_PASSWORD=<geheim>     # nur für den MySQL-Container
 
-AZURE_CLIENT_ID=…
-AZURE_CLIENT_SECRET=…
-AZURE_TENANT_ID=<Tenant-GUID>
+AZURE_…, DIVERA_…, VAPID_…          # wie in .env.example
 AZURE_REDIRECT_URI=https://la-tool.thw-jugend-ge.de/microsoft-callback/
-AZURE_GROUP_ADMINS_ID=…
-AZURE_GROUP_USERS_ID=…
-
-DIVERA_ADMIN_USER_API_KEY=…
-DIVERA_SITE_ID=20369
-DIVERA_EVENTS_GROUP=Jugendliche
-
-VAPID_PUBLIC_KEY=…
-VAPID_PRIVATE_KEY=…
-VAPID_SUBJECT=mailto:<kontakt-adresse>
+VAPID_SUBJECT=https://la-tool.thw-jugend-ge.de
 ```
 
-`DATABASE_TYPE=mysql` und `DB_MYSQL_HOST=db` setzt `compose.yaml`.
+`DATABASE_TYPE=mysql`, `DB_MYSQL_HOST=db` und `DB_MYSQL_PORT` setzt `compose.yaml`. Den MySQL-Container initialisiert Compose aus denselben `DB_MYSQL_*`-Werten. Werte dürfen kein `$` enthalten (Compose interpoliert sie).
 
-`/srv/la-tool/db.env` (`chmod 600`) für den Datenbank-Container:
+Das Image enthält keine Geheimnisse. Die `.env` gehört ins Offsite-Backup, sobald es eingerichtet ist.
 
-```ini
-MYSQL_DATABASE=la_tool
-MYSQL_USER=la_tool
-MYSQL_PASSWORD=<wie DB_MYSQL_PASSWORD>
-MYSQL_ROOT_PASSWORD=<eigenes Geheimnis>
-```
-
-Das Image enthält keine Geheimnisse; beide Dateien gehören ins verschlüsselte Backup.
-
-**Reverse-Proxy** (openresty/nginx, Ausschnitt):
-
-```nginx
-server {
-    listen 443 ssl;
-    server_name la-tool.thw-jugend-ge.de;
-    client_max_body_size 20m;
-
-    location /media/ { alias /srv/la-tool/media/; }
-
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
-}
-```
+**Reverse-Proxy (1Panel → Website → Reverse-Proxy):** Ziel `http://127.0.0.1:8001`. Nötig sind die Header `Host`, `X-Forwarded-Proto` und `X-Forwarded-For` (Standard bei 1Panel), sowie `client_max_body_size` ≥ 20 MB für Uploads. `/media/` muss nicht gesondert eingerichtet werden; Django liefert die Uploads selbst aus.
 
 **Microsoft Entra (App-Registrierung):** Redirect-URI wie `AZURE_REDIRECT_URI`, delegierte Berechtigung `User.Read`.
 
 ## Release-Prozess
 
-1. Änderungen per Pull-Request nach `main`; die CI führt `check`, `makemigrations --check`, Tests und `pip-audit` aus.
-2. Nach grüner CI baut sie das Image und lädt es als `ghcr.io/luca-alexander-thomas/la-tool:<git-sha>` hoch.
-3. Das Deployment wird **manuell** auf dem Server mit diesem Tag ausgelöst (siehe [Update](#update)).
+1. Änderungen per Pull-Request nach `main`. Die CI (`ci.yml`) prüft jeden Push.
+2. Beim Mergen startet `deploy.yml`: Tests, dann per SSH auf dem Server `git pull --ff-only` und `bash deploy/deploy.sh`. Ein direkter Push auf `main` deployt nicht; dann den Workflow „Deploy“ in GitHub manuell starten.
+3. `deploy.sh`:
+   1. merkt das laufende Image als `la-tool-app:previous`,
+   2. baut das neue Image,
+   3. startet die Datenbank und wartet auf ihren Healthcheck,
+   4. sichert die Datenbank (`backups/db-…-vor-deploy.sql.gz`),
+   5. führt `migrate` im neuen Image aus,
+   6. startet die App und wartet bis zu 2 Minuten auf „healthy“; sonst startet es das vorige Image und bricht mit Fehler ab,
+   7. spielt die systemd-Timer ein.
 
-Migrationsdateien sind ab der Umstellung **versioniert** und im Image enthalten; auf dem Server wird `makemigrations` nicht mehr ausgeführt.
+Migrationsdateien sind **versioniert** (`app/migrations/`, `la_tool_admin/migrations/`) und im Image enthalten. Auf dem Server wird `makemigrations` nicht ausgeführt.
+
+**GitHub-Secrets** für `deploy.yml` (Repository → Settings → Environments → `production`): `SSH_HOST`, `SSH_USER` (`root`, weil `deploy.sh` systemd-Units schreibt), `SSH_KEY` (privater Schlüssel, dessen öffentlicher Teil in `/root/.ssh/authorized_keys` steht), optional `SSH_PORT`, `DEPLOY_PATH=/home/compose/la-tool`.
 
 ## Erstinstallation
 
 ```bash
-cd /srv/la-tool
-# compose.yaml und deploy/ aus dem Repository hierher kopieren
-export APP_TAG=<git-sha>
-docker compose pull
-docker compose up -d db
-docker compose run --rm app python manage.py migrate
-docker compose run --rm app python manage.py createsuperuser   # Notfall-Admin ohne Microsoft-Verknüpfung
-docker compose run --rm app python manage.py check --deploy
-docker compose up -d app
+cd /home/compose
+git clone https://github.com/luca-alexander-thomas/LA-Tool.git la-tool
+cd la-tool
+cp .env.example .env && chmod 600 .env      # Werte wie oben eintragen, VAPID zunächst leer
+bash deploy/deploy.sh
+docker compose exec -T app python manage.py generate_vapid_keys   # Werte in .env übernehmen
+docker compose up -d --wait app
 ```
 
-Danach Timer und Backup einrichten ([Betrieb](betrieb.md#wiederkehrende-aufgaben-timer)) und [verifizieren](#verifikation).
-
-Umzug aus dem [Übergangsbetrieb](deployment-uebergang.md): Datenbank-Dump in den `db`-Container einspielen (`docker compose exec -T db mysql -u root -p la_tool < dump.sql`), `media/` nach `/srv/la-tool/media` kopieren, Migrationen wie in [Entscheidung 0001, Schritt 2](entscheidungen/0001-deployment-strategie.md#schritt-2-migrationen-versionieren-einmalig) abgleichen, openresty-Upstream umstellen, alten Dienst stoppen.
-
-## Update
-
-Über `deploy/deploy.sh <git-sha>` (Teil der Umsetzung). Das Skript führt diese Schritte aus, die auch von Hand gelten:
+Erster Admin: mit Microsoft anmelden, dann das Konto zum Superuser machen (oder einen lokalen Notfall-Admin mit `createsuperuser` anlegen):
 
 ```bash
-cd /srv/la-tool
-NEW=<git-sha>; OLD=$(cat current-tag)
-
-./deploy/backup.sh db-only "vor-$NEW"                          # Dump vor jeder Migration
-APP_TAG=$NEW docker compose pull app
-APP_TAG=$NEW docker compose run --rm app python manage.py migrate --plan   # prüfen
-APP_TAG=$NEW docker compose run --rm app python manage.py migrate
-APP_TAG=$NEW docker compose up -d app
-# warten, bis der Container „healthy“ ist, sonst Rollback auf $OLD
-echo $NEW > current-tag
+docker compose exec app python manage.py shell -c "from django.contrib.auth.models import User; User.objects.filter(email__iexact='<mail>').update(is_staff=True, is_superuser=True)"
 ```
 
-Laufende Prüfungen und Sitzungen überstehen das Update (sie liegen in der Datenbank); die Zeit läuft während des Neustarts weiter.
+## Umstellung von der 1Panel-Runtime
+
+Die alte Installation (1Panel-Python-Runtime „LA-Tool“, Code in `/home/LA-Tool`, `runserver` auf `127.0.0.1:8000`, Datenbank im 1Panel-MySQL) enthielt keine App-Daten (keine App-Tabellen, keine Konten). Ein Datenumzug entfällt.
+
+1. Reverse-Proxy in 1Panel auf `http://127.0.0.1:8001` umstellen.
+2. Prüfen: `curl -fsS https://la-tool.thw-jugend-ge.de/healthz/`, Anmeldung mit Divera und Microsoft.
+3. Alte Runtime in 1Panel stoppen (nicht löschen). Nach einigen Wochen stabilem Betrieb: Runtime, `/home/LA-Tool` und die leere Datenbank im 1Panel-MySQL entfernen.
 
 ## Verifikation
 
 ```bash
+cd /home/compose/la-tool
 docker compose ps                                              # app und db „healthy“
 curl -fsS https://la-tool.thw-jugend-ge.de/healthz/            # {"status": "ok"}
 curl -sI https://la-tool.thw-jugend-ge.de/login/ | grep -iE "strict-transport|content-security"
-journalctl CONTAINER_NAME=la-tool-app-1 -n 50
+docker compose logs --tail 50 app
+systemctl list-timers 'la-tool-*'
 ```
 
 Im Browser: Anmeldung mit Divera und Microsoft, ein Training abschließen, Admin-Bereich öffnen.
@@ -183,18 +145,22 @@ Im Browser: Anmeldung mit Divera und Microsoft, ein Training abschließen, Admin
 
 | Fall | Vorgehen |
 |---|---|
-| Ohne Schemaänderung | `APP_TAG=<voriger-sha> docker compose up -d app`, `current-tag` zurücksetzen |
-| Mit umkehrbarer Migration | im **neuen** Image zurückmigrieren: `APP_TAG=<neu> docker compose run --rm app python manage.py migrate <app> <vorige_migration>`, dann wie oben das alte Image starten |
-| Mit nicht umkehrbarer Migration oder Datenfehlern | `app` stoppen, Dump „vor-<sha>“ einspielen ([Wiederherstellung](betrieb.md#backup-und-wiederherstellung)), altes Image starten |
+| Healthcheck schlägt beim Deploy fehl | `deploy.sh` startet automatisch `la-tool-app:previous` |
+| Fehler erst später bemerkt, ohne Schemaänderung | `git checkout <voriger-commit>` und `bash deploy/deploy.sh`, oder `docker tag la-tool-app:previous la-tool-app:latest && docker compose up -d --no-build app` |
+| Mit umkehrbarer Migration | im **neuen** Image zurückmigrieren (`docker compose run --rm app python manage.py migrate <app> <vorige_migration>`), dann den vorigen Stand deployen |
+| Mit nicht umkehrbarer Migration oder Datenfehlern | `app` stoppen, Dump `backups/db-…-vor-deploy.sql.gz` einspielen ([Wiederherstellung](betrieb.md#backup-und-wiederherstellung)), vorigen Stand starten |
+
+Nach einem Rollback per `git checkout` steht der Klon auf einem losgelösten Commit; vor dem nächsten Deploy `git checkout main`.
 
 ## Fehler beim Deployment
 
 | Symptom | Ursache und Lösung |
 |---|---|
-| `app` wird nicht „healthy“ | `docker compose logs app`; häufig `.env` unvollständig (`SECRET_KEY`), `localhost` fehlt in `EXTRA_HOSTS` (Healthcheck „400“) oder `db` nicht erreichbar |
-| „400 Bad Request“ von außen | `HOSTNAME`/`EXTRA_HOSTS` passt nicht zum Hostnamen; openresty gibt `Host` nicht weiter |
+| `app` wird nicht „healthy“ | `docker compose logs app`; häufig `.env` unvollständig (`SECRET_KEY`) oder `db` nicht erreichbar |
+| „400 Bad Request“ von außen | `HOSTNAME`/`EXTRA_HOSTS` passt nicht zum Hostnamen; Proxy gibt `Host` nicht weiter |
 | Endlose Weiterleitung | `SECURE_SSL_REDIRECT=True`, aber `X-Forwarded-Proto` fehlt bzw. `TRUST_X_FORWARDED_PROTO=False` |
 | „CSRF-Prüfung fehlgeschlagen“ | Aufruf über HTTP oder `Host`/`X-Forwarded-Proto` fehlen |
-| `migrate` meldet fehlende Tabellen oder Konflikte | Migrationsstand des Servers passt nicht zum Repository – nicht weiterarbeiten, Dump einspielen, Abgleich nach [Schritt 2](entscheidungen/0001-deployment-strategie.md#schritt-2-migrationen-versionieren-einmalig) |
-| Uploads schlagen fehl | Rechte auf `/srv/la-tool/media` (UID 1000) oder `client_max_body_size` im Proxy |
-| `docker compose pull` verweigert | Paket in GHCR nicht öffentlich oder Tag existiert nicht (CI-Lauf für den Commit fehlgeschlagen) |
+| `git pull --ff-only` scheitert | lokale Änderungen oder losgelöster Commit im Klon (`git status`); der Klon darf nur über Git geändert werden |
+| `migrate` meldet Konflikte | Migrationsstand passt nicht zum Repository – nicht weiterarbeiten, Dump einspielen |
+| Uploads schlagen fehl | Rechte auf `media/` (UID 1000, setzt `deploy.sh`) oder `client_max_body_size` im Proxy |
+| Container verschwinden nach Arbeiten in 1Panel | Projektname-Konflikt; `compose.yaml` muss `name: thw-la-tool` behalten |

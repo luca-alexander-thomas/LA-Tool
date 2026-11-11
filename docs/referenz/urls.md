@@ -59,7 +59,7 @@ Legende Zugriff: **öffentlich** = ohne Anmeldung, **angemeldet** = Sitzung nöt
 | `/robots.txt` | `Disallow: /` |
 | `/favicon.ico`, `/apple-touch-icon*.png` | Weiterleitung auf die Icons unter `/static/pwa/` |
 | `/static/…` | statische Dateien (WhiteNoise) |
-| `/media/…` | Uploads; durch Django nur mit `DEBUG=True`, sonst durch den Proxy |
+| `/media/…` | Uploads, von Django ausgeliefert (auch ohne `DEBUG`; der Proxy sieht das Container-Volume nicht) |
 | `/django-admin/` | Django-Admin, nur mit `DEBUG=True` |
 
 ## Admin-Bereich (`/admin/`)

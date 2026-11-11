@@ -62,16 +62,17 @@ Benötigte delegierte Berechtigung: `User.Read`.
 
 Fehlt einer der drei Werte, ist Push abgeschaltet; Benachrichtigungen erscheinen trotzdem in der App (Glocke).
 
-## Zielarchitektur (Docker Compose)
+## Produktion (Docker Compose)
 
-Zusätzlich zur `.env` gelten mit der [Zielarchitektur](../deployment.md) (noch nicht umgesetzt):
+Im [Container-Betrieb](../deployment.md) gilt zusätzlich:
 
 | Wert | Ort | Bedeutung |
 |---|---|---|
-| `APP_TAG` | Shell bzw. `deploy.sh` | Image-Tag (Git-SHA) der auszurollenden Version |
-| `DATABASE_TYPE=mysql`, `DB_MYSQL_HOST=db` | `compose.yaml` | Datenbank-Container statt Host-Datenbank |
-| `EXTRA_HOSTS=localhost` | `.env` | erlaubt den Healthcheck im Container (`/healthz/` über `127.0.0.1`) |
-| `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD` | `/srv/la-tool/db.env` | Initialisierung des MySQL-Containers; Benutzer und Passwort wie `DB_MYSQL_*` |
+| `DATABASE_TYPE=mysql`, `DB_MYSQL_HOST=db`, `DB_MYSQL_PORT=3306` | `compose.yaml` | Datenbank-Container; in der `.env` nicht nötig |
+| `DB_MYSQL_ROOT_PASSWORD` | `.env` | Root-Passwort des MySQL-Containers |
+| `DB_MYSQL_NAME`, `DB_MYSQL_USER`, `DB_MYSQL_PASSWORD` | `.env` | gelten für die App **und** initialisieren den MySQL-Container (nur beim ersten Start des Volumes) |
+
+Der Container-Healthcheck sendet `Host: $HOSTNAME`; `EXTRA_HOSTS` braucht dafür keinen Eintrag. Werte in der `.env` dürfen kein `$` enthalten (Compose interpoliert sie).
 
 ## Feste Einstellungen im Code
 

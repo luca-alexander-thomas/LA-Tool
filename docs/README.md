@@ -9,7 +9,7 @@ Wegweiser durch die Dokumentation des LA-Tools. Kurzüberblick und Schnellstart:
 | verstehen, wie das System aufgebaut ist | [Architektur](architektur.md) |
 | das Projekt lokal einrichten, entwickeln und testen | [Entwicklung](entwicklung.md) |
 | Oberflächen bauen (Klassen, Komponenten, Regeln) | [Design-System](design-system.md) |
-| die Anwendung auf dem Server installieren oder aktualisieren | [Deployment](deployment.md) (Zielarchitektur) · bis zur Umstellung: [Übergangsbetrieb](deployment-uebergang.md) |
+| die Anwendung auf dem Server installieren oder aktualisieren | [Deployment](deployment.md) |
 | Timer, Logs, Backups und Fehlersuche im laufenden Betrieb | [Betrieb](betrieb.md) |
 | Rechte vergeben, Sicherheit und Datenschutz verstehen | [Sicherheit und Datenschutz](sicherheit-datenschutz.md) |
 
@@ -28,7 +28,7 @@ Nachschlagetabellen, die bei Code-Änderungen mitgepflegt werden müssen:
 
 Architekturentscheidungen mit Begründung, Alternativen und Umsetzungsschritten:
 
-- [0001 Deployment-Strategie](entscheidungen/0001-deployment-strategie.md) – Docker Compose auf dem VPS (beschlossen, Umsetzung ausstehend)
+- [0001 Deployment-Strategie](entscheidungen/0001-deployment-strategie.md) – Docker Compose auf dem VPS (umgesetzt 11.11.2026)
 
 ## Berichte
 

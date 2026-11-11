@@ -67,7 +67,7 @@ flowchart LR
 | `app/static/` | JavaScript (`js/app.js`), Bilder, PWA-Icons, Startbilder, Vendor-Bibliotheken |
 | `docs/` | Diese Dokumentation |
 
-Nicht im Repository (siehe `.gitignore`): `.env`, `db.sqlite3`, `media/`, `staticfiles/`, **Migrationen** (`*/migrations/`, Umstellung beschlossen), `divera.json` (lokale Entwicklungshilfe), `old/`.
+Nicht im Repository (siehe `.gitignore`): `.env`, `db.sqlite3`, `media/`, `staticfiles/`, `backups/`, `divera.json` (lokale Entwicklungshilfe), `old/`.
 
 ### Module in `app/`
 
@@ -207,6 +207,6 @@ Beim Abmelden löscht der Browser gespeicherte Fragen, offene Abgaben und den Ap
 | Tailwind über Standalone-Binary, gebautes CSS eingecheckt | Kein Node.js auf Entwickler-Rechnern und Server |
 | Lernstand wird berechnet statt gespeichert | Eine Quelle der Wahrheit (`TrainingResultData`); keine Migrationen für Lernlogik |
 | Persönliche Divera-Keys werden nicht gespeichert | Ein Key gibt Vollzugriff auf Divera; Abgleich läuft über den Admin-Key |
-| Migrationen bisher nicht versioniert | Wurden auf dem Zielsystem erzeugt; Datenanpassungen über `post_migrate`-Hooks. Wird mit der Zielarchitektur auf versionierte Migrationen umgestellt ([Entscheidung 0001](entscheidungen/0001-deployment-strategie.md#schritt-2-migrationen-versionieren-einmalig)) |
+| Migrationen versioniert (seit 11.11.2026) | Neu aufgesetzt mit je einer `0001_initial`, weil die Produktionsdatenbank leer war. Der ältere `post_migrate`-Hook in `app/apps.py` bleibt idempotent |
 | Cache im Arbeitsspeicher je Gunicorn-Worker (LocMem) | Keine zusätzliche Infrastruktur; Folgen siehe [Betrieb](betrieb.md#bekannte-einschränkungen) |
 | Produktion mit Docker Compose auf einem VPS | reproduzierbar, Rollback per Image, ohne Orchestrierung; Kubernetes/PaaS verworfen ([Entscheidung 0001](entscheidungen/0001-deployment-strategie.md)) |
