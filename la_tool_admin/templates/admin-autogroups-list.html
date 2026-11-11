@@ -1,6 +1,6 @@
 {% extends "admin_base.html" %}
 
-{% block page_title %}Automatische Gruppen · Admin{% endblock %}
+{% block page_title %}Gruppen und Rechte · Admin{% endblock %}
 
 {% block admin_content %}
 {% if perms.app.manage_settings %}
@@ -10,9 +10,9 @@
 <div class="page-header">
     <div class="max-w-2xl">
         <p class="eyebrow">Konfiguration</p>
-        <h1 class="page-title mt-1">Automatische Gruppen</h1>
+        <h1 class="page-title mt-1">Gruppen und Rechte</h1>
         <p class="page-subtitle">
-            Gruppenregeln werden bei jedem Login ausgewertet – Mitgliedschaften werden automatisch hinzugefügt oder entfernt.
+            Rechte einer Gruppe gelten für alle Mitglieder. Regeln (Divera, Entra) werden bei jedem Login ausgewertet – Mitgliedschaften werden automatisch hinzugefügt oder entfernt.
         </p>
     </div>
     {% if perms.app.manage_groups %}
@@ -20,7 +20,7 @@
     {% endif %}
 </div>
 
-{% if rules %}
+{% if rows %}
 <div class="table-wrap">
     <table class="table">
         <thead>
@@ -28,14 +28,15 @@
                 <th>Gruppenname</th>
                 <th>Divera-Qualifikationen</th>
                 <th>Entra-Gruppen-IDs</th>
+                <th>Rechte</th>
                 <th>Mitglieder</th>
                 {% if perms.app.manage_groups %}<th><span class="sr-only">Aktionen</span></th>{% endif %}
             </tr>
         </thead>
         <tbody>
-            {% for rule in rules %}
+            {% for row in rows %}{% with rule=row.rule %}
             <tr>
-                <td class="font-semibold">{{ rule.group.name }}</td>
+                <td class="font-semibold">{{ row.group.name }}</td>
                 <td>
                     {% if rule.divera_qual_ids %}
                     <span class="badge badge-info">{{ rule.divera_qual_ids|length }} Qualifikation{{ rule.divera_qual_ids|length|pluralize:"en" }}</span>
@@ -46,24 +47,33 @@
                 <td>
                     {% if rule.entra_group_ids %}
                     <span class="badge badge-neutral">{{ rule.entra_group_ids|length }} Entra-Gruppe{{ rule.entra_group_ids|length|pluralize:"n" }}</span>
+                    {% elif row.mapped %}
+                    <span class="badge badge-neutral">aus .env</span>
                     {% else %}
                     <span class="text-ink-3">–</span>
                     {% endif %}
                 </td>
-                <td class="text-xs whitespace-nowrap text-ink-2">{{ rule.member_count }} Nutzer</td>
+                <td>
+                    {% if row.perm_count %}
+                    <span class="badge badge-info">{{ row.perm_count }} Recht{{ row.perm_count|pluralize:"e" }}</span>
+                    {% else %}
+                    <span class="text-ink-3">keine</span>
+                    {% endif %}
+                </td>
+                <td class="text-xs whitespace-nowrap text-ink-2">{{ row.member_count }} Nutzer</td>
                 {% if perms.app.manage_groups %}
                 <td class="text-right">
-                    <a href="{% url 'admin_autogroup_edit' rule.group.pk %}" class="btn btn-sm btn-secondary">{% include "icons/pencil-square.html" with cls="size-4" %} Bearbeiten</a>
+                    <a href="{% url 'admin_autogroup_edit' row.group.pk %}" class="btn btn-sm btn-secondary">{% include "icons/pencil-square.html" with cls="size-4" %} Bearbeiten</a>
                 </td>
                 {% endif %}
             </tr>
-            {% endfor %}
+            {% endwith %}{% endfor %}
         </tbody>
     </table>
 </div>
 {% else %}
 <div class="empty-state">
-    <p class="mb-4">Noch keine automatischen Gruppen angelegt.</p>
+    <p class="mb-4">Noch keine Gruppen angelegt.</p>
     {% if perms.app.manage_groups %}
     <a href="{% url 'admin_autogroup_create' %}" class="btn btn-primary">{% include "icons/plus.html" %} Erste Gruppe anlegen</a>
     {% endif %}

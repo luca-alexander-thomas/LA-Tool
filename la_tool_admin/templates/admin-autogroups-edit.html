@@ -4,11 +4,11 @@
 
 {% block admin_content %}
 <div class="max-w-3xl" x-data="{ confirmDelete: false }">
-    <a href="{% url 'admin_autogroup_list' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Automatische Gruppen</a>
+    <a href="{% url 'admin_autogroup_list' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Gruppen und Rechte</a>
 
     <div class="page-header">
         <div>
-            <p class="eyebrow">Automatische Gruppen</p>
+            <p class="eyebrow">Gruppen und Rechte</p>
             <h1 class="page-title mt-1">{{ title }}</h1>
         </div>
     </div>
@@ -24,7 +24,37 @@
                     <label class="form-label" for="{{ form.group_name.id_for_label }}">{{ form.group_name.label }}</label>
                     {{ form.group_name }}
                     <div class="form-text">Entspricht dem Django-Gruppennamen. Wird für Zugriffsrechte und Inhaltszuweisungen verwendet.</div>
+                    {% if mapped_entra %}
+                    <div class="form-text">Diese Gruppe ist in der <code>.env</code> einer Entra-Gruppe zugeordnet (<code>AZURE_GROUP_…_ID</code>). Nicht umbenennen, sonst greift die Zuordnung nicht mehr.</div>
+                    {% endif %}
                     {% for e in form.group_name.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+                </div>
+            </div>
+        </section>
+
+        {# Rechte #}
+        <section class="card">
+            <div class="card-header">
+                <div>
+                    <h2 class="section-title">Rechte der Gruppe</h2>
+                    <p class="mt-0.5 text-xs text-ink-2">
+                        Alle Mitglieder erhalten diese Rechte, solange sie in der Gruppe sind. Für den Admin-Bereich ist
+                        <strong>Admin-Bereich zugreifen</strong> immer nötig. Admins mit Microsoft-Konto melden sich danach nur noch über Microsoft an.
+                    </p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="grid gap-2 sm:grid-cols-2">
+                    {% for code, label in app_permissions %}
+                    <div class="form-check rounded-xl border border-line p-3 has-[:checked]:border-accent has-[:checked]:bg-accent-soft">
+                        <input class="form-check-input" type="checkbox" name="perms" value="{{ code }}" id="perm_{{ code }}"
+                               {% if code in selected_perms %}checked{% endif %}>
+                        <label class="form-check-label w-full" for="perm_{{ code }}">
+                            <span class="font-semibold">{{ label }}</span>
+                            <span class="block text-xs text-ink-3">{{ code }}</span>
+                        </label>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </section>
@@ -116,7 +146,7 @@
             <div>
                 <p class="font-semibold">Gruppe löschen?</p>
                 <p class="mt-1">
-                    Die Auto-Regel wird entfernt. Nutzer werden bei der nächsten Anmeldung ausgetragen.
+                    Die Auto-Regel wird entfernt. Mitglieder bleiben in der Gruppe, bis ein Admin sie austrägt; die Gruppe selbst bleibt mit ihren Rechten bestehen, außer du löschst sie unten mit.
                 </p>
             </div>
             <form method="post" action="{% url 'admin_autogroup_delete' group.pk %}" class="space-y-3">

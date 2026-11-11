@@ -54,10 +54,10 @@
         <section class="card card-body flex flex-col gap-4 sm:flex-row sm:items-center">
             <span class="icon-tile">{% include "icons/bolt.html" with cls="size-6" %}</span>
             <div class="min-w-0 flex-1">
-                <h2 class="section-title">Automatische Gruppen</h2>
+                <h2 class="section-title">Gruppen und Rechte</h2>
                 <p class="mt-1 text-sm text-ink-2">
-                    Verwalte Gruppen, deren Mitgliedschaft automatisch anhand von Divera-Qualifikationen und Entra-Gruppen vergeben wird.
-                    Gruppen können für Zugriffsrechte und die Zuweisung von Prüfungen genutzt werden.
+                    Rechte für Gruppen vergeben und Mitgliedschaft automatisch anhand von Divera-Qualifikationen und Entra-Gruppen regeln.
+                    Gruppen dienen außerdem der Zuweisung von Prüfungen.
                 </p>
             </div>
             <a href="{% url 'admin_autogroup_list' %}" class="btn btn-soft">Gruppen verwalten {% include "icons/arrow-right.html" with cls="size-4" %}</a>

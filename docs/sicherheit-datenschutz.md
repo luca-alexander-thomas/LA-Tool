@@ -32,7 +32,7 @@ Schutzmechanismen:
 - Rechte- und Gruppenänderungen sowie Eingriffe in Admin-Konten verlangen `manage_groups`.
 - Das eigene Konto und Superuser lassen sich in der Benutzerverwaltung nicht ändern.
 
-Gruppenrechte lassen sich im Admin-Bereich nicht setzen, siehe [Betrieb – Bekannte Einschränkungen](betrieb.md#bekannte-einschränkungen).
+**Rechte an Gruppen** vergibt Admin → Einstellungen → Gruppen und Rechte (`manage_groups`). Alle Mitglieder erben sie. So erhalten z.&nbsp;B. alle Mitglieder der Entra-Admin-Gruppe (`AZURE_GROUP_ADMINS_ID` → Gruppe `LA-Tool-Admins`, oder eine Auto-Gruppe mit dieser Entra-ID) beim Microsoft-Login ihre Admin-Rechte. Die Liste zeigt alle Gruppen, auch solche ohne Regel.
 
 ### Ohne Anmeldung erreichbar
 

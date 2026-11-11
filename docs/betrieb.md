@@ -159,11 +159,5 @@ Startbilder (`app/static/pwa/startup/`) und Screenshots für den Installationsdi
 
 - **Cache je Worker (LocMem):** Login-Drosselung, Zähler fälliger Fragen (10 min), freigegebene Stufen (60 s) und die globale Fehlerquote (10 min) gelten je Gunicorn-Worker.
 - **Divera-Dienste:** `sync_divera` überschreibt bei jedem Lauf Titel, Zeit, Ort und **Beschreibung** importierter Dienste mit den Divera-Werten. Im Admin ergänzte Stufe und Aufgaben bleiben erhalten, eine geänderte Beschreibung nicht. In Divera gelöschte Termine werden nicht entfernt.
-- **Gruppenrechte:** Der Admin-Bereich vergibt Einzelrechte an Personen und Gruppenmitgliedschaften, aber **keine Rechte an Gruppen**. Gruppenrechte setzt man über den Django-Admin (`/django-admin/`, nur mit `DEBUG=True`) oder die Shell:
-
-  ```bash
-  python manage.py shell -c "from django.contrib.auth.models import Group, Permission; Group.objects.get(name='LA-Tool-Admins').permissions.add(*Permission.objects.filter(content_type__app_label='app', codename__in=['access_admin', 'manage_theory']))"
-  ```
-
 - **`/media/`** ist ohne Anmeldung abrufbar (Aufgaben-PDFs, Bilder, temporäre Uploads unter `media/tmp/`).
 - **Offline:** Auf Geräten gespeicherte Theoriefragen bleiben während einer Prüfung lesbar (der Server sperrt nur das Nachladen).

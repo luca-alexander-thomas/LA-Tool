@@ -1755,13 +1755,39 @@ def admin_level_delete(request, level_id):
 
 # ── AUTOMATISCHE GRUPPEN ──────────────────────────────────────────────────────
 
+def _set_group_permissions(group, codenames):
+    """App-Rechte der Gruppe auf die gewählten setzen; andere Rechte der Gruppe bleiben unberührt."""
+    known = [c for c, _ in APP_PERMISSIONS]
+    wanted = set(codenames) & set(known)
+    perms = Permission.objects.filter(content_type__app_label='app', codename__in=known)
+    group.permissions.remove(*[p for p in perms if p.codename not in wanted])
+    group.permissions.add(*[p for p in perms if p.codename in wanted])
+
+
+def _group_permission_context(group=None):
+    selected = set()
+    if group is not None:
+        selected = set(group.permissions.filter(content_type__app_label='app').values_list('codename', flat=True))
+    return {'app_permissions': APP_PERMISSIONS, 'selected_perms': selected}
+
+
 @admin_permission_required('app.manage_groups')
 def admin_autogroup_list(request):
-    from .models import AutoGroupRule
-    rules = AutoGroupRule.objects.select_related('group').annotate(member_count=Count('group__user')).order_by('group__name')
+    # Alle Gruppen, auch ohne Regel (z.B. „LA-Tool-Admins“ aus AZURE_GROUP_ADMINS_ID), damit ihre Rechte pflegbar sind
+    app_perms = Permission.objects.filter(content_type__app_label='app', codename__in=[c for c, _ in APP_PERMISSIONS])
+    groups = (Group.objects.select_related('auto_rule')
+              .annotate(member_count=Count('user', distinct=True))
+              .prefetch_related(Prefetch('permissions', queryset=app_perms, to_attr='app_perms'))
+              .order_by('name'))
+    mapped = {name for gid, name in getattr(settings, 'AZURE_GROUPS_MAPPING', {}).items() if gid}
+    rows = []
+    for group in groups:
+        rule = getattr(group, 'auto_rule', None)
+        rows.append({'group': group, 'rule': rule, 'mapped': group.name in mapped,
+                     'perm_count': len(group.app_perms), 'member_count': group.member_count})
     return render(request, 'admin-autogroups-list.html', {
         'user': request.user,
-        'rules': rules,
+        'rows': rows,
     })
 
 
@@ -1784,6 +1810,8 @@ def admin_autogroup_create(request):
             entra_raw = form.cleaned_data.get('entra_group_ids_text', '')
             rule.entra_group_ids = [ln.strip() for ln in entra_raw.splitlines() if ln.strip()]
             rule.save()
+            _set_group_permissions(group, request.POST.getlist('perms'))
+            messages.success(request, f'Gruppe „{group.name}“ gespeichert.')
             return redirect('admin_autogroup_list')
     else:
         form = AutoGroupRuleForm()
@@ -1794,7 +1822,8 @@ def admin_autogroup_create(request):
         'all_divera_quals': all_divera_quals,
         'selected_divera_qual_ids': set(),
         'selected_entra_group_ids': [],
-        'title': 'Neue automatische Gruppe',
+        'title': 'Neue Gruppe',
+        **_group_permission_context(),
     })
 
 
@@ -1803,7 +1832,7 @@ def admin_autogroup_edit(request, group_id):
     from .models import AutoGroupRule, DiveraQualification
     from .forms import AutoGroupRuleForm
     group = get_object_or_404(Group, pk=group_id)
-    rule, _ = AutoGroupRule.objects.get_or_create(group=group)
+    rule = AutoGroupRule.objects.filter(group=group).first() or AutoGroupRule(group=group)
     all_divera_quals = DiveraQualification.objects.order_by('name')
 
     if request.method == 'POST':
@@ -1816,7 +1845,10 @@ def admin_autogroup_edit(request, group_id):
             rule.divera_qual_ids = [int(x) for x in request.POST.getlist('divera_qual_ids') if str(x).isdigit()]
             entra_raw = form.cleaned_data.get('entra_group_ids_text', '')
             rule.entra_group_ids = [ln.strip() for ln in entra_raw.splitlines() if ln.strip()]
-            rule.save()
+            if rule.pk or rule.divera_qual_ids or rule.entra_group_ids:
+                rule.save()
+            _set_group_permissions(group, request.POST.getlist('perms'))
+            messages.success(request, f'Gruppe „{group.name}“ gespeichert.')
             return redirect('admin_autogroup_list')
     else:
         form = AutoGroupRuleForm(initial={
@@ -1833,6 +1865,8 @@ def admin_autogroup_edit(request, group_id):
         'selected_divera_qual_ids': set(int(x) for x in rule.divera_qual_ids if str(x).isdigit()),
         'selected_entra_group_ids': rule.entra_group_ids,
         'title': f'Gruppe bearbeiten: {group.name}',
+        'mapped_entra': group.name in {n for gid, n in getattr(settings, 'AZURE_GROUPS_MAPPING', {}).items() if gid},
+        **_group_permission_context(group),
     })
 
 

@@ -91,5 +91,5 @@ Alle Seiten verlangen eine Anmeldung und das Recht `access_admin`; zusätzlich d
 | `/admin/benachrichtigungen/…` | `send_notifications` |
 | `/admin/stufen/` | – (lesen) |
 | `/admin/stufen/erstellen/`, `…/<id>/`, `…/<id>/loeschen/` | `manage_levels` |
-| `/admin/autogruppen/…` | `manage_groups` |
+| `/admin/autogruppen/…` | `manage_groups` (Gruppen, Regeln und Gruppenrechte) |
 | `/admin/settings/` | `manage_settings` |

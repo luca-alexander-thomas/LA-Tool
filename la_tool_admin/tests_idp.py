@@ -144,6 +144,48 @@ class PinGroupAdminTests(TestCase):
         self.assertFalse(self.target.groups.filter(pk=self.group.pk).exists())
 
 
+class GroupPermissionAdminTests(TestCase):
+    """Rechte an Gruppen vergeben (z.B. für die per Entra zugeordnete Admin-Gruppe)."""
+
+    def setUp(self):
+        self.group = Group.objects.create(name='LA-Tool-Admins')
+        self.admin = User.objects.create_user('admin')
+        grant(self.admin, 'access_admin', 'manage_groups')
+        self.member = User.objects.create_user('betreuer')
+        self.member.groups.add(self.group)
+
+    def test_set_permissions_member_inherits(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(reverse('admin_autogroup_edit', args=[self.group.pk]), {
+            'group_name': 'LA-Tool-Admins', 'entra_group_ids_text': '', 'perms': ['access_admin', 'manage_exams', 'unbekannt'],
+        })
+        self.assertEqual(response.status_code, 302)
+        codes = set(self.group.permissions.values_list('codename', flat=True))
+        self.assertEqual(codes, {'access_admin', 'manage_exams'})
+        self.assertTrue(User.objects.get(pk=self.member.pk).has_perm('app.access_admin'))
+        self.assertFalse(AutoGroupRule.objects.filter(group=self.group).exists())  # keine leere Regel angelegt
+
+        self.client.post(reverse('admin_autogroup_edit', args=[self.group.pk]), {
+            'group_name': 'LA-Tool-Admins', 'entra_group_ids_text': '', 'perms': ['access_admin'],
+        })
+        self.assertEqual(set(self.group.permissions.values_list('codename', flat=True)), {'access_admin'})
+
+    def test_list_shows_groups_without_rule(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('admin_autogroup_list'))
+        self.assertContains(response, 'LA-Tool-Admins')
+
+    def test_requires_manage_groups(self):
+        other = User.objects.create_user('other')
+        grant(other, 'access_admin', 'manage_users')
+        self.client.force_login(other)
+        response = self.client.post(reverse('admin_autogroup_edit', args=[self.group.pk]), {
+            'group_name': 'LA-Tool-Admins', 'perms': ['access_admin', 'manage_groups'],
+        })
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(self.group.permissions.exists())
+
+
 class SyncDiveraUsersTests(TestCase):
     def setUp(self):
         self.stay = User.objects.create_user('bleibt')
