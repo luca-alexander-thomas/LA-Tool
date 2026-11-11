@@ -1,6 +1,7 @@
 # Produktivbetrieb: Projektverzeichnis = Git-Klon, Konfiguration in .env (siehe .env.example, Abschnitt Produktion).
 # Start und Updates über deploy/deploy.sh (ruft der Deploy-Workflow auf).
-name: la-tool
+# Eindeutiger Projektname: 1Panel nutzt "la-tool" bereits für seine Python-Runtime (sonst Orphan-Konflikte)
+name: thw-la-tool
 
 services:
   app:
