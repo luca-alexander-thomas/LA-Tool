@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Baut und startet die ausgecheckte Version (der Deploy-Workflow ruft das Skript nach "git pull" auf).
+# Baut und startet die ausgecheckte Version (aufgerufen von deploy/release.sh nach dem Auschecken des Release-Tags).
 # Ablauf: Image bauen -> Backup -> migrate -> App starten -> Healthcheck; schlägt er fehl, startet das vorige Image.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -54,4 +54,4 @@ for timer in deploy/systemd/*.timer; do
 done
 
 docker image prune -f >/dev/null
-echo "Deploy erfolgreich: $(git log -1 --format='%h %s')"
+echo "Deploy erfolgreich: $(git describe --tags --always) ($(git log -1 --format='%h %s'))"

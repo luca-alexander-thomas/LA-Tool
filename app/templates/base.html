@@ -187,7 +187,7 @@
 
     <footer class="border-t border-line/70 py-6 text-xs text-ink-3">
         <div class="container-app flex flex-col items-center justify-between gap-2 sm:flex-row">
-            <p>© 2026 Luca-Alexander Thomas · THW-Jugend Gelsenkirchen</p>
+            <p>© 2026 Luca-Alexander Thomas · THW-Jugend Gelsenkirchen{% if release %} · <a href="{% url 'release_notes' %}" class="tabular-nums hover:text-ink" title="Was ist neu?">Version {{ release.tag }}</a>{% endif %}</p>
             <nav class="flex gap-4">
                 <a href="{% url 'legal_privacy' %}" class="hover:text-ink">Datenschutz</a>
                 <a href="{% url 'legal_terms' %}" class="hover:text-ink">Nutzungsbedingungen</a>

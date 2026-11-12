@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block page_title %}Neuigkeiten{% endblock %}
+
+{% block site_content %}
+<article class="page-narrow legal">
+    <p class="eyebrow">Neuigkeiten</p>
+    {% if release %}
+    <h1 class="page-title mt-1">{{ release.name }}</h1>
+    <p class="mt-1 text-xs text-ink-3">
+        Version <span class="tabular-nums">{{ release.tag }}</span>{% if release.published_at %} · veröffentlicht am {{ release.published_at|date:"j. F Y" }}{% endif %}
+        {% if release.url %} · <a class="link" href="{{ release.url }}" target="_blank" rel="noopener">auf GitHub</a>{% endif %}
+    </p>
+    {% if notes %}
+    {{ notes }}
+    {% else %}
+    <p>Zu dieser Version gibt es keine Notizen.</p>
+    {% endif %}
+    {% else %}
+    <h1 class="page-title mt-1">Entwicklungsstand</h1>
+    <p>Diese Installation stammt nicht aus einem Release, daher gibt es keine Versionshinweise.</p>
+    {% endif %}
+</article>
+{% endblock %}

@@ -165,3 +165,9 @@ def counters(request):
         'unread_notifications': unread_count(user),
         'due_count': _due_count(request, user),
     }
+
+
+def release(request):
+    """Aktuelle Version (aus dem GitHub-Release) für Fußzeile und Hinweis auf der Startseite."""
+    from .release import current_release
+    return {'release': current_release()}

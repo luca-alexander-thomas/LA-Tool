@@ -8,3 +8,4 @@ old/
 staticfiles/
 .django_tailwind_cli/
 backups/
+release.json

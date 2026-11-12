@@ -17,7 +17,7 @@ Die tatsächliche Umsetzung beschreibt [Deployment](../deployment.md). Abweichun
 |---|---|---|---|
 | Ist-Stand vorher | nativer Gunicorn-Dienst mit Daten | 1Panel-Python-Runtime mit `runserver`; Datenbank **ohne App-Tabellen und Konten** | – |
 | Migrationen | Abgleich mit der Produktionsdatenbank (Schritt 2) | neu erzeugte `0001_initial` je App, kein Abgleich nötig | Produktionsdatenbank war leer |
-| Build und Auslieferung | Image in der CI bauen, nach GHCR, Server zieht per Tag | Server baut das Image aus dem Git-Klon; Deploy per SSH aus GitHub Actions nach gemergtem Pull-Request (wie beim Projekt ConvertX-Frontend-M365 auf demselben Server) | einheitliches Verfahren auf dem Server, keine Registry nötig; die CI baut das Image trotzdem zur Prüfung |
+| Build und Auslieferung | Image in der CI bauen, nach GHCR, Server zieht per Tag | Server baut das Image aus dem Git-Klon; Deploy per SSH aus GitHub Actions beim Veröffentlichen eines GitHub-Releases (anfangs nach gemergtem Pull-Request wie bei ConvertX-Frontend-M365; seit 12.11.2026 nur per Release) | einheitliches Verfahren auf dem Server, keine Registry nötig; die CI baut das Image trotzdem zur Prüfung |
 | Pfad | `/srv/la-tool` | `/home/compose/la-tool` (Git-Klon) | Konvention auf dem Server |
 | Port | `127.0.0.1:8000` | `127.0.0.1:8001` | 8000 belegt die alte Runtime bis zur Umstellung |
 | Compose-Projekt | `la-tool` | `thw-la-tool` | 1Panel nutzt `la-tool` für die Runtime; gleiche Namen entfernen gegenseitig Container als „verwaist“ |

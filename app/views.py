@@ -1278,6 +1278,15 @@ def legal_page(request, template):
     return render(request, template, legal_context())
 
 
+def release_notes(request):
+    """Neuigkeiten: Version und Notizen des aktuell installierten Releases."""
+    from .release import current_release, notes_html
+    release = current_release()
+    return render(request, 'release-notes.html', {
+        'notes': notes_html(release['body']) if release else '',
+    })
+
+
 def robots_txt(request):
     """Geschlossene Anwendung: Suchmaschinen sollen nichts indexieren."""
     from django.http import HttpResponse
@@ -1377,7 +1386,9 @@ def health(request):
     except Exception:
         logger.exception('Health-Check: Datenbank nicht erreichbar')
         return JsonResponse({'status': 'error'}, status=503)
-    response = JsonResponse({'status': 'ok'})
+    from .release import current_release
+    release = current_release()
+    response = JsonResponse({'status': 'ok', 'version': release['tag'] if release else None})
     response['Cache-Control'] = 'no-store'
     return response
 

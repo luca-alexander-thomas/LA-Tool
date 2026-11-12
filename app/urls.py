@@ -14,6 +14,7 @@ urlpatterns = [
     path('sw.js', pwa.service_worker, name='service_worker'),
     path('offline/', pwa.offline, name='offline'),
     path('healthz/', views.health, name='health'),
+    path('neuigkeiten/', views.release_notes, name='release_notes'),
     path('robots.txt', views.robots_txt, name='robots_txt'),
     path('datenschutz/', views.legal_page, {'template': 'legal-datenschutz.html'}, name='legal_privacy'),
     path('nutzungsbedingungen/', views.legal_page, {'template': 'legal-nutzungsbedingungen.html'}, name='legal_terms'),
