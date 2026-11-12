@@ -549,6 +549,14 @@
         & strong {
             @apply text-ink;
         }
+
+        & h3 {
+            @apply mt-5 mb-1 text-sm font-semibold text-ink;
+        }
+
+        & code {
+            @apply rounded bg-surface-2 px-1 py-0.5 text-xs;
+        }
     }
 
     .legal-check {

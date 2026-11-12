@@ -143,3 +143,30 @@ class RememberMeTests(TestCase):
         response = self.client.get(reverse('profile'))
         self.assertIn('sessionid', response.cookies)  # Cookie mit neuem Ablauf
         self.assertNotIn('sessionid', self.client.get(reverse('profile')).cookies)  # heute schon verlängert
+
+
+class DiveraPromptTests(TestCase):
+    """Ohne Divera-Verknüpfung: Wizard nur beim ersten Besuch, danach Kachel auf der Startseite."""
+
+    def setUp(self):
+        from la_tool_admin.models import Profile
+        self.user = User.objects.create_user('ohne-divera', password='pw')
+        Profile.objects.create(user=self.user, login_source='entra')
+        self.client.force_login(self.user)
+
+    def test_wizard_only_once_then_tile(self):
+        first = self.client.get(reverse('home'))
+        self.assertRedirects(first, reverse('first_run_wizard'))
+        # neue Sitzung (erneuter Login): kein Wizard mehr, stattdessen Kachel
+        self.client.logout()
+        self.client.force_login(self.user)
+        second = self.client.get(reverse('home'))
+        self.assertEqual(second.status_code, 200)
+        self.assertContains(second, 'Divera verknüpfen')
+
+    def test_linked_user_sees_no_tile(self):
+        self.user.profile.divera_ucr = 123
+        self.user.profile.save()
+        response = self.client.get(reverse('home'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'Divera verknüpfen')

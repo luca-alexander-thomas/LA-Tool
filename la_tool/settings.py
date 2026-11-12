@@ -139,6 +139,7 @@ TEMPLATES = [
                 'app.context_processors.nav_section',
                 'app.context_processors.push',
                 'app.context_processors.counters',
+                'app.context_processors.release',
             ],
         },
     },

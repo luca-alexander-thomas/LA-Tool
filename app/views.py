@@ -44,12 +44,11 @@ def index(request):
 
     user = request.user
 
-    # First-Run-Wizard: once per session for users without Divera link
-    try:
-        has_divera = bool(user.profile.divera_ucr)
-    except Exception:
-        has_divera = True
-    if not has_divera and not request.session.get('first_run_done'):
+    # Ohne Divera-Verknüpfung: Wizard nur beim ersten Mal, danach dezente Kachel auf der Startseite
+    profile = getattr(user, 'profile', None)
+    divera_missing = profile is not None and not profile.divera_ucr
+    if divera_missing and not profile.divera_prompt_seen and not request.session.get('first_run_done'):
+        type(profile).objects.filter(pk=profile.pk).update(divera_prompt_seen=True)
         return redirect('first_run_wizard')
 
     training_results = TrainingResultData.objects.filter(
@@ -72,6 +71,7 @@ def index(request):
         'open_exams_count': open_exams_count,
         'unreleased_results': unreleased_results,
         'next_work': next_work,
+        'divera_missing': divera_missing,
     })
 
 
@@ -1281,6 +1281,15 @@ def legal_page(request, template):
     return render(request, template, legal_context())
 
 
+def release_notes(request):
+    """Neuigkeiten: Version und Notizen des aktuell installierten Releases."""
+    from .release import current_release, notes_html
+    release = current_release()
+    return render(request, 'release-notes.html', {
+        'notes': notes_html(release['body']) if release else '',
+    })
+
+
 def robots_txt(request):
     """Geschlossene Anwendung: Suchmaschinen sollen nichts indexieren."""
     from django.http import HttpResponse
@@ -1380,7 +1389,9 @@ def health(request):
     except Exception:
         logger.exception('Health-Check: Datenbank nicht erreichbar')
         return JsonResponse({'status': 'error'}, status=503)
-    response = JsonResponse({'status': 'ok'})
+    from .release import current_release
+    release = current_release()
+    response = JsonResponse({'status': 'ok', 'version': release['tag'] if release else None})
     response['Cache-Control'] = 'no-store'
     return response
 
