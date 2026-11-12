@@ -17,6 +17,21 @@
 
     <div class="mb-4">{% include "_install_card.html" with dismiss_key="install-card-dismissed" %}</div>
 
+    {% if release %}
+    {# Hinweis auf eine neue Version, bis er für diese Version weggeklickt wird (nur auf diesem Gerät) #}
+    <div x-data="{ key: 'release-seen', tag: '{{ release.tag|escapejs }}', show: false }"
+         x-init="try { show = localStorage.getItem(key) !== tag } catch (e) { show = false }"
+         x-show="show" x-cloak class="card card-body mb-4 flex items-center gap-3 py-3">
+        {% include "icons/sparkles.html" with cls="size-5 shrink-0 text-accent" %}
+        <a href="{% url 'release_notes' %}" class="min-w-0 flex-1 text-sm text-ink-2 hover:text-ink"
+           @click="try { localStorage.setItem(key, tag) } catch (e) {}">
+            <span class="font-semibold text-ink">Neu in Version {{ release.tag }}</span> · Was ist neu?
+        </a>
+        <button type="button" class="btn btn-ghost btn-icon size-8 shrink-0" aria-label="Hinweis ausblenden"
+                @click="show = false; try { localStorage.setItem(key, tag) } catch (e) {}">{% include "icons/x-mark.html" with cls="size-4" %}</button>
+    </div>
+    {% endif %}
+
     {% if divera_missing %}
     <a href="{% url 'first_run_wizard' %}" class="card-link card-body mb-4 flex items-center gap-3 py-3">
         {% include "icons/link.html" with cls="size-5 shrink-0 text-ink-3" %}

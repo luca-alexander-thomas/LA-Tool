@@ -35,6 +35,7 @@ Legende Zugriff: **öffentlich** = ohne Anmeldung, **angemeldet** = Sitzung nöt
 | `/dienste/<id>/ueben/` | `work_training_start` | angemeldet | Training mit den Fragen des Dienstes |
 | `/la-filter/<slug>/` | `set_la_filter` | öffentlich | aktive LA-Stufe der Sitzung wechseln |
 | `/datenschutz/`, `/nutzungsbedingungen/`, `/impressum/` | `legal_privacy`, `legal_terms`, `legal_imprint` | öffentlich | Rechtstexte |
+| `/neuigkeiten/` | `release_notes` | öffentlich | installierte Version mit Release-Notizen (aus `release.json`) |
 
 ## JSON-Endpunkte
 
@@ -46,7 +47,7 @@ Legende Zugriff: **öffentlich** = ohne Anmeldung, **angemeldet** = Sitzung nöt
 | `/push/abonnieren/` | POST | angemeldet | Push-Abo des Browsers (`endpoint`, `keys.p256dh`, `keys.auth`) → `{"ok": true}`; nur bekannte Push-Dienste |
 | `/push/abbestellen/` | POST | angemeldet | `{"endpoint": "…"}` → `{"ok": true}` |
 | `/push/test/` | POST | angemeldet | Test-Push an die eigenen Geräte |
-| `/healthz/` | GET | öffentlich | `{"status": "ok"}` (200) oder `{"status": "error"}` (503) |
+| `/healthz/` | GET | öffentlich | `{"status": "ok", "version": "<tag>"}` (200; `version` ist `null` ohne Release) oder `{"status": "error"}` (503) |
 
 ## Technische Endpunkte
 
