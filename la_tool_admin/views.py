@@ -16,6 +16,7 @@ from app.models import (
     QuestionReport, LearningAssignment, TrainingResultData,
 )
 from app.views import _assignment_question_ids, _visible_assignments, assignment_status, review_rows
+from app.list_filters import filtered_list_url, remember_filters
 from app.login_function import apply_remember, post_login_setup, safe_next_url
 from .forms import CatalogForm, TheoryQuestionForm, PracticalForm, GroupExerciseForm, ExamForm, WorkForm, WorkCreateForm, ImportQuestionForm, LevelForm, PushMessageForm, LearningAssignmentForm
 from .models import PinnedGroup, Profile, PushSubscription
@@ -519,7 +520,7 @@ def admin_draft_toggle(request, model, pk):
     obj = get_object_or_404(ModelClass, pk=pk)
     obj.is_draft = not obj.is_draft
     obj.save(update_fields=['is_draft'])
-    return redirect(redirect_map.get(model, 'admin_index'))
+    return redirect(filtered_list_url(request, redirect_map.get(model, 'admin_index')))
 
 
 # ── FRAGENKATALOG: KATALOGE ───────────────────────────────────────────────────
@@ -549,6 +550,7 @@ def _filter_by_status(qs, status):
 @admin_required
 def admin_catalog_list(request):
     filters = _list_filters(request, 'q', 'stufe', 'status', 'inhalt')
+    remember_filters(request, 'admin_catalog')
     all_catalogs = Questions_Catalogs.objects.select_related('level').order_by('level__order', 'order', 'title')
     qs = _filter_by_status(_filter_by_level(all_catalogs, filters['stufe'], 'ohne'), filters['status'])
     if filters['q']:
@@ -584,7 +586,7 @@ def admin_catalog_create(request):
     form = CatalogForm(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():
         form.save()
-        return redirect('admin_catalog')
+        return redirect(filtered_list_url(request, 'admin_catalog'))
     return render(request, 'admin-catalog-create.html', {
         'user': request.user,
         'form': form,
@@ -605,6 +607,8 @@ def admin_catalog_detail(request, catalog_id):
         'theory_questions': theory_qs,
         'practical_questions': practical_qs,
         'active_tab': request.GET.get('tab', 'theory'),
+        'move_targets': Questions_Catalogs.objects.exclude(pk=catalog.pk).select_related('level')
+                        .order_by('level__order', 'order', 'title'),
     })
 
 
@@ -624,7 +628,7 @@ def admin_catalog_delete(request, catalog_id):
     if request.method == 'POST':
         catalog.delete()
         messages.success(request, f'Katalog „{catalog.title}“ gelöscht.')
-        return redirect('admin_catalog')
+        return redirect(filtered_list_url(request, 'admin_catalog'))
     return redirect('admin_catalog_detail', catalog_id=catalog_id)
 
 
@@ -701,6 +705,62 @@ def admin_theory_delete(request, catalog_id, q_id):
         question.delete()
         messages.success(request, 'Theoriefrage gelöscht.')
     return redirect('admin_catalog_detail', catalog_id=catalog_id)
+
+
+# ── SAMMELAKTIONEN IM KATALOG ─────────────────────────────────────────────────
+
+BULK_KINDS = {
+    # Art: (Modell, Recht, Einzahl, Mehrzahl)
+    'theory': (Questions_Theory, 'manage_theory', 'Frage', 'Fragen'),
+    'practical': (Questions_Practical, 'manage_practical', 'Aufgabe', 'Aufgaben'),
+}
+
+
+@admin_required
+def admin_catalog_bulk(request, catalog_id):
+    """Mehrere Fragen/Aufgaben eines Katalogs auf einmal freigeben, zurückstellen, verschieben oder löschen."""
+    catalog = get_object_or_404(Questions_Catalogs, pk=catalog_id)
+    kind = request.POST.get('kind', '')
+    if kind not in BULK_KINDS:
+        raise Http404
+    model, perm, one, many = BULK_KINDS[kind]
+    back = f"{reverse('admin_catalog_detail', args=[catalog.pk])}?tab={kind}"
+    if request.method != 'POST':
+        return redirect(back)
+    if not request.user.has_perm(f'app.{perm}'):
+        raise PermissionDenied(_missing_permission_text(request.user, (f'app.{perm}',)))
+
+    ids = [int(x) for x in request.POST.getlist('ids') if x.isdigit()]
+    items = model.objects.filter(catalog=catalog, pk__in=ids)
+    count = items.count()
+    noun = one if count == 1 else many
+    action = request.POST.get('action')
+    if not count:
+        messages.warning(request, f'Keine {many} ausgewählt.')
+    elif action == 'publish':
+        items.update(is_draft=False)
+        messages.success(request, f'{count} {noun} freigegeben.')
+    elif action == 'draft':
+        items.update(is_draft=True)
+        messages.success(request, f'{count} {noun} als Entwurf markiert.')
+    elif action == 'move':
+        target = Questions_Catalogs.objects.filter(pk=request.POST.get('target')).exclude(pk=catalog.pk).first()
+        if target is None:
+            messages.warning(request, 'Bitte einen Ziel-Katalog wählen.')
+        else:
+            numbers = {n for n in items.values_list('number', flat=True) if n}
+            clashes = model.objects.filter(catalog=target, number__in=numbers).count()
+            items.update(catalog=target)
+            text = f'{count} {noun} nach „{target}“ verschoben.'
+            if clashes:
+                text += f' Achtung: {clashes} Nummer{"n" if clashes != 1 else ""} gibt es dort schon doppelt.'
+            messages.success(request, text)
+    elif action == 'delete':
+        with transaction.atomic():
+            for item in items:
+                item.delete()  # einzeln, damit Signale (z.B. Dateien löschen) greifen
+        messages.success(request, f'{count} {noun} gelöscht.')
+    return redirect(back)
 
 
 # ── IMPORT ────────────────────────────────────────────────────────────────────
@@ -1106,6 +1166,7 @@ def admin_practical_delete(request, catalog_id, q_id):
 def admin_group_list(request):
     """Gruppenaufgaben – eigenständig, nach LA-Stufe gruppiert (ohne Stufe = für alle Stufen)."""
     filters = _list_filters(request, 'q', 'stufe', 'status', 'datei')
+    remember_filters(request, 'admin_group_list')
     all_exercises = Questions_GroupExercise.objects.select_related('level').order_by('number', 'pk')
     qs = _filter_by_status(_filter_by_level(all_exercises, filters['stufe'], 'alle'), filters['status'])
     if filters['q']:
@@ -1163,7 +1224,7 @@ def admin_group_create(request):
                     }
                     return redirect('admin_file_confirm')
             form.save()
-            return redirect('admin_group_list')
+            return redirect(filtered_list_url(request, 'admin_group_list'))
     else:
         form = GroupExerciseForm(initial={'level': Levels.objects.filter(slug=request.session.get('la_filter')).first()})
     return render(request, 'admin-question-group.html', {
@@ -1183,7 +1244,7 @@ def admin_group_edit(request, q_id):
             del form.fields['file']
         if form.is_valid():
             form.save()
-            return redirect('admin_group_list')
+            return redirect(filtered_list_url(request, 'admin_group_list'))
     else:
         form = GroupExerciseForm(instance=question)
     return render(request, 'admin-question-group.html', {
@@ -1200,7 +1261,7 @@ def admin_group_delete(request, q_id):
     if request.method == 'POST':
         question.delete()
         messages.success(request, 'Gruppenaufgabe gelöscht.')
-    return redirect('admin_group_list')
+    return redirect(filtered_list_url(request, 'admin_group_list'))
 
 
 # ── DATEI-BESTÄTIGUNG BEI DUPLIKATEN ─────────────────────────────────────────
@@ -1213,7 +1274,7 @@ def admin_file_confirm(request):
 
     pending = request.session.get('pending_file_upload')
     if not pending:
-        return redirect('admin_catalog')
+        return redirect(filtered_list_url(request, 'admin_catalog'))
 
     catalog_id = pending['catalog_id']
     model = pending['model']
@@ -1266,7 +1327,7 @@ def admin_file_confirm(request):
         obj.save()
         if model == 'practical':
             return redirect('admin_catalog_detail', catalog_id=catalog_id)
-        return redirect('admin_group_list')
+        return redirect(filtered_list_url(request, 'admin_group_list'))
 
     # GET: render confirmation page with previews
     temp_url = default_storage.url(temp_path)
@@ -1949,6 +2010,7 @@ def _learner_row(user, attempts, level, catalogs, question_ids):
 
 @admin_permission_required('app.view_learning_progress')
 def admin_learning(request):
+    remember_filters(request, 'admin_learning')
     levels, level, catalogs, question_ids = _learning_scope(request)
     groups = list(Group.objects.order_by('name'))
     group = next((g for g in groups if str(g.pk) == request.GET.get('gruppe')), None)

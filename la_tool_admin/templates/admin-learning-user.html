@@ -1,9 +1,10 @@
 {% extends "admin_base.html" %}
+{% load list_filters %}
 
 {% block page_title %}Lernstand {{ learner.get_full_name|default:learner.username }} · Admin{% endblock %}
 
 {% block admin_content %}
-<a href="{% url 'admin_learning' %}?stufe={{ level.slug }}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Lernstand</a>
+<a href="{% list_url 'admin_learning' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Lernstand</a>
 <div class="page-header">
     <div>
         <p class="eyebrow">Lernstand{% if level %} · {{ level.name }}{% endif %}</p>

@@ -28,6 +28,8 @@ from .models import (
     QuestionBookmark, QuestionReport, LearningAssignment,
 )
 
+from .list_filters import remember_filters
+
 logger = logging.getLogger(__name__)
 
 
@@ -534,6 +536,7 @@ def work_list(request):
     ).distinct()
     current_year = timezone.localtime(now).year
     years = sorted({d.year for d in list_works.dates('date', 'year')} | {current_year}, reverse=True)
+    remember_filters(request, 'work')
     year = request.GET.get('jahr', '')
     year = int(year) if year.isdigit() and int(year) in years else current_year
     list_works = list_works.filter(date__year=year)

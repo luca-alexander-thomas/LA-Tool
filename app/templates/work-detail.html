@@ -1,10 +1,11 @@
 {% extends "base.html" %}
+{% load list_filters %}
 
 {% block page_title %}{{ work.title }}{% endblock %}
 
 {% block site_content %}
 <div class="page">
-    <a href="{% url 'work' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Dienste</a>
+    <a href="{% list_url 'work' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Dienste</a>
 
     <div class="page-header">
         <div class="min-w-0">

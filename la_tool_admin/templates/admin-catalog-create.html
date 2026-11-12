@@ -1,10 +1,11 @@
 {% extends "admin_base.html" %}
+{% load list_filters %}
 
 {% block page_title %}{{ title }}{% endblock %}
 
 {% block admin_content %}
 <div class="max-w-2xl">
-    <a href="{% url 'admin_catalog' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Alle Kataloge</a>
+    <a href="{% list_url 'admin_catalog' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Alle Kataloge</a>
     <div class="page-header">
         <h1 class="page-title">{{ title }}</h1>
     </div>
@@ -27,7 +28,7 @@
             {% endfor %}
         </div>
         <div class="card-footer">
-            <a href="{% url 'admin_catalog' %}" class="btn btn-secondary">Abbrechen</a>
+            <a href="{% list_url 'admin_catalog' %}" class="btn btn-secondary">Abbrechen</a>
             <button type="submit" class="btn btn-primary">{% include "icons/check.html" %} Speichern</button>
         </div>
     </form>

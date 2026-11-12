@@ -1,9 +1,10 @@
 {% extends "admin_base.html" %}
+{% load list_filters %}
 
 {% block page_title %}{{ catalog.title }}{% endblock %}
 
 {% block admin_content %}
-<a href="{% url 'admin_catalog' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Alle Kataloge</a>
+<a href="{% list_url 'admin_catalog' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Alle Kataloge</a>
 
 <div class="page-header">
     <div>
@@ -87,21 +88,42 @@
 </div>
 {% endif %}
 {% if theory_questions %}
+    <div x-data="{ sel: [], all: [{% for q in theory_questions %}'{{ q.pk }}',{% endfor %}] }">
+    {% if perms.app.manage_theory %}
+    <div class="mb-2 flex items-center gap-3 px-1 text-sm">
+        <label class="form-check">
+            <input type="checkbox" class="form-check-input" :checked="sel.length && sel.length === all.length"
+                   :indeterminate="sel.length > 0 && sel.length < all.length"
+                   @change="sel = $event.target.checked ? all.slice() : []">
+            <span class="form-check-label">Alle auswählen</span>
+        </label>
+        <span class="text-ink-3" x-show="sel.length" x-cloak>· <span x-text="sel.length"></span> von {{ theory_questions|length }}</span>
+    </div>
+    {% endif %}
     <div class="space-y-2">
     {% for q in theory_questions %}
-    <div class="card flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
-        <div class="min-w-0">
+    <div class="card flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between" :class="sel.includes('{{ q.pk }}') && 'border-accent bg-accent-soft'">
+        <div class="flex min-w-0 gap-3">
+            {% if perms.app.manage_theory %}
+            <input type="checkbox" class="form-check-input mt-1 shrink-0" name="ids" value="{{ q.pk }}" form="bulk-theory"
+                   x-model="sel" aria-label="{{ q.number|default:'Ohne Nummer' }} auswählen">
+            {% endif %}
+            <div class="min-w-0">
             <p>
                 <span class="mr-2 text-xs text-ink-3 tabular-nums">{{ q.number }}</span>
                 <strong class="font-semibold">{{ q.question|truncatechars:120 }}</strong>
+                {% if q.is_draft %}<span class="badge badge-warning ml-1">Entwurf</span>{% endif %}
             </p>
             {% if q.answer_choice %}
             <div class="mt-2 flex flex-wrap gap-1">
+                {% with correct=q.correct_answers %}
                 {% for choice in q.answer_choice %}
-                    <span class="badge {% if choice == q.answer_text %}badge-success{% else %}badge-neutral{% endif %}">{{ choice|truncatechars:40 }}</span>
+                    <span class="badge {% if choice in correct %}badge-success{% else %}badge-neutral{% endif %}">{% if choice in correct %}<span class="sr-only">Richtig: </span>{% endif %}{{ choice|truncatechars:40 }}</span>
                 {% endfor %}
+                {% endwith %}
             </div>
             {% endif %}
+            </div>
         </div>
         {% if perms.app.manage_theory %}
         <div class="flex shrink-0 gap-2">
@@ -114,6 +136,8 @@
         {% endif %}
     </div>
     {% endfor %}
+    </div>
+    {% if perms.app.manage_theory %}{% include "_admin_bulk_bar.html" with kind="theory" noun="Fragen" %}{% endif %}
     </div>
 {% else %}
     <p class="empty-state">Noch keine Theoriefragen vorhanden.</p>
@@ -128,17 +152,36 @@
 </div>
 {% endif %}
 {% if practical_questions %}
+    <div x-data="{ sel: [], all: [{% for q in practical_questions %}'{{ q.pk }}',{% endfor %}] }">
+    {% if perms.app.manage_practical %}
+    <div class="mb-2 flex items-center gap-3 px-1 text-sm">
+        <label class="form-check">
+            <input type="checkbox" class="form-check-input" :checked="sel.length && sel.length === all.length"
+                   :indeterminate="sel.length > 0 && sel.length < all.length"
+                   @change="sel = $event.target.checked ? all.slice() : []">
+            <span class="form-check-label">Alle auswählen</span>
+        </label>
+        <span class="text-ink-3" x-show="sel.length" x-cloak>· <span x-text="sel.length"></span> von {{ practical_questions|length }}</span>
+    </div>
+    {% endif %}
     <div class="space-y-2">
     {% for q in practical_questions %}
-    <div class="card flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
-        <div class="min-w-0">
+    <div class="card flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between" :class="sel.includes('{{ q.pk }}') && 'border-accent bg-accent-soft'">
+        <div class="flex min-w-0 gap-3">
+            {% if perms.app.manage_practical %}
+            <input type="checkbox" class="form-check-input mt-1 shrink-0" name="ids" value="{{ q.pk }}" form="bulk-practical"
+                   x-model="sel" aria-label="{{ q.number|default:'Ohne Nummer' }} auswählen">
+            {% endif %}
+            <div class="min-w-0">
             <p>
                 <span class="mr-2 text-xs text-ink-3 tabular-nums">{{ q.number }}</span>
                 <strong class="font-semibold">{{ q.question|truncatechars:120 }}</strong>
+                {% if q.is_draft %}<span class="badge badge-warning ml-1">Entwurf</span>{% endif %}
             </p>
             {% if q.file %}
                 <a href="{{ q.file.url }}" target="_blank" class="link mt-1 inline-flex items-center gap-1 text-sm">{% include "icons/document-text.html" with cls="size-4" %} PDF ansehen</a>
             {% endif %}
+            </div>
         </div>
         {% if perms.app.manage_practical %}
         <div class="flex shrink-0 gap-2">
@@ -151,6 +194,8 @@
         {% endif %}
     </div>
     {% endfor %}
+    </div>
+    {% if perms.app.manage_practical %}{% include "_admin_bulk_bar.html" with kind="practical" noun="Aufgaben" %}{% endif %}
     </div>
 {% else %}
     <p class="empty-state">Noch keine praktischen Aufgaben vorhanden.</p>

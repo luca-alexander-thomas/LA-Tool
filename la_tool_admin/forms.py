@@ -109,9 +109,18 @@ class TheoryQuestionForm(forms.Form):
         return instance
 
 
+class CatalogChoiceField(forms.ModelChoiceField):
+    """Katalog-Auswahl mit Stufe vorn, damit gleichnamige Kataloge verschiedener Stufen unterscheidbar sind."""
+
+    def label_from_instance(self, obj):
+        level = obj.level.name if obj.level else 'Ohne Stufe'
+        name = f'{obj.short_title} – {obj.title}' if obj.short_title else obj.title
+        return f'{level} · {name}' + (' (Entwurf)' if obj.is_draft else '')
+
+
 class ImportQuestionForm(forms.Form):
-    catalog = forms.ModelChoiceField(
-        queryset=Questions_Catalogs.objects.select_related('level').all().order_by('level__order', 'title'),
+    catalog = CatalogChoiceField(
+        queryset=Questions_Catalogs.objects.select_related('level').all().order_by('level__order', 'order', 'title'),
         widget=forms.Select(attrs={'class': 'form-select'}),
         label='Ziel-Katalog',
         empty_label='— Katalog wählen —',
