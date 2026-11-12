@@ -14,6 +14,7 @@ urlpatterns = [
     path('catalog/<int:catalog_id>/', views.admin_catalog_detail, name='admin_catalog_detail'),
     path('catalog/<int:catalog_id>/update/', views.admin_catalog_update, name='admin_catalog_update'),
     path('catalog/<int:catalog_id>/delete/', views.admin_catalog_delete, name='admin_catalog_delete'),
+    path('catalog/<int:catalog_id>/sammelaktion/', views.admin_catalog_bulk, name='admin_catalog_bulk'),
 
     # Theoriefragen
     path('catalog/<int:catalog_id>/theory/create/', views.admin_theory_create, name='admin_theory_create'),

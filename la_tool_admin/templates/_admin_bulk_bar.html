@@ -1,0 +1,29 @@
+{# Leiste für Sammelaktionen; erscheint, sobald etwas ausgewählt ist. Erwartet: kind, catalog, move_targets, noun #}
+<form id="bulk-{{ kind }}" method="post" action="{% url 'admin_catalog_bulk' catalog.pk %}"
+      x-show="sel.length" x-cloak x-transition
+      class="card sticky bottom-3 z-20 mt-4 flex flex-col gap-3 p-3 shadow-lg sm:flex-row sm:flex-wrap sm:items-center"
+      @submit="if ($event.submitter && $event.submitter.value === 'delete' && !confirm(sel.length + ' {{ noun }} endgültig löschen?')) $event.preventDefault()">
+    {% csrf_token %}
+    <input type="hidden" name="kind" value="{{ kind }}">
+    <p class="text-sm font-semibold" aria-live="polite"><span x-text="sel.length"></span> ausgewählt</p>
+    <div class="flex flex-wrap gap-2">
+        <button type="submit" name="action" value="publish" class="btn btn-sm btn-soft">{% include "icons/eye.html" with cls="size-4" %} Freigeben</button>
+        <button type="submit" name="action" value="draft" class="btn btn-sm btn-secondary">{% include "icons/eye-slash.html" with cls="size-4" %} Als Entwurf</button>
+    </div>
+    {% if move_targets %}
+    <div class="flex min-w-0 flex-1 gap-2">
+        <label class="sr-only" for="bulk-target-{{ kind }}">Ziel-Katalog</label>
+        <select name="target" id="bulk-target-{{ kind }}" class="form-select min-w-0 flex-1 py-1.5 text-sm">
+            <option value="">Verschieben nach …</option>
+            {% for c in move_targets %}
+            <option value="{{ c.pk }}">{{ c.level.name|default:"Ohne Stufe" }} · {{ c.short_title|default:c.title }}{% if c.short_title %} – {{ c.title }}{% endif %}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" name="action" value="move" class="btn btn-sm btn-secondary">{% include "icons/arrow-right.html" with cls="size-4" %} Verschieben</button>
+    </div>
+    {% endif %}
+    <div class="flex gap-2 sm:ml-auto">
+        <button type="button" class="btn btn-sm btn-ghost" @click="sel = []">Abbrechen</button>
+        <button type="submit" name="action" value="delete" class="btn btn-sm btn-danger-soft">{% include "icons/trash.html" with cls="size-4" %} Löschen</button>
+    </div>
+</form>

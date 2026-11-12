@@ -64,6 +64,8 @@ Legende Zugriff: **öffentlich** = ohne Anmeldung, **angemeldet** = Sitzung nöt
 
 ## Admin-Bereich (`/admin/`)
 
+Gewählte Filter der Listen (Kataloge, Gruppenaufgaben, Lernstand, Dienste) merkt sich die Sitzung; Zurück-Links und Weiterleitungen nach Aktionen führen zur gefilterten Liste.
+
 Alle Seiten verlangen eine Anmeldung und das Recht `access_admin`; zusätzlich das genannte Recht (siehe [Rollen und Rechte](../sicherheit-datenschutz.md#rollen-und-rechte)). Ändernde Aktionen nur per POST.
 
 | Pfad | Recht |
@@ -72,6 +74,7 @@ Alle Seiten verlangen eine Anmeldung und das Recht `access_admin`; zusätzlich d
 | `/admin/users/` | `manage_users` (Rechte/Gruppen/Admin-Konten zusätzlich `manage_groups`) |
 | `/admin/catalog/`, `/admin/catalog/<id>/` | – (lesen) |
 | `/admin/catalog/create/`, `…/<id>/update/`, `…/<id>/delete/` | `manage_catalogs` |
+| `/admin/catalog/<id>/sammelaktion/` (POST) | `manage_theory` bzw. `manage_practical` je nach `kind`: ausgewählte Fragen/Aufgaben freigeben, als Entwurf markieren, verschieben, löschen |
 | `/admin/catalog/<id>/theory/…` | `manage_theory` |
 | `/admin/catalog/<id>/practical/…` | `manage_practical` |
 | `/admin/gruppenaufgaben/…` | `manage_group_exercises` |

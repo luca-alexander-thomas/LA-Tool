@@ -1,10 +1,11 @@
 {% extends "admin_base.html" %}
+{% load list_filters %}
 
 {% block page_title %}Theoriefragen importieren{% endblock %}
 
 {% block admin_content %}
 <div class="max-w-4xl">
-    <a href="{% url 'admin_catalog' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Fragenkataloge</a>
+    <a href="{% list_url 'admin_catalog' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Fragenkataloge</a>
     <div class="page-header">
         <div>
             <p class="eyebrow">Fragen-Import</p>
