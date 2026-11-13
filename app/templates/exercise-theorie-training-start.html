@@ -83,18 +83,14 @@
                                 <span class="flex-1">{% include "_learning_bar.html" with summary=catalog.progress height="h-1.5" compact=True %}</span>
                                 <span class="shrink-0 text-xs text-ink-3 tabular-nums">{{ catalog.progress.score }} %{% if catalog.progress.counts.new %} · {{ catalog.progress.counts.new }} neu{% endif %}</span>
                             </span>
-                            {% elif not catalog.progress.total %}
-                            <span class="mt-0.5 block text-xs text-ink-3">Noch keine Fragen</span>
                             {% endif %}
                         </span>
-                        {% if catalog.progress.total %}
                         <a href="{% url 'theory_lookup' %}#katalog-{{ catalog.pk }}" class="btn btn-ghost btn-sm shrink-0 text-ink-2" title="Fragen mit Lösungen lesen, danach gezielt üben" @click.stop>
                             {% include "icons/book-open.html" with cls="size-4" %}<span class="hidden sm:inline">Lesen</span>
                         </a>
-                        {% endif %}
                     </label>
                     {% empty %}
-                    <p class="empty-state">Noch keine Kataloge vorhanden. Bitte zuerst Kataloge anlegen.</p>
+                    <p class="empty-state">Für diese Stufe gibt es noch keine Theoriefragen.</p>
                     {% endfor %}
                 </div>
             </section>

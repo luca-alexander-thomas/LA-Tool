@@ -1852,11 +1852,20 @@ def admin_autogroup_list(request):
     })
 
 
+def _divera_qual_choices(selected_ids):
+    """Bekannte Divera-Qualifikationen plus gewählte, die (noch) nicht bekannt sind – sonst gingen sie beim Speichern verloren."""
+    from .models import DiveraQualification
+    known = list(DiveraQualification.objects.order_by('name'))
+    known_ids = {q.qual_id for q in known}
+    return known + [DiveraQualification(qual_id=qid, name='Unbekannte Qualifikation')
+                    for qid in sorted(set(selected_ids) - known_ids)]
+
+
 @admin_permission_required('app.manage_groups')
 def admin_autogroup_create(request):
-    from .models import AutoGroupRule, DiveraQualification
+    from .models import AutoGroupRule
     from .forms import AutoGroupRuleForm
-    all_divera_quals = DiveraQualification.objects.order_by('name')
+    all_divera_quals = _divera_qual_choices([])
 
     if request.method == 'POST':
         form = AutoGroupRuleForm(request.POST)
@@ -1890,11 +1899,12 @@ def admin_autogroup_create(request):
 
 @admin_permission_required('app.manage_groups')
 def admin_autogroup_edit(request, group_id):
-    from .models import AutoGroupRule, DiveraQualification
+    from .models import AutoGroupRule
     from .forms import AutoGroupRuleForm
     group = get_object_or_404(Group, pk=group_id)
     rule = AutoGroupRule.objects.filter(group=group).first() or AutoGroupRule(group=group)
-    all_divera_quals = DiveraQualification.objects.order_by('name')
+    selected_qual_ids = {int(x) for x in rule.divera_qual_ids if str(x).isdigit()}
+    all_divera_quals = _divera_qual_choices(selected_qual_ids)
 
     if request.method == 'POST':
         form = AutoGroupRuleForm(request.POST)
@@ -1923,7 +1933,7 @@ def admin_autogroup_edit(request, group_id):
         'rule': rule,
         'group': group,
         'all_divera_quals': all_divera_quals,
-        'selected_divera_qual_ids': set(int(x) for x in rule.divera_qual_ids if str(x).isdigit()),
+        'selected_divera_qual_ids': selected_qual_ids,
         'selected_entra_group_ids': rule.entra_group_ids,
         'title': f'Gruppe bearbeiten: {group.name}',
         'mapped_entra': group.name in {n for gid, n in getattr(settings, 'AZURE_GROUPS_MAPPING', {}).items() if gid},

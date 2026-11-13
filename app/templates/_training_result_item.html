@@ -37,7 +37,9 @@
         <p class="mt-2 flex gap-2 text-xs text-ink-2">{% include "icons/light-bulb.html" with cls="size-4 shrink-0 text-amber-500" %}<span>{{ item.question.help_reference }}</span></p>
         {% endif %}
     </div>
+    {% if user.is_authenticated %}
     <div class="border-t border-line px-2 py-1.5 sm:px-3">
         {% include "_question_tools.html" with qid=item.question.pk %}
     </div>
+    {% endif %}
 </section>

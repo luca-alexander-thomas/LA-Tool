@@ -135,6 +135,25 @@ class TodayAndCatalogTests(LearningBase):
         self.assertIsNotNone(response.context['chart'])
         self.assertContains(self.client.get(reverse('excercise')), 'Heute lernen')
 
+    def test_catalogs_without_theory_questions_hidden(self):
+        """Kataloge nur mit Praxisaufgaben oder nur mit Entwürfen erscheinen nicht beim Theorie-Training (Issue #5)."""
+        from .models import Questions_Practical
+        practical_only = Questions_Catalogs.objects.create(title='Nur Praxis', short_title='P', level=self.level, order=3)
+        Questions_Practical.objects.create(question='Knoten', catalog=practical_only, number='1')
+        drafts_only = Questions_Catalogs.objects.create(title='Nur Entwürfe', short_title='E', level=self.level, order=4)
+        Questions_Theory.objects.create(question='E?', catalog=drafts_only, answer_text='Ja',
+                                        answer_choice=['Ja'], is_draft=True)
+        for anonymous in (False, True):
+            if anonymous:
+                self.client.logout()
+                session = self.client.session
+                session['la_filter'] = 'teststufe'
+                session.save()
+            response = self.client.get(reverse('training_config'))
+            self.assertEqual([c.title for c in response.context['catalogs']], ['Alpha', 'Beta'])
+            self.assertNotContains(response, 'Nur Praxis')
+            self.assertNotContains(response, 'Noch keine Fragen')
+
     def test_anonymous_cannot_use_today(self):
         self.client.logout()
         response = self.client.post(reverse('training_today'))

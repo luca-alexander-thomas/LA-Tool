@@ -10,7 +10,7 @@ from django.urls import reverse
 
 from app import login_function as lf
 from app.login_function import DiveraError
-from .models import AutoGroupRule, PinnedGroup, Profile
+from .models import AutoGroupRule, DiveraQualification, PinnedGroup, Profile
 from .tests import grant
 from .utils import sync_idp_groups
 
@@ -184,6 +184,51 @@ class GroupPermissionAdminTests(TestCase):
         })
         self.assertEqual(response.status_code, 403)
         self.assertFalse(self.group.permissions.exists())
+
+
+class DiveraQualificationTests(TestCase):
+    """Qualifikations-Definitionen aus Divera für die Auswahl bei Auto-Gruppen (Issue #9)."""
+
+    # Aufbau wie in der Divera-Antwort (pull/all, data.cluster)
+    CLUSTER = {'qualification': {
+        '30132': {'name': 'Leistungsabzeichen Bronze', 'shortname': 'LA B'},
+        '24131': {'name': 'Jugendhelfer', 'shortname': 'JHE'},
+    }}
+
+    def test_definitions_are_stored_and_updated(self):
+        lf._store_divera_cluster_quals(self.CLUSTER)
+        lf._store_divera_cluster_quals({'qualification': {'30132': {'name': 'LA Bronze', 'shortname': 'B'}}})
+        self.assertEqual(
+            list(DiveraQualification.objects.order_by('qual_id').values_list('qual_id', 'name', 'short_name')),
+            [(24131, 'Jugendhelfer', 'JHE'), (30132, 'LA Bronze', 'B')])
+
+    def test_invalid_data_is_ignored(self):
+        lf._store_divera_cluster_quals({'qualification': [1, 2]})
+        lf._store_divera_cluster_quals({'qualification': {'abc': {'name': 'X'}}})
+        self.assertFalse(DiveraQualification.objects.exists())
+
+    def test_sync_stores_definitions(self):
+        pulls = [
+            {'success': True, 'data': {'ucr': {'9': {'cluster_id': 20369}}}},
+            {'success': True, 'data': {'cluster': {**self.CLUSTER, 'consumer': {'1': {'qualifications': [30132]}}}}},
+        ]
+        with patch('la_tool.env.DIVERA_ADMIN_USER_API_KEY', 'key'), patch('la_tool.env.DIVERA_Site_ID', '20369'),                 patch('app.management.commands.sync_divera_users._divera_pull', side_effect=pulls):
+            call_command('sync_divera_users', stdout=StringIO(), stderr=StringIO())
+        self.assertEqual(DiveraQualification.objects.count(), 2)
+
+    def test_autogroup_edit_lists_qualifications(self):
+        lf._store_divera_cluster_quals(self.CLUSTER)
+        group = Group.objects.create(name='Bronze')
+        AutoGroupRule.objects.create(group=group, divera_qual_ids=[30132, 99999])
+        admin = User.objects.create_user('admin')
+        grant(admin, 'access_admin', 'manage_groups')
+        self.client.force_login(admin)
+        response = self.client.get(reverse('admin_autogroup_edit', args=[group.pk]))
+        self.assertContains(response, 'Leistungsabzeichen Bronze')
+        self.assertContains(response, 'Jugendhelfer')
+        # Gewählte, aber unbekannte Qualifikation bleibt sichtbar und damit beim Speichern erhalten
+        self.assertContains(response, 'id="qual_99999"')
+        self.assertEqual(response.context['selected_divera_qual_ids'], {30132, 99999})
 
 
 class SyncDiveraUsersTests(TestCase):
