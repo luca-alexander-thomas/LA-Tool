@@ -88,6 +88,13 @@
     const keyOf = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
     const parse = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
     const fmt = k => { const [, m, d] = k.split('-'); return d + '.' + m + '.'; };
+    const safeHref = (url) => {
+        try {
+            const u = new URL(String(url || ''), window.location.origin);
+            if (u.protocol === 'http:' || u.protocol === 'https:') return u.href;
+        } catch (e) {}
+        return '#';
+    };
 
     // Tag -> Dienste an diesem Tag (mehrtägige Dienste auf jeden Tag verteilt)
     const byDay = {};
@@ -180,7 +187,7 @@
         }
         shown.forEach(w => {
             const a = el('a', 'flex min-h-11 items-center gap-3 border-b border-line py-2 text-ink transition last:border-b-0 hover:text-accent-ink');
-            a.href = w.url;
+            a.href = safeHref(w.url);
             a.appendChild(el('span', 'badge badge-primary shrink-0 tabular-nums', w.start === w.end ? fmt(w.start) : fmt(w.start) + '–' + fmt(w.end)));
             a.appendChild(el('span', 'min-w-0 flex-1 truncate', w.title));
             if (w.time) a.appendChild(el('span', 'shrink-0 text-xs text-ink-3', w.time + ' Uhr'));
