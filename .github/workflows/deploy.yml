@@ -7,6 +7,9 @@ on:
     types:
       - published
 
+permissions:
+  contents: read
+
 # Erforderliche GitHub-Secrets (Settings → Secrets → Actions, Environment "production"):
 #
 #   SSH_HOST      – Hostname oder IP-Adresse des Servers
