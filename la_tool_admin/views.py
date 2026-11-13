@@ -724,9 +724,8 @@ def admin_catalog_bulk(request, catalog_id):
     if kind not in BULK_KINDS:
         raise Http404
     model, perm, one, many = BULK_KINDS[kind]
-    back = f"{reverse('admin_catalog_detail', args=[catalog.pk])}?tab={kind}"
     if request.method != 'POST':
-        return redirect(back)
+        return redirect('admin_catalog_detail', catalog_id=catalog.pk)
     if not request.user.has_perm(f'app.{perm}'):
         raise PermissionDenied(_missing_permission_text(request.user, (f'app.{perm}',)))
 
@@ -760,7 +759,7 @@ def admin_catalog_bulk(request, catalog_id):
             for item in items:
                 item.delete()  # einzeln, damit Signale (z.B. Dateien löschen) greifen
         messages.success(request, f'{count} {noun} gelöscht.')
-    return redirect(back)
+    return redirect('admin_catalog_detail', catalog_id=catalog.pk)
 
 
 # ── IMPORT ────────────────────────────────────────────────────────────────────
