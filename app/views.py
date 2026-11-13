@@ -39,8 +39,9 @@ def _user_exam_filter(user):
 
 
 def index(request):
-    """Startseite. Angemeldet: alles zum Lernen auf einer Seite (Heute lernen, Lernstand, gemerkte Fragen,
-    Trainings, Prüfungen, nächster Dienst); ohne Anmeldung die Vorstellung des LA-Tools."""
+    """Startseite. Angemeldet: das Wichtigste auf einen Blick (Heute lernen, Lernaufträge, Lernstand, nächster
+    Dienst, Prüfungen, gemerkte Fragen, letzte Trainings); ohne Anmeldung die Vorstellung des LA-Tools.
+    Alle Fragen mit Status stehen auf „Fragen nachschlagen“."""
     site = SiteSettings.get()
     notice = {'notice': site.notice_for(request.user), 'notice_level': site.notice_level}
     if not request.user.is_authenticated:
@@ -64,8 +65,8 @@ def index(request):
         **notice,
         **overview,
         **_today_plan(overview),
-        **_learning_details(request, overview),
-        'training_results': TrainingResultData.objects.filter(user=user).order_by('-meta_time')[:5],
+        **_home_learning(request, overview),
+        'training_results': TrainingResultData.objects.filter(user=user).order_by('-meta_time')[:3],
         'open_exams_count': open_exams_count,
         'unreleased_results': ExamResultData.objects.filter(user=user, state='published').order_by('-meta_time')[:3],
         'next_work': _visible_works(user).filter(date__gte=timezone.now()).order_by('date').first(),
@@ -979,62 +980,35 @@ def _today_plan(overview):
     }}
 
 
-# ── MEIN LERNSTAND (auf der Startseite) ──────────────────────────────────────
+# ── LERNSTAND AUF DER STARTSEITE ─────────────────────────────────────────────
 
-def _learning_details(request, overview):
-    """Lernstand für die Startseite: Kennzahlen, Verlauf, alle Fragen mit Status und gemerkte Fragen."""
-    attempts, history, ids = overview['attempts'], overview['history'], overview['question_ids']
+# So viele gemerkte Fragen zeigt die Startseite; alle stehen unter „Fragen nachschlagen“ (Filter „Gemerkt“)
+HOME_SAVED_SHOWN = 5
+
+
+def _home_learning(request, overview):
+    """Kennzahlen und gemerkte Fragen der aktiven Stufe für die Startseite."""
+    attempts, ids = overview['attempts'], overview['question_ids']
     today = timezone.localdate()
     saved_ids = _bookmarked_ids(request.user)
-
-    q_map = Questions_Theory.objects.select_related('catalog').in_bulk(ids)
-    rows = []
-    for qid in ids:
-        tries = attempts.get(qid, [])
-        box, due = learning.schedule(tries)
-        status = learning.status(history.get(qid, []))
-        rows.append({
-            'question': q_map[qid],
-            'status': status,
-            'status_label': learning.STATUS_LABELS[status],
-            'mastery': round(learning.mastery(history.get(qid, [])) * 100),
-            'box': box,
-            'due': due,
-            'is_due': bool(tries) and due <= today,
-            'saved': qid in saved_ids,
-            'tries': len(tries),
-        })
-    # Gemerkte Fragen der Stufe mit Lösung zum Wiederholen
-    saved_questions = [{
-        'question': r['question'],
-        'status': r['status'],
-        'choices': [(letter, text, text in set(r['question'].correct_answers))
-                    for letter, text in _labeled_choices(r['question'])],
-    } for r in rows if r['saved']]
+    level_saved = [qid for qid in ids if qid in saved_ids]
+    q_map = Questions_Theory.objects.select_related('catalog').in_bulk(level_saved[:HOME_SAVED_SHOWN])
     other_ids = saved_ids - set(ids)
-    other_level_saved = _published(Questions_Theory).filter(pk__in=other_ids).count() if other_ids else 0
-
-    trainings = TrainingResultData.objects.filter(user=request.user)
-    practice_days = {timezone.localdate(t) for t in trainings.values_list('meta_time', flat=True)}
-    timeline = learning.progress_timeline(ids, attempts)
+    practice_days = {timezone.localdate(t) for t in
+                     TrainingResultData.objects.filter(user=request.user).values_list('meta_time', flat=True)}
     return {
-        'rows': rows,
-        'saved_count': len(saved_questions),
-        'saved_questions': saved_questions,
-        'other_level_saved': other_level_saved,
+        'saved_questions': [q_map[qid] for qid in level_saved[:HOME_SAVED_SHOWN]],
+        'saved_count': len(level_saved),
+        'other_level_saved': _published(Questions_Theory).filter(pk__in=other_ids).count() if other_ids else 0,
         'streak': learning.practice_streak(practice_days, today),
-        'practice_day_count': len(practice_days),
-        'training_count': trainings.count(),
-        'answer_count': sum(len(tries) for tries in attempts.values()),
         'due_week': learning.due_count_until(ids, attempts, today + timedelta(days=7)),
-        'chart': _timeline_chart(timeline),
-        'intervals': learning.INTERVALS,
     }
 
 
 def learning_stats(request):
-    """Frühere Seite „Mein Lernstand“; steht jetzt auf der Startseite."""
-    return redirect(reverse('home') + '#lernstand')
+    """Frühere Seite „Mein Lernstand“: Kennzahlen stehen auf der Startseite, alle Fragen mit Status unter
+    „Fragen nachschlagen“."""
+    return redirect('theory_lookup')
 
 
 def _timeline_chart(points, width=600, height=180, pad=28):
@@ -1095,16 +1069,26 @@ def theory_lookup(request):
     la = current_la_filter(request)
     questions = list(_published(Questions_Theory).select_related('catalog').filter(catalog__level__slug=la))
     questions.sort(key=lambda q: (learning.natural_key(q.number), q.pk))
-    history = learning.user_history(request.user)
+    attempts = learning.user_attempts(request.user)
+    history = learning.scores_only(attempts)
+    today = timezone.localdate()
     entries = []
     for q in questions:
         correct = set(q.correct_answers)
-        status = learning.status(history.get(q.pk, []))
+        scores = history.get(q.pk, [])
+        status = learning.status(scores)
+        tries = attempts.get(q.pk, [])
+        box, due = learning.schedule(tries)
         entries.append({
             'question': q,
             'choices': [(letter, text, text in correct) for letter, text in _labeled_choices(q)],
             'status': status,
             'status_label': learning.STATUS_LABELS[status],
+            'mastery': round(learning.mastery(scores) * 100),
+            'tries': len(tries),
+            'box': box,
+            'due': due,
+            'is_due': bool(tries) and due <= today,
             # Suchtext: Frage, Nummer und Antworten (für die Suche im Browser)
             'search': ' '.join([q.number or '', q.question, *(q.answer_choice or [])]).lower(),
         })
@@ -1113,10 +1097,23 @@ def theory_lookup(request):
         'items': items,
         'progress': learning.summary([e['question'].pk for e in items], history),
     } for catalog, items in _by_catalog(entries, catalog_of=lambda e: e['question'].catalog)]
+    ids = [e['question'].pk for e in entries]
+    progress = learning.summary(ids, history)
+    saved_ids = _bookmarked_ids(request.user) & set(ids)
     return render(request, 'exercise-theorie-katalog.html', {
         'sections': sections,
         'question_count': len(entries),
-        'saved_ids': sorted(_bookmarked_ids(request.user) & {e['question'].pk for e in entries}),
+        'saved_ids': sorted(saved_ids),
+        # (Schlüssel, Beschriftung, Anzahl) für die Statusfilter; „Gemerkt“ zählt der Browser mit
+        'status_filters': [
+            ('all', 'Alle', len(entries)),
+            ('due', 'Fällig', sum(1 for e in entries if e['is_due'])),
+            *[(key, learning.STATUS_LABELS[key], progress['counts'][key])
+              for key in ('weak', 'learning', 'mastered', 'new')],
+            ('saved', 'Gemerkt', len(saved_ids)),
+        ],
+        'chart': _timeline_chart(learning.progress_timeline(ids, attempts)),
+        'intervals': learning.INTERVALS,
     })
 
 

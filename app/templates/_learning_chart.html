@@ -1,42 +1,37 @@
-{# Lernerfolg im Verlauf (SVG). Parameter: chart (views._timeline_chart) #}
+{# Lernerfolg im Verlauf (SVG, ohne Karte). Parameter: chart (views._timeline_chart) #}
 {% load l10n %}
-<section class="card">
-    <div class="card-header"><h2 class="section-title">Lernerfolg im Verlauf</h2></div>
-    <div class="card-body">
-        {% if chart %}
-        {# SVG-Koordinaten mit Punkt statt deutschem Komma #}
-        {% localize off %}
-        <div class="overflow-x-auto">
-            <svg viewBox="0 0 {{ chart.width }} {{ chart.height }}" class="h-auto w-full min-w-[20rem] text-accent" role="img"
-                 aria-label="Lernerfolg von {{ chart.start_label|date:'d.m.' }} bis {{ chart.end_label|date:'d.m.' }}: zuletzt {{ chart.last.value }} Prozent">
-                {% for g in chart.grid %}
-                <line x1="{{ chart.left }}" x2="{{ chart.right }}" y1="{{ g.y }}" y2="{{ g.y }}" class="stroke-line" stroke-width="1"/>
-                <text x="{{ chart.left|add:'-6' }}" y="{{ g.y }}" text-anchor="end" dominant-baseline="middle" class="fill-ink-3 text-[11px]">{{ g.label }}</text>
-                {% endfor %}
-                <polygon points="{{ chart.area }}" fill="currentColor" fill-opacity="0.08"/>
-                <polyline points="{{ chart.line }}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-                {% for p in chart.points %}
-                <g class="group">
-                    <circle cx="{{ p.x }}" cy="{{ p.y }}" r="12" fill="transparent"><title>{{ p.day|date:"d.m.Y" }}: {{ p.value }} %</title></circle>
-                    <circle cx="{{ p.x }}" cy="{{ p.y }}" r="4" fill="currentColor" class="stroke-surface opacity-0 transition group-hover:opacity-100" stroke-width="2" pointer-events="none"/>
-                </g>
-                {% endfor %}
-                <circle cx="{{ chart.last.x }}" cy="{{ chart.last.y }}" r="4" fill="currentColor" class="stroke-surface" stroke-width="2"/>
-                <text x="{{ chart.last.x }}" y="{{ chart.last.y|add:'-10' }}" text-anchor="end" class="fill-ink text-[12px] font-semibold">{{ chart.last.value }} %</text>
-                <text x="{{ chart.left }}" y="{{ chart.height|add:'-6' }}" class="fill-ink-3 text-[11px]">{{ chart.start_label|date:"d.m." }}</text>
-                <text x="{{ chart.right }}" y="{{ chart.height|add:'-6' }}" text-anchor="end" class="fill-ink-3 text-[11px]">{{ chart.end_label|date:"d.m." }}</text>
-            </svg>
-        </div>
-        {% endlocalize %}
-        <details class="mt-2 text-xs text-ink-3">
-            <summary class="cursor-pointer">Als Tabelle</summary>
-            <table class="mt-2 w-full max-w-xs text-left">
-                <thead><tr><th class="py-1 font-semibold">Tag</th><th class="py-1 text-right font-semibold">Lernerfolg</th></tr></thead>
-                <tbody>{% for p in chart.points %}<tr class="border-t border-line"><td class="py-1">{{ p.day|date:"d.m.Y" }}</td><td class="py-1 text-right tabular-nums">{{ p.value }} %</td></tr>{% endfor %}</tbody>
-            </table>
-        </details>
-        {% else %}
-        <p class="empty-state">Der Verlauf erscheint, sobald du an mindestens zwei Tagen geübt hast.</p>
-        {% endif %}
-    </div>
-</section>
+{% if chart %}
+{# SVG-Koordinaten mit Punkt statt deutschem Komma #}
+{% localize off %}
+<div class="overflow-x-auto">
+    <svg viewBox="0 0 {{ chart.width }} {{ chart.height }}" class="h-auto w-full min-w-[20rem] text-accent" role="img"
+         aria-label="Lernerfolg von {{ chart.start_label|date:'d.m.' }} bis {{ chart.end_label|date:'d.m.' }}: zuletzt {{ chart.last.value }} Prozent">
+        {% for g in chart.grid %}
+        <line x1="{{ chart.left }}" x2="{{ chart.right }}" y1="{{ g.y }}" y2="{{ g.y }}" class="stroke-line" stroke-width="1"/>
+        <text x="{{ chart.left|add:'-6' }}" y="{{ g.y }}" text-anchor="end" dominant-baseline="middle" class="fill-ink-3 text-[11px]">{{ g.label }}</text>
+        {% endfor %}
+        <polygon points="{{ chart.area }}" fill="currentColor" fill-opacity="0.08"/>
+        <polyline points="{{ chart.line }}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        {% for p in chart.points %}
+        <g class="group">
+            <circle cx="{{ p.x }}" cy="{{ p.y }}" r="12" fill="transparent"><title>{{ p.day|date:"d.m.Y" }}: {{ p.value }} %</title></circle>
+            <circle cx="{{ p.x }}" cy="{{ p.y }}" r="4" fill="currentColor" class="stroke-surface opacity-0 transition group-hover:opacity-100" stroke-width="2" pointer-events="none"/>
+        </g>
+        {% endfor %}
+        <circle cx="{{ chart.last.x }}" cy="{{ chart.last.y }}" r="4" fill="currentColor" class="stroke-surface" stroke-width="2"/>
+        <text x="{{ chart.last.x }}" y="{{ chart.last.y|add:'-10' }}" text-anchor="end" class="fill-ink text-[12px] font-semibold">{{ chart.last.value }} %</text>
+        <text x="{{ chart.left }}" y="{{ chart.height|add:'-6' }}" class="fill-ink-3 text-[11px]">{{ chart.start_label|date:"d.m." }}</text>
+        <text x="{{ chart.right }}" y="{{ chart.height|add:'-6' }}" text-anchor="end" class="fill-ink-3 text-[11px]">{{ chart.end_label|date:"d.m." }}</text>
+    </svg>
+</div>
+{% endlocalize %}
+<details class="mt-2 text-xs text-ink-3">
+    <summary class="cursor-pointer">Als Tabelle</summary>
+    <table class="mt-2 w-full max-w-xs text-left">
+        <thead><tr><th class="py-1 font-semibold">Tag</th><th class="py-1 text-right font-semibold">Lernerfolg</th></tr></thead>
+        <tbody>{% for p in chart.points %}<tr class="border-t border-line"><td class="py-1">{{ p.day|date:"d.m.Y" }}</td><td class="py-1 text-right tabular-nums">{{ p.value }} %</td></tr>{% endfor %}</tbody>
+    </table>
+</details>
+{% else %}
+<p class="empty-state">Der Verlauf erscheint, sobald du an mindestens zwei Tagen geübt hast.</p>
+{% endif %}

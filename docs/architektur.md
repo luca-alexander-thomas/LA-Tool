@@ -73,7 +73,7 @@ Nicht im Repository (siehe `.gitignore`): `.env`, `db.sqlite3`, `media/`, `stati
 
 | Datei | Verantwortung |
 |---|---|
-| `views.py` | Alle Nutzerseiten: Start (Dashboard mit Lernstand und gemerkten Fragen), Training, Nachschlagen, Prüfungen, Dienste, Profil, Benachrichtigungen, Rechtstexte, Health-Check |
+| `views.py` | Alle Nutzerseiten: Start (Dashboard mit Lernstand und gemerkten Fragen), Training, Nachschlagen (mit Lernstand je Frage), Prüfungen, Dienste, Profil, Benachrichtigungen, Rechtstexte, Health-Check |
 | `models.py` | Stufen, Kataloge, Fragen/Aufgaben, Ergebnisse, Prüfungen, Dienste, Merkliste, Meldungen, Lernaufträge |
 | `learning.py` | Lernstand und Lernkartei: Beherrschung, Status, Fälligkeit, „Heute lernen“, Bereitschafts-Ampel, Verlauf |
 | `scoring.py` | Bewertung einer Antwort (alles-oder-nichts oder Teilpunkte je Katalog) |

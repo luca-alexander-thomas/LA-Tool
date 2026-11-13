@@ -4,8 +4,9 @@
 
 {% block site_content %}
 {% comment %}
-Alle Fragen der Stufe mit Lösung. Suche und Katalog-Filter laufen im Browser (data-search: Frage, Nummer,
-Antworten; data-catalog: Katalog-ID). „Lesen, dann üben“: jeder Katalog hat einen Knopf, der genau diese
+Alle Fragen der Stufe mit Lösung und Lernstand. Suche, Katalog- und Statusfilter laufen im Browser (data-search:
+Frage, Nummer, Antworten; data-catalog: Katalog-ID; data-status/data-due/data-qid). ?status=saved (oder due, weak,
+learning, mastered, new) wählt den Statusfilter vor, z. B. für den Link „Alle gemerkten“ von der Startseite. „Lesen, dann üben“: jeder Katalog hat einen Knopf, der genau diese
 Fragen abfragt (training_today mit catalog).
 {% endcomment %}
 <div class="page" x-data="{
@@ -15,19 +16,30 @@ Fragen abfragt (training_today mit catalog).
         }),
         q: '',
         catalog: 'all',
+        status: 'all',
         allOpen: false,
         init() {
             // Link „Lesen“ von der Trainingsseite (#katalog-ID): direkt diesen Katalog zeigen
             const match = location.hash.match(/^#katalog-(\d+)$/);
             if (match) this.catalog = match[1];
+            const status = new URLSearchParams(location.search).get('status');
+            if (['due', 'weak', 'learning', 'mastered', 'new', 'saved'].includes(status)) this.status = status;
         },
         get term() { return this.q.trim().toLowerCase(); },
+        get savedCount() { return Object.values(this.saved).filter(Boolean).length; },
+        statusMatches(el) {
+            if (this.status === 'all') return true;
+            if (this.status === 'saved') return this.isSaved(Number(el.dataset.qid));
+            if (this.status === 'due') return el.dataset.due === '1';
+            return el.dataset.status === this.status;
+        },
         matches(el) {
             return (this.catalog === 'all' || el.dataset.catalog === this.catalog)
-                && (!this.term || el.dataset.search.includes(this.term));
+                && (!this.term || el.dataset.search.includes(this.term))
+                && this.statusMatches(el);
         },
         get hits() {
-            this.term; this.catalog;  // Abhängigkeiten für Alpine
+            this.term; this.catalog; this.status; this.saved;  // Abhängigkeiten für Alpine
             return [...this.$root.querySelectorAll('details[data-search]')].filter((el) => this.matches(el)).length;
         },
         toggleAll() {
@@ -39,9 +51,24 @@ Fragen abfragt (training_today mit catalog).
         <div>
             <p class="eyebrow">Theorie{% if current_level %} · {{ current_level.name }}{% endif %}</p>
             <h1 class="page-title mt-1">Fragen nachschlagen</h1>
-            <p class="page-subtitle">{{ question_count }} Frage{{ question_count|pluralize:"n" }} mit Lösungen. Lies einen Katalog und übe ihn danach gezielt.</p>
+            <p class="page-subtitle">{{ question_count }} Frage{{ question_count|pluralize:"n" }} mit Lösungen und deinem Lernstand. Lies einen Katalog und übe ihn danach gezielt.</p>
         </div>
     </div>
+
+    {% if sections %}
+    {# Verlauf und Erklärung der Wiederholung (eingeklappt) #}
+    <details class="card group mb-4">
+        <summary class="flex min-h-12 cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-ink sm:px-5 [&::-webkit-details-marker]:hidden">
+            {% include "icons/chart-bar.html" with cls="size-5 text-ink-3" %}
+            <span class="flex-1">Lernerfolg im Verlauf</span>
+            {% include "icons/chevron-down.html" with cls="size-5 text-ink-3 transition-transform group-open:rotate-180" %}
+        </summary>
+        <div class="space-y-3 border-t border-line p-4 sm:p-5">
+            {% include "_learning_chart.html" %}
+            <p class="text-xs text-ink-2">So funktioniert die Wiederholung: Die Fragen liegen in einer Lernkartei mit {{ intervals|length }} Fächern. Jede richtig beantwortete Frage rückt ein Fach weiter und kommt erst nach {% for d in intervals %}{{ d }}{% if not forloop.last %}, {% endif %}{% endfor %} Tagen wieder (je nach Fach). Eine falsche Antwort setzt sie auf den Anfang zurück, dann ist sie sofort wieder fällig. „Heute lernen“ nimmt zuerst die fälligen Fragen, danach neue.</p>
+        </div>
+    </details>
+    {% endif %}
 
     {% if sections %}
     {# Suche, Katalog-Filter, alle aufklappen #}
@@ -68,7 +95,15 @@ Fragen abfragt (training_today mit catalog).
                     title="{{ s.catalog.title }}">{{ s.catalog.short_title|default:s.catalog.title }}</button>
             {% endfor %}
         </div>
-        <p class="text-xs text-ink-3" x-show="term || catalog !== 'all'" x-cloak aria-live="polite">
+        <div class="-mx-4 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0" role="group" aria-label="Nach Lernstand filtern">
+            {% for key, label, count in status_filters %}
+            <button type="button" class="btn btn-sm shrink-0" :class="status === '{{ key }}' ? 'btn-primary' : 'btn-secondary'"
+                    @click="status = '{{ key }}'" :aria-pressed="(status === '{{ key }}').toString()">
+                {{ label }}{% if key == 'saved' %} <span class="tabular-nums" x-text="savedCount">{{ count }}</span>{% elif key != 'all' %} <span class="tabular-nums">{{ count }}</span>{% endif %}
+            </button>
+            {% endfor %}
+        </div>
+        <p class="text-xs text-ink-3" x-show="term || catalog !== 'all' || status !== 'all'" x-cloak aria-live="polite">
             <span x-text="hits"></span> Treffer
         </p>
     </div>
@@ -100,12 +135,19 @@ Fragen abfragt (training_today mit catalog).
             <div class="space-y-2">
                 {% for e in s.items %}
                 <details class="group rounded-xl border border-line bg-surface" data-search="{{ e.search }}" data-catalog="{{ s.catalog.pk }}"
+                         data-qid="{{ e.question.pk }}" data-status="{{ e.status }}" data-due="{{ e.is_due|yesno:'1,0' }}"
                          x-show="matches($el)">
                     <summary class="flex min-h-12 cursor-pointer list-none items-start gap-3 rounded-xl px-3 py-2.5 transition hover:bg-surface-2 [&::-webkit-details-marker]:hidden">
                         <span class="mt-1.5 size-2.5 shrink-0 rounded-full {% if e.status == 'mastered' %}bg-green-500{% elif e.status == 'learning' %}bg-amber-400{% elif e.status == 'weak' %}bg-red-500{% else %}bg-line{% endif %}"
                               title="{{ e.status_label }}"><span class="sr-only">{{ e.status_label }}</span></span>
                         <span class="w-12 shrink-0 pt-0.5 text-xs font-medium text-ink-3 tabular-nums">{{ e.question.number }}</span>
-                        <span class="min-w-0 flex-1 text-sm font-semibold text-ink sm:text-base">{{ e.question.question }}</span>
+                        <span class="min-w-0 flex-1">
+                            <span class="block text-sm font-semibold text-ink sm:text-base">{{ e.question.question }}</span>
+                            <span class="mt-0.5 block text-xs font-normal text-ink-3">
+                                {{ e.status_label }}{% if e.tries %} · {{ e.mastery }} % · {{ e.tries }}× beantwortet · {% if e.is_due %}<span class="font-semibold text-ink-2">jetzt fällig</span>{% else %}wieder am {{ e.due|date:"d.m." }}{% endif %}{% endif %}
+                                <span x-show="isSaved({{ e.question.pk }})" x-cloak class="inline-flex items-center gap-0.5 text-accent-ink"> · {% include "icons/bookmark.html" with cls="size-3" fill="currentColor" %} gemerkt</span>
+                            </span>
+                        </span>
                         {% include "icons/chevron-down.html" with cls="mt-0.5 size-5 shrink-0 text-ink-3 transition-transform group-open:rotate-180" %}
                     </summary>
                     <div class="space-y-1.5 border-t border-line px-3 py-3 text-sm sm:pl-[5.25rem]">

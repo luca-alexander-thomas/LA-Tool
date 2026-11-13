@@ -8,7 +8,7 @@ Legende Zugriff: **öffentlich** = ohne Anmeldung, **angemeldet** = Sitzung nöt
 
 | Pfad | Name | Zugriff | Inhalt |
 |---|---|---|---|
-| `/` | `home` | öffentlich | Startseite mit Hinweisbanner (Admin → Einstellungen). Angemeldet: einziges Dashboard mit „Heute lernen“, Lernaufträgen, Lernstand (`#lernstand`: Kennzahlen, Verlauf, alle Fragen), Katalogen, gemerkten Fragen (`#gemerkt`), Trainings, Prüfungen und nächstem Dienst. Ohne Divera-Verknüpfung beim ersten Login zum First-Run-Wizard |
+| `/` | `home` | öffentlich | Startseite mit Hinweisbanner (Admin → Einstellungen). Angemeldet: einziges Dashboard mit „Heute lernen“, Lernaufträgen, Lernstand kompakt (`#lernstand`), nächstem Dienst, Prüfungen, gemerkten Fragen (`#gemerkt`) und letzten Trainings. Ohne Divera-Verknüpfung beim ersten Login zum First-Run-Wizard |
 | `/login/`, `/logout/` (POST) | `login`, `logout` | öffentlich | Anmeldung (mit Drosselung), Abmeldung |
 | `/microsoft-login/`, `/microsoft-callback/` | `microsoft_login`, `microsoft_callback` | öffentlich | Microsoft-OAuth (PKCE) |
 | `/first-run/` | `first_run_wizard` | angemeldet | Divera verknüpfen (Zugangsdaten oder Accesskey) |
@@ -23,8 +23,8 @@ Legende Zugriff: **öffentlich** = ohne Anmeldung, **angemeldet** = Sitzung nöt
 | `/uebungen/theorie/training/` | `training_run` | öffentlich | laufender Durchgang; POST `answers` (JSON), für späte Abgaben zusätzlich `run_id`, `question_ids` |
 | `/uebungen/theorie/training/<id>/` | `training_result` | eigene; ohne Anmeldung die in dieser Sitzung abgegebenen | Auswertung |
 | `/uebungen/theorie/training/<id>/wiederholen/` (POST) | `training_retry` | wie `training_result` | Fehler erneut üben |
-| `/uebungen/theorie/fragen/` | `theory_lookup` | angemeldet | Nachschlagen mit Lösungen (während einer Prüfung gesperrt) |
-| `/uebungen/theorie/lernstand/` | `learning_stats` | öffentlich | leitet zur Startseite (`/#lernstand`) |
+| `/uebungen/theorie/fragen/` | `theory_lookup` | angemeldet | Nachschlagen mit Lösungen und Lernstand je Frage, Statusfilter (`?status=` mit `due`, `weak`, `learning`, `mastered`, `new` oder `saved`), Verlauf (während einer Prüfung gesperrt) |
+| `/uebungen/theorie/lernstand/` | `learning_stats` | öffentlich | leitet zu „Fragen nachschlagen“ (frühere Seite „Mein Lernstand“) |
 | `/uebungen/praxis/`, `/uebungen/praxis/<id>/` | `practical_list`, `practical_detail` | öffentlich (Selbsteinschätzung angemeldet) | Praxisaufgaben |
 | `/uebungen/gruppen/`, `/uebungen/gruppen/<id>/` | `group_list`, `group_detail` | öffentlich (Selbsteinschätzung angemeldet) | Gruppenaufgaben |
 | `/pruefungen/` | `exam_list` | angemeldet | zugewiesene Prüfungen, Ergebnisse |

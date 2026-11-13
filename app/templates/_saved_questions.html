@@ -1,54 +1,43 @@
 {% comment %}
-Gemerkte Theoriefragen der aktiven Stufe mit Lösung (Startseite). Parameter: saved_questions (views._learning_details),
-catalogs (zum Üben aller gemerkten Fragen), other_level_saved (gemerkte Fragen anderer Stufen).
+Gemerkte Theoriefragen der aktiven Stufe (Startseite, kompakt). Lösungen und alle gemerkten Fragen zeigt
+„Fragen nachschlagen“ mit dem Filter „Gemerkt“. Parameter: saved_questions (die ersten, views._home_learning),
+saved_count, other_level_saved, catalogs (zum Üben aller gemerkten Fragen).
 {% endcomment %}
-<section class="card" id="gemerkt" x-data="questionActions({
-             urls: { bookmark: '{% url 'question_bookmark' 0 %}', report: '{% url 'question_report' 0 %}' },
-             saved: { {% for s in saved_questions %}{{ s.question.pk }}: true, {% endfor %} },
-         })">
+<section class="card flex flex-col" id="gemerkt">
     <div class="card-header">
-        <div class="flex items-center gap-3">
-            <span class="icon-tile">{% include "icons/bookmark.html" with cls="size-6" %}</span>
-            <h2 class="section-title">Gemerkte Fragen</h2>
-        </div>
-        {% if saved_questions %}<span class="badge badge-neutral tabular-nums">{{ saved_questions|length }}</span>{% endif %}
+        <h2 class="section-title">Gemerkte Fragen</h2>
+        {% if saved_count %}<span class="badge badge-neutral tabular-nums">{{ saved_count }}</span>{% endif %}
+    </div>
+    <div class="flex-1 p-4">
+        {% if saved_questions %}
+        <ul class="space-y-1">
+            {% for q in saved_questions %}
+            <li>
+                <a href="{% url 'theory_lookup' %}?status=saved" class="list-row text-sm text-ink">
+                    {% include "icons/bookmark.html" with cls="size-4 shrink-0 text-accent-ink" fill="currentColor" %}
+                    <span class="min-w-0 flex-1 truncate">{% if q.catalog.short_title %}<span class="mr-1 text-xs font-semibold text-ink-3">{{ q.catalog.short_title }}{% if q.number %} {{ q.number }}{% endif %}</span>{% endif %}{{ q.question }}</span>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+        {% if saved_count > saved_questions|length %}
+        <a class="link mt-2 inline-block text-xs" href="{% url 'theory_lookup' %}?status=saved">Alle {{ saved_count }} gemerkten Fragen mit Lösung</a>
+        {% endif %}
+        {% else %}
+        <p class="empty-state">Noch keine Fragen gemerkt. Tippe beim Üben oder Nachschlagen auf „Merken“.</p>
+        {% endif %}
+        {% if other_level_saved %}
+        <p class="mt-2 text-xs text-ink-3">Dazu {{ other_level_saved }} gemerkte Frage{{ other_level_saved|pluralize:"n" }} anderer Stufen.</p>
+        {% endif %}
     </div>
     {% if saved_questions %}
-    <div class="space-y-2 p-4">
-        {% for s in saved_questions %}
-        <details class="group rounded-xl border border-line">
-            <summary class="flex min-h-11 cursor-pointer list-none items-start gap-2 rounded-xl px-3 py-2.5 transition hover:bg-surface-2 [&::-webkit-details-marker]:hidden">
-                <span class="min-w-0 flex-1 text-sm text-ink">
-                    {% if s.question.catalog.short_title %}<span class="mr-1 text-xs font-semibold text-ink-3">{{ s.question.catalog.short_title }}{% if s.question.number %} {{ s.question.number }}{% endif %}</span>{% endif %}{{ s.question.question }}
-                </span>
-                {% include "icons/chevron-down.html" with cls="mt-0.5 size-4 shrink-0 text-ink-3 transition-transform group-open:rotate-180" %}
-            </summary>
-            <div class="space-y-1.5 border-t border-line px-3 py-3 text-sm">
-                {% for letter, text, is_correct in s.choices %}
-                <p class="flex gap-2 {% if is_correct %}font-semibold text-green-700 dark:text-green-400{% else %}text-ink-2{% endif %}">
-                    {% if is_correct %}{% include "icons/check-circle.html" with cls="size-5 shrink-0" %}<span class="sr-only">Richtig:</span>{% else %}<span class="inline-flex size-5 shrink-0 items-center justify-center text-xs font-semibold uppercase">{{ letter }}</span>{% endif %}
-                    <span>{{ text }}</span>
-                </p>
-                {% endfor %}
-                {% if s.question.help_reference %}
-                <p class="mt-2 flex gap-2 text-xs text-ink-2">{% include "icons/light-bulb.html" with cls="size-4 shrink-0 text-amber-500" %}<span>{{ s.question.help_reference }}</span></p>
-                {% endif %}
-                <div class="-ml-2 pt-1">{% include "_question_tools.html" with qid=s.question.pk %}</div>
-            </div>
-        </details>
-        {% endfor %}
-    </div>
     <form method="post" action="{% url 'training_config' %}" class="card-footer">
         {% csrf_token %}
         <input type="hidden" name="mode" value="saved">
-        <input type="hidden" name="count" value="{{ saved_questions|length|stringformat:'d' }}">
+        <input type="hidden" name="count" value="{{ saved_count|stringformat:'d' }}">
         {% for c in catalogs %}<input type="hidden" name="catalogs" value="{{ c.pk }}">{% endfor %}
-        <button type="submit" class="btn btn-soft w-full">{% include "icons/play.html" with cls="size-4" %} Gemerkte Fragen üben</button>
+        <a href="{% url 'theory_lookup' %}?status=saved" class="btn btn-secondary flex-1">{% include "icons/book-open.html" with cls="size-4" %} Lesen</a>
+        <button type="submit" class="btn btn-primary flex-1">{% include "icons/play.html" with cls="size-4" %} Üben</button>
     </form>
-    {% else %}
-    <p class="empty-state p-4">Noch keine Fragen gemerkt. Tippe beim Üben oder Nachschlagen auf „Merken“, um eine Frage hier zu sammeln.</p>
-    {% endif %}
-    {% if other_level_saved %}
-    <p class="border-t border-line px-4 py-2.5 text-xs text-ink-3">Dazu {{ other_level_saved }} gemerkte Frage{{ other_level_saved|pluralize:"n" }} anderer Stufen – sichtbar nach dem Wechsel der LA-Stufe.</p>
     {% endif %}
 </section>

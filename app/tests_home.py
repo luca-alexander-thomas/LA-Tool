@@ -9,20 +9,21 @@ from .tests_learning import LearningBase
 
 
 class HomeDashboardTests(LearningBase):
-    def test_old_pages_redirect_to_home(self):
+    def test_old_pages_redirect(self):
         self.assertRedirects(self.client.get(reverse('excercise')), reverse('home'))
-        self.assertRedirects(self.client.get(reverse('learning_stats')), reverse('home') + '#lernstand',
-                             fetch_redirect_response=False)
+        self.assertRedirects(self.client.get(reverse('learning_stats')), reverse('theory_lookup'))
 
-    def test_home_contains_learning_overview(self):
+    def test_home_shows_only_overview(self):
         self.train({self.qa[0]: True, self.qa[1]: False}, days_ago=1)
         response = self.client.get(reverse('home'))
         self.assertEqual(response.context['progress']['total'], 6)
-        self.assertEqual(len(response.context['rows']), 6)
-        for text in ('Heute lernen', 'Tage in Folge geübt', 'Alle Fragen', 'Kataloge', 'Gemerkte Fragen', 'Letzte Trainings'):
+        for text in ('Heute lernen', 'Mein Lernstand', 'Fällig in 7 Tagen', 'Nächster Dienst', 'Prüfungen',
+                     'Gemerkte Fragen', 'Letzte Trainings'):
             self.assertContains(response, text)
-        # Keine Schnellzugriff-Kacheln mehr: die Navigation steht in Kopfzeile und Tab-Leiste
-        self.assertNotContains(response, 'Schnellzugriff')
+        # Die Fragenliste, der Verlauf und die Katalogliste stehen nicht mehr auf der Startseite
+        for text in ('Alle Fragen</h2>', 'Lernerfolg im Verlauf', '<svg viewBox', 'So funktioniert die Wiederholung'):
+            self.assertNotContains(response, text)
+        self.assertContains(response, reverse('theory_lookup'))
 
     def test_practice_menu_without_overview_and_stats(self):
         html = self.client.get(reverse('training_config')).content.decode()
@@ -32,17 +33,23 @@ class HomeDashboardTests(LearningBase):
     def test_saved_questions_on_home(self):
         QuestionBookmark.objects.create(user=self.user, question=self.qb[1])
         response = self.client.get(reverse('home'))
-        saved = response.context['saved_questions']
-        self.assertEqual([s['question'] for s in saved], [self.qb[1]])
-        self.assertEqual(saved[0]['choices'], [('a', 'Ja', True), ('b', 'Nein', False)])
+        self.assertEqual(response.context['saved_questions'], [self.qb[1]])
+        self.assertEqual(response.context['saved_count'], 1)
         self.assertContains(response, 'id="gemerkt"')
-        self.assertContains(response, 'Gemerkte Fragen üben')
+        self.assertContains(response, reverse('theory_lookup') + '?status=saved')
 
-        # Der Knopf startet eine Runde nur mit den gemerkten Fragen
+        # „Üben“ startet eine Runde nur mit den gemerkten Fragen
         response = self.client.post(reverse('training_config'), {
             'mode': 'saved', 'count': '1', 'catalogs': [c.pk for c in response.context['catalogs']]})
         self.assertRedirects(response, reverse('training_run'), fetch_redirect_response=False)
         self.assertEqual(self.client.session['training_question_ids'], [self.qb[1].pk])
+
+    def test_home_shows_first_saved_questions_and_links_all(self):
+        for q in self.qa + self.qb:
+            QuestionBookmark.objects.create(user=self.user, question=q)
+        response = self.client.get(reverse('home'))
+        self.assertEqual(len(response.context['saved_questions']), 5)
+        self.assertContains(response, 'Alle 6 gemerkten Fragen mit Lösung')
 
     def test_saved_questions_of_other_levels_are_counted(self):
         other_level = Levels.objects.create(name='Andere', slug='andere', order=100)
@@ -59,8 +66,24 @@ class HomeDashboardTests(LearningBase):
         Questions_Theory.objects.all().delete()
         response = self.client.get(reverse('home'))
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, 'Alle Fragen')
+        self.assertNotContains(response, 'id="lernstand"')
         self.assertContains(response, 'Nächster Dienst')
+
+
+class LookupStatusTests(LearningBase):
+    """Alle Fragen mit Lernstand und Statusfiltern unter „Fragen nachschlagen“."""
+
+    def test_status_data_and_filters(self):
+        self.train({self.qa[0]: False}, days_ago=0)
+        QuestionBookmark.objects.create(user=self.user, question=self.qb[0])
+        response = self.client.get(reverse('theory_lookup'))
+        filters = {key: count for key, _, count in response.context['status_filters']}
+        self.assertEqual(filters, {'all': 6, 'due': 1, 'weak': 1, 'learning': 0, 'mastered': 0, 'new': 5, 'saved': 1})
+        entry = next(e for s in response.context['sections'] for e in s['items'] if e['question'] == self.qa[0])
+        self.assertEqual((entry['status'], entry['tries'], entry['is_due']), ('weak', 1, True))
+        self.assertContains(response, 'data-qid="%d" data-status="weak" data-due="1"' % self.qa[0].pk)
+        self.assertContains(response, 'jetzt fällig')
+        self.assertContains(response, 'Lernerfolg im Verlauf')
 
 
 class SiteNoticeTests(TestCase):

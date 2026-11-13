@@ -133,8 +133,7 @@ class TodayAndCatalogTests(LearningBase):
         response = self.client.get(reverse('home'))
         self.assertContains(response, 'Heute lernen')
         self.assertContains(response, 'id="lernstand"')
-        self.assertContains(response, 'Alle Fragen')
-        self.assertIsNotNone(response.context['chart'])
+        self.assertIsNotNone(self.client.get(reverse('theory_lookup')).context['chart'])
 
     def test_catalogs_without_theory_questions_hidden(self):
         """Kataloge nur mit Praxisaufgaben oder nur mit Entwürfen erscheinen nicht beim Theorie-Training (Issue #5)."""
@@ -307,7 +306,7 @@ class ChartLocalizationTests(LearningBase):
     def test_svg_coordinates_use_dot(self):
         self.train({self.qa[0]: True}, days_ago=3)
         self.train({self.qa[1]: True}, days_ago=0)
-        html = self.client.get(reverse('home')).content.decode()
+        html = self.client.get(reverse('theory_lookup')).content.decode()
         svg = html[html.index('<svg viewBox'):html.index('</svg>')]
         import re
         self.assertFalse(re.search(r'(cx|cy|y1|y2)="\d+,\d', svg), svg[:300])
