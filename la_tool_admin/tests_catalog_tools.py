@@ -75,3 +75,24 @@ class CatalogToolsTests(TestCase):
         self.client.get(reverse('admin_catalog'))
         response = self.client.post(reverse('admin_draft_toggle', args=['catalog', self.cat.pk]))
         self.assertEqual(response['Location'], reverse('admin_catalog'))
+
+
+class CatalogTabTests(TestCase):
+    """Gewählte Ansicht Theorie/Praxis bleibt erhalten (Issue #7)."""
+
+    setUp = CatalogToolsTests.setUp
+
+    def detail_tab(self):
+        return self.client.get(reverse('admin_catalog_detail', args=[self.cat.pk])).context['active_tab']
+
+    def test_tab_is_remembered(self):
+        self.assertEqual(self.detail_tab(), 'theory')
+        self.client.get(reverse('admin_catalog_detail', args=[self.cat.pk]) + '?tab=practical')
+        self.assertEqual(self.detail_tab(), 'practical')
+        self.client.get(reverse('admin_catalog_detail', args=[self.cat.pk]) + '?tab=unbekannt')
+        self.assertEqual(self.detail_tab(), 'practical')
+
+    def test_practical_delete_returns_to_practical_tab(self):
+        task = Questions_Practical.objects.create(question='Knoten', catalog=self.cat, number='1')
+        response = self.client.post(reverse('admin_practical_delete', args=[self.cat.pk, task.pk]))
+        self.assertRedirects(response, reverse('admin_catalog_detail', args=[self.cat.pk]) + '?tab=practical')
