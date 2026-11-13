@@ -36,7 +36,7 @@
                 <p class="text-sm font-semibold text-ink-2">Dein Lernerfolg{% if current_level %} · {{ current_level.name }}{% endif %}</p>
                 <p class="mt-1 text-4xl font-bold tracking-tight text-ink tabular-nums">{{ progress.score }}<span class="text-2xl text-ink-3"> %</span></p>
             </div>
-            <p class="max-w-sm text-xs text-ink-3">Berechnet aus deinen letzten drei Antworten je Frage. Noch nicht geübte Fragen zählen mit 0 %. <a class="link" href="{% url 'learning_stats' %}">Mein Lernstand</a></p>
+            <p class="max-w-sm text-xs text-ink-3">Berechnet aus deinen letzten drei Antworten je Frage. Noch nicht geübte Fragen zählen mit 0 %. <a class="link" href="{% url 'home' %}#lernstand">Mein Lernstand</a></p>
         </div>
         {% include "_learning_bar.html" with summary=progress height="h-3" %}
         <ul class="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">

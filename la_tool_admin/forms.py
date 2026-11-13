@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import Group
 from django.core.validators import FileExtensionValidator
-from app.models import Questions_Catalogs, Questions_Theory, Questions_Practical, Questions_GroupExercise, Exams, Work, Levels, LearningAssignment
+from app.models import Questions_Catalogs, Questions_Theory, Questions_Practical, Questions_GroupExercise, Exams, Work, Levels, LearningAssignment, SiteSettings
 
 _PDF_IMAGE_VALIDATOR = FileExtensionValidator(allowed_extensions=['pdf', 'png', 'jpg', 'jpeg'])
 
@@ -290,6 +290,34 @@ class ExamForm(forms.ModelForm):
             'closed': 'Gesperrt (keine Abgaben möglich)',
             'archived': 'Archiviert',
         }
+
+
+class SiteNoticeForm(forms.ModelForm):
+    """Hinweisbanner auf der Startseite."""
+
+    class Meta:
+        model = SiteSettings
+        fields = ['notice_text', 'notice_level', 'notice_visibility']
+        widgets = {
+            'notice_text': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'maxlength': 500,
+                                                 'placeholder': 'z.B. Am 21.11. fällt der Dienst aus.'}),
+            'notice_level': forms.Select(attrs={'class': 'form-select'}),
+            'notice_visibility': forms.Select(attrs={'class': 'form-select'}),
+        }
+        labels = {
+            'notice_text': 'Text',
+            'notice_level': 'Art',
+            'notice_visibility': 'Sichtbar',
+        }
+        help_texts = {
+            'notice_text': 'Höchstens 500 Zeichen, ohne Formatierung. Zeilenumbrüche bleiben erhalten.',
+        }
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get('notice_visibility') != SiteSettings.NOTICE_OFF and not (cleaned.get('notice_text') or '').strip():
+            self.add_error('notice_text', 'Bitte einen Text eingeben oder das Banner ausblenden.')
+        return cleaned
 
 
 class PushMessageForm(forms.Form):

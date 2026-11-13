@@ -39,8 +39,12 @@ def _user_exam_filter(user):
 
 
 def index(request):
+    """Startseite. Angemeldet: alles zum Lernen auf einer Seite (Heute lernen, Lernstand, gemerkte Fragen,
+    Trainings, Prüfungen, nächster Dienst); ohne Anmeldung die Vorstellung des LA-Tools."""
+    site = SiteSettings.get()
+    notice = {'notice': site.notice_for(request.user), 'notice_level': site.notice_level}
     if not request.user.is_authenticated:
-        return render(request, "home.html")
+        return render(request, "home.html", notice)
 
     user = request.user
 
@@ -51,26 +55,20 @@ def index(request):
         type(profile).objects.filter(pk=profile.pk).update(divera_prompt_seen=True)
         return redirect('first_run_wizard')
 
-    training_results = TrainingResultData.objects.filter(
-        user=user
-    ).order_by('-meta_time')[:5]
-
+    overview = _learning_overview(request)
     open_exams_count = Exams.objects.filter(
         _user_exam_filter(user), visible=True, archived=False
     ).distinct().count()
 
-    unreleased_results = ExamResultData.objects.filter(
-        user=user, state='published'
-    ).order_by('-meta_time')[:3]
-
-    next_work = _visible_works(user).filter(date__gte=timezone.now()).order_by('date').first()
-
     return render(request, "home.html", {
-        'user': user,
-        'training_results': training_results,
+        **notice,
+        **overview,
+        **_today_plan(overview),
+        **_learning_details(request, overview),
+        'training_results': TrainingResultData.objects.filter(user=user).order_by('-meta_time')[:5],
         'open_exams_count': open_exams_count,
-        'unreleased_results': unreleased_results,
-        'next_work': next_work,
+        'unreleased_results': ExamResultData.objects.filter(user=user, state='published').order_by('-meta_time')[:3],
+        'next_work': _visible_works(user).filter(date__gte=timezone.now()).order_by('date').first(),
         'divera_missing': divera_missing,
     })
 
@@ -492,27 +490,8 @@ def exam_result(request, exam_id):
     })
 
 def excercise(request):
-    if not request.user.is_authenticated:
-        return redirect_to_login(request.get_full_path())
-
-    last_trainings = TrainingResultData.objects.filter(
-        user=request.user
-    ).order_by('-meta_time')[:3]
-    sample_theory = _published(Questions_Theory).order_by('?').first()
-    sample_practical = _published(Questions_Practical).order_by('?').first()
-    sample_group = _published_groups().order_by('?').first()
-    overview = _learning_overview(request)
-
-    return render(request, "exercise.html", {
-        **_today_plan(overview),
-        'last_trainings': last_trainings,
-        'theory_progress': overview['progress'],
-        'readiness': overview['readiness'],
-        'assignments': overview['assignments'],
-        'sample_theory': sample_theory,
-        'sample_practical': sample_practical,
-        'sample_group': sample_group,
-    })
+    """Frühere Übersicht „Übungen“; ihr Inhalt steht jetzt auf der Startseite (alte Links und Benachrichtigungen)."""
+    return redirect('home')
 
 def _visible_works(user):
     """Dienste, die der Nutzer sehen darf: keine Entwürfe, nur ohne Gruppe oder für seine Gruppen."""
@@ -1000,13 +979,10 @@ def _today_plan(overview):
     }}
 
 
-# ── MEIN LERNSTAND ────────────────────────────────────────────────────────────
+# ── MEIN LERNSTAND (auf der Startseite) ──────────────────────────────────────
 
-def learning_stats(request):
-    """Persönliche Statistik: Verlauf, Übungstage in Folge, Kataloge und alle Fragen mit Status."""
-    if not request.user.is_authenticated:
-        return redirect_to_login(request.get_full_path())
-    overview = _learning_overview(request)
+def _learning_details(request, overview):
+    """Lernstand für die Startseite: Kennzahlen, Verlauf, alle Fragen mit Status und gemerkte Fragen."""
     attempts, history, ids = overview['attempts'], overview['history'], overview['question_ids']
     today = timezone.localdate()
     saved_ids = _bookmarked_ids(request.user)
@@ -1028,15 +1004,24 @@ def learning_stats(request):
             'saved': qid in saved_ids,
             'tries': len(tries),
         })
+    # Gemerkte Fragen der Stufe mit Lösung zum Wiederholen
+    saved_questions = [{
+        'question': r['question'],
+        'status': r['status'],
+        'choices': [(letter, text, text in set(r['question'].correct_answers))
+                    for letter, text in _labeled_choices(r['question'])],
+    } for r in rows if r['saved']]
+    other_ids = saved_ids - set(ids)
+    other_level_saved = _published(Questions_Theory).filter(pk__in=other_ids).count() if other_ids else 0
 
     trainings = TrainingResultData.objects.filter(user=request.user)
     practice_days = {timezone.localdate(t) for t in trainings.values_list('meta_time', flat=True)}
     timeline = learning.progress_timeline(ids, attempts)
-    return render(request, 'exercise-theorie-lernstand.html', {
-        **overview,
-        **_today_plan(overview),
+    return {
         'rows': rows,
-        'saved_count': sum(1 for r in rows if r['saved']),
+        'saved_count': len(saved_questions),
+        'saved_questions': saved_questions,
+        'other_level_saved': other_level_saved,
         'streak': learning.practice_streak(practice_days, today),
         'practice_day_count': len(practice_days),
         'training_count': trainings.count(),
@@ -1044,7 +1029,12 @@ def learning_stats(request):
         'due_week': learning.due_count_until(ids, attempts, today + timedelta(days=7)),
         'chart': _timeline_chart(timeline),
         'intervals': learning.INTERVALS,
-    })
+    }
+
+
+def learning_stats(request):
+    """Frühere Seite „Mein Lernstand“; steht jetzt auf der Startseite."""
+    return redirect(reverse('home') + '#lernstand')
 
 
 def _timeline_chart(points, width=600, height=180, pad=28):

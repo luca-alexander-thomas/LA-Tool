@@ -18,7 +18,7 @@ from app.models import (
 from app.views import _assignment_question_ids, _visible_assignments, assignment_status, review_rows
 from app.list_filters import filtered_list_url, remember_filters
 from app.login_function import apply_remember, post_login_setup, safe_next_url
-from .forms import CatalogForm, TheoryQuestionForm, PracticalForm, GroupExerciseForm, ExamForm, WorkForm, WorkCreateForm, ImportQuestionForm, LevelForm, PushMessageForm, LearningAssignmentForm
+from .forms import CatalogForm, TheoryQuestionForm, PracticalForm, GroupExerciseForm, ExamForm, WorkForm, WorkCreateForm, ImportQuestionForm, LevelForm, PushMessageForm, LearningAssignmentForm, SiteNoticeForm
 from .models import PinnedGroup, Profile, PushSubscription
 from .utils import pin_group, unpin_group
 from .push import push_configured, send_push
@@ -1741,19 +1741,26 @@ def admin_push_test(request):
 def admin_settings(request):
     settings_obj = SiteSettings.get()
     error = None
-    if request.method == 'POST':
+    is_notice = request.method == 'POST' and request.POST.get('section') == 'notice'
+    notice_form = SiteNoticeForm(request.POST if is_notice else None, instance=settings_obj)
+    if is_notice:
+        if notice_form.is_valid():
+            notice_form.save()
+            messages.success(request, 'Hinweisbanner gespeichert.')
+            return redirect('admin_settings')
+    elif request.method == 'POST':
         raw = request.POST.get('training_pass_threshold', '')
         try:
             val = int(raw)
             if 0 <= val <= 100:
                 settings_obj.training_pass_threshold = val
-                settings_obj.save()
+                settings_obj.save(update_fields=['training_pass_threshold'])
                 return redirect('admin_settings')
             else:
                 error = 'Der Wert muss zwischen 0 und 100 liegen.'
         except ValueError:
             error = 'Bitte eine ganze Zahl eingeben.'
-    return render(request, 'admin-settings.html', {'settings': settings_obj, 'error': error})
+    return render(request, 'admin-settings.html', {'settings': settings_obj, 'error': error, 'notice_form': notice_form})
 
 
 # ── LA-STUFEN ─────────────────────────────────────────────────────────────────
@@ -2167,7 +2174,7 @@ def admin_assignment_create(request):
                 assignment.recipients(),
                 title='Neuer Lernauftrag',
                 body=f'„{assignment.title}“' + (f' bis {deadline:%d.%m.}' if deadline else ''),
-                url=reverse('excercise'),
+                url=reverse('home'),
             ))
         messages.success(request, 'Lernauftrag angelegt.')
         return redirect('admin_assignment_detail', assignment_id=assignment.pk)

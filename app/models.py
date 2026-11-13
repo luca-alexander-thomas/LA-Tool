@@ -412,6 +412,18 @@ class SiteSettings(models.Model):
     training_pass_threshold = models.IntegerField(
         default=75, help_text='Mindestprozentsatz (0–100) zum Bestehen eines Trainings')
 
+    # Hinweisbanner auf der Startseite
+    NOTICE_OFF, NOTICE_PUBLIC, NOTICE_USERS = 'off', 'public', 'users'
+    NOTICE_VISIBILITY_CHOICES = [
+        (NOTICE_OFF, 'Ausgeblendet'),
+        (NOTICE_PUBLIC, 'Für alle (auch ohne Anmeldung)'),
+        (NOTICE_USERS, 'Nur für angemeldete Nutzer'),
+    ]
+    NOTICE_LEVEL_CHOICES = [('info', 'Information'), ('warning', 'Warnung')]
+    notice_text = models.TextField(max_length=500, blank=True, default='')
+    notice_level = models.CharField(max_length=10, choices=NOTICE_LEVEL_CHOICES, default='info')
+    notice_visibility = models.CharField(max_length=10, choices=NOTICE_VISIBILITY_CHOICES, default=NOTICE_OFF)
+
     class Meta:
         verbose_name = 'Site-Einstellungen'
         permissions = [
@@ -428,3 +440,12 @@ class SiteSettings(models.Model):
     def get(cls):
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+    def notice_for(self, user):
+        """Hinweistext für diesen Besucher oder '' (ausgeblendet, leer oder nur für Angemeldete)."""
+        text = self.notice_text.strip()
+        if not text or self.notice_visibility == self.NOTICE_OFF:
+            return ''
+        if self.notice_visibility == self.NOTICE_USERS and not user.is_authenticated:
+            return ''
+        return text

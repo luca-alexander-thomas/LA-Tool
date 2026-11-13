@@ -1,0 +1,7 @@
+{# Hinweisbanner aus dem Admin (Einstellungen). Parameter: notice (Text oder leer), notice_level (info/warning) #}
+{% if notice %}
+<div class="alert {% if notice_level == 'warning' %}alert-warning{% else %}alert-info{% endif %} mb-4" role="status">
+    {% if notice_level == 'warning' %}{% include "icons/exclamation-triangle.html" with cls="size-5 shrink-0" %}{% else %}{% include "icons/information-circle.html" with cls="size-5 shrink-0" %}{% endif %}
+    <p class="min-w-0 flex-1">{{ notice|linebreaksbr }}</p>
+</div>
+{% endif %}

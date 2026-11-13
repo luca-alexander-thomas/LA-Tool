@@ -4,12 +4,12 @@
 {% block page_title %}Auswertung{% endblock %}
 
 {% block site_content %}
-{% if user.is_authenticated %}{% url 'excercise' as overview_url %}{% else %}{% url 'training_config' as overview_url %}{% endif %}
+{% if user.is_authenticated %}{% url 'home' as overview_url %}{% else %}{% url 'training_config' as overview_url %}{% endif %}
 <div class="page" x-data="questionActions({
          {% if user.is_authenticated %}urls: { bookmark: '{% url 'question_bookmark' 0 %}', report: '{% url 'question_report' 0 %}' },{% endif %}
          saved: { {% for item in questions_data %}{% if item.saved %}{{ item.question.pk }}: true, {% endif %}{% endfor %} },
      })">
-    <a href="{{ overview_url }}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} {% if user.is_authenticated %}Übungen{% else %}Theorie-Training{% endif %}</a>
+    <a href="{{ overview_url }}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} {% if user.is_authenticated %}Start{% else %}Theorie-Training{% endif %}</a>
     <div class="page-header">
         <div>
             <p class="eyebrow">Theorie-Training</p>
@@ -91,7 +91,7 @@
                 </div>
                 <p class="mt-2 text-xs text-ink-3">
                     {% if wrong %}Falsch beantwortete Fragen kommen beim nächsten „Heute lernen“ wieder dran.{% else %}Richtig beantwortete Fragen kommen erst nach einigen Tagen zur Wiederholung.{% endif %}
-                    <a class="link" href="{% url 'learning_stats' %}">Mein Lernstand</a>
+                    <a class="link" href="{% url 'home' %}#lernstand">Mein Lernstand</a>
                 </p>
             </section>
             {% endif %}

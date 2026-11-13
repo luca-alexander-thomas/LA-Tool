@@ -8,7 +8,7 @@ Legende Zugriff: **öffentlich** = ohne Anmeldung, **angemeldet** = Sitzung nöt
 
 | Pfad | Name | Zugriff | Inhalt |
 |---|---|---|---|
-| `/` | `home` | öffentlich | Startseite (angemeldet: Übersicht; ohne Divera-Verknüpfung einmal je Sitzung zum First-Run-Wizard) |
+| `/` | `home` | öffentlich | Startseite mit Hinweisbanner (Admin → Einstellungen). Angemeldet: einziges Dashboard mit „Heute lernen“, Lernaufträgen, Lernstand (`#lernstand`: Kennzahlen, Verlauf, alle Fragen), Katalogen, gemerkten Fragen (`#gemerkt`), Trainings, Prüfungen und nächstem Dienst. Ohne Divera-Verknüpfung beim ersten Login zum First-Run-Wizard |
 | `/login/`, `/logout/` (POST) | `login`, `logout` | öffentlich | Anmeldung (mit Drosselung), Abmeldung |
 | `/microsoft-login/`, `/microsoft-callback/` | `microsoft_login`, `microsoft_callback` | öffentlich | Microsoft-OAuth (PKCE) |
 | `/first-run/` | `first_run_wizard` | angemeldet | Divera verknüpfen (Zugangsdaten oder Accesskey) |
@@ -17,14 +17,14 @@ Legende Zugriff: **öffentlich** = ohne Anmeldung, **angemeldet** = Sitzung nöt
 | `/profile/lerndaten-loeschen/` (POST) | `my_learning_data_delete` | angemeldet | eigene Lerndaten löschen (Feld `confirm=LÖSCHEN`) |
 | `/benachrichtigungen/` | `notification_list` | angemeldet | Benachrichtigungen; markiert alle als gelesen |
 | `/benachrichtigungen/<id>/` | `notification_open` | angemeldet | markiert gelesen und leitet zum Ziel |
-| `/uebungen/` | `excercise` | angemeldet | Übersicht mit „Heute lernen“, Lernaufträgen |
+| `/uebungen/` | `excercise` | öffentlich | leitet zur Startseite (frühere Übersicht; alte Links und Benachrichtigungen) |
 | `/uebungen/theorie/` | `training_config` | öffentlich | Training einstellen (Arten außer „Gemischt“ nur angemeldet) |
 | `/uebungen/theorie/heute/` (GET, POST) | `training_today` | angemeldet | „Heute lernen“ starten; POST optional `catalog` oder `assignment` |
 | `/uebungen/theorie/training/` | `training_run` | öffentlich | laufender Durchgang; POST `answers` (JSON), für späte Abgaben zusätzlich `run_id`, `question_ids` |
-| `/uebungen/theorie/training/<id>/` | `training_result` | angemeldet (eigene) | Auswertung |
-| `/uebungen/theorie/training/<id>/wiederholen/` (POST) | `training_retry` | angemeldet (eigene) | Fehler erneut üben |
+| `/uebungen/theorie/training/<id>/` | `training_result` | eigene; ohne Anmeldung die in dieser Sitzung abgegebenen | Auswertung |
+| `/uebungen/theorie/training/<id>/wiederholen/` (POST) | `training_retry` | wie `training_result` | Fehler erneut üben |
 | `/uebungen/theorie/fragen/` | `theory_lookup` | angemeldet | Nachschlagen mit Lösungen (während einer Prüfung gesperrt) |
-| `/uebungen/theorie/lernstand/` | `learning_stats` | angemeldet | Mein Lernstand |
+| `/uebungen/theorie/lernstand/` | `learning_stats` | öffentlich | leitet zur Startseite (`/#lernstand`) |
 | `/uebungen/praxis/`, `/uebungen/praxis/<id>/` | `practical_list`, `practical_detail` | öffentlich (Selbsteinschätzung angemeldet) | Praxisaufgaben |
 | `/uebungen/gruppen/`, `/uebungen/gruppen/<id>/` | `group_list`, `group_detail` | öffentlich (Selbsteinschätzung angemeldet) | Gruppenaufgaben |
 | `/pruefungen/` | `exam_list` | angemeldet | zugewiesene Prüfungen, Ergebnisse |

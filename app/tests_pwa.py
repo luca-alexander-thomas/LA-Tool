@@ -31,7 +31,7 @@ class NotificationTests(PwaBase):
         self.assertEqual(send_push([self.user], 'Neue Prüfung', 'Text', '/pruefungen/'), 0)
         notification = UserNotification.objects.get()
         self.assertEqual((notification.title, notification.url, notification.read_at), ('Neue Prüfung', '/pruefungen/', None))
-        response = self.client.get(reverse('excercise'))
+        response = self.client.get(reverse('home'))
         self.assertEqual(response.context['unread_notifications'], 1)
         self.assertContains(response, 'data-unread="1"')
 
@@ -88,7 +88,7 @@ class OfflineTrainingTests(PwaBase):
 
     def test_due_count_in_tabbar(self):
         TrainingResultData.objects.create(name='T', user=self.user, questions=[self.q[0].pk], answers={str(self.q[0].pk): ['b']})
-        response = self.client.get(reverse('excercise'))
+        response = self.client.get(reverse('home'))
         self.assertEqual(response.context['due_count'], 1)
         self.assertContains(response, '1 Fragen fällig')
 
