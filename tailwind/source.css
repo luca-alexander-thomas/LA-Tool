@@ -482,7 +482,10 @@
     .answer-option {
         @apply flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-line bg-surface p-3.5 transition select-none hover:border-accent/50 sm:p-4;
 
-        &:has(:checked),    }
+        &:has(:checked) {
+            @apply border-accent bg-accent-soft;
+        }
+    }
 
     .answer-letter {
         @apply flex size-9 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-sm font-bold text-ink-2 transition;

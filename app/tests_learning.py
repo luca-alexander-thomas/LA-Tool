@@ -127,13 +127,32 @@ class TodayAndCatalogTests(LearningBase):
     def test_pages_render(self):
         self.train({self.qa[0]: True, self.qa[1]: False}, days_ago=1)
         self.train({self.qa[0]: True}, days_ago=0)
-        for name in ('excercise', 'training_config', 'learning_stats', 'theory_lookup'):
+        for name in ('home', 'training_config', 'theory_lookup'):
             response = self.client.get(reverse(name))
             self.assertEqual(response.status_code, 200, name)
-        response = self.client.get(reverse('learning_stats'))
-        self.assertContains(response, 'Mein Lernstand')
-        self.assertIsNotNone(response.context['chart'])
-        self.assertContains(self.client.get(reverse('excercise')), 'Heute lernen')
+        response = self.client.get(reverse('home'))
+        self.assertContains(response, 'Heute lernen')
+        self.assertContains(response, 'id="lernstand"')
+        self.assertIsNotNone(self.client.get(reverse('theory_lookup')).context['chart'])
+
+    def test_catalogs_without_theory_questions_hidden(self):
+        """Kataloge nur mit Praxisaufgaben oder nur mit Entwürfen erscheinen nicht beim Theorie-Training (Issue #5)."""
+        from .models import Questions_Practical
+        practical_only = Questions_Catalogs.objects.create(title='Nur Praxis', short_title='P', level=self.level, order=3)
+        Questions_Practical.objects.create(question='Knoten', catalog=practical_only, number='1')
+        drafts_only = Questions_Catalogs.objects.create(title='Nur Entwürfe', short_title='E', level=self.level, order=4)
+        Questions_Theory.objects.create(question='E?', catalog=drafts_only, answer_text='Ja',
+                                        answer_choice=['Ja'], is_draft=True)
+        for anonymous in (False, True):
+            if anonymous:
+                self.client.logout()
+                session = self.client.session
+                session['la_filter'] = 'teststufe'
+                session.save()
+            response = self.client.get(reverse('training_config'))
+            self.assertEqual([c.title for c in response.context['catalogs']], ['Alpha', 'Beta'])
+            self.assertNotContains(response, 'Nur Praxis')
+            self.assertNotContains(response, 'Noch keine Fragen')
 
     def test_anonymous_cannot_use_today(self):
         self.client.logout()
@@ -266,7 +285,7 @@ class AdminLearningTests(LearningBase):
 
         # Jugendliche sehen den Auftrag und üben ihn; „Heute lernen“ nimmt seine Fragen zuerst
         self.client.force_login(self.user)
-        self.assertContains(self.client.get(reverse('excercise')), 'Alpha lernen')
+        self.assertContains(self.client.get(reverse('home')), 'Alpha lernen')
         self.client.post(reverse('training_today'), {'assignment': assignment.pk})
         self.assertEqual(self.client.session['training_question_ids'], [q.pk for q in self.qa])
         self.train({self.qa[0]: True, self.qa[1]: True})
@@ -279,7 +298,7 @@ class AdminLearningTests(LearningBase):
         assignment.assigned_users.add(self.user)
         other = User.objects.create_user('andere')
         self.client.force_login(other)
-        self.assertNotContains(self.client.get(reverse('excercise')), 'Nur für Jule')
+        self.assertNotContains(self.client.get(reverse('home')), 'Nur für Jule')
         self.assertEqual(self.client.post(reverse('training_today'), {'assignment': assignment.pk}).status_code, 404)
 
 
@@ -287,7 +306,7 @@ class ChartLocalizationTests(LearningBase):
     def test_svg_coordinates_use_dot(self):
         self.train({self.qa[0]: True}, days_ago=3)
         self.train({self.qa[1]: True}, days_ago=0)
-        html = self.client.get(reverse('learning_stats')).content.decode()
+        html = self.client.get(reverse('theory_lookup')).content.decode()
         svg = html[html.index('<svg viewBox'):html.index('</svg>')]
         import re
         self.assertFalse(re.search(r'(cx|cy|y1|y2)="\d+,\d', svg), svg[:300])

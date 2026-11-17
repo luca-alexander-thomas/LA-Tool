@@ -6,7 +6,8 @@ import requests
 import la_tool.env as env
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
-from la_tool_admin.models import Profile
+from django.db import DatabaseError
+from la_tool_admin.models import DiveraQualification, Profile
 
 logger = logging.getLogger(__name__)
 
@@ -28,29 +29,24 @@ def safe_next_url(request, url):
 
 
 def _store_divera_cluster_quals(cluster_data):
-    """Try to persist Divera qualification definitions from cluster-level API data."""
-    try:
-        from la_tool_admin.models import DiveraQualification
-        cluster_quals = cluster_data.get('qualifications', {})
-        if not isinstance(cluster_quals, dict):
-            return
-        for qid_str, qinfo in cluster_quals.items():
-            try:
-                qid = int(qid_str)
-                if isinstance(qinfo, dict):
-                    name = qinfo.get('name') or qinfo.get('title') or str(qid)
-                    short_name = qinfo.get('short_name') or qinfo.get('shortname') or ''
-                else:
-                    name = str(qinfo)
-                    short_name = ''
-                DiveraQualification.objects.update_or_create(
-                    qual_id=qid,
-                    defaults={'name': name, 'short_name': short_name},
-                )
-            except (ValueError, Exception):
-                pass
-    except Exception:
-        logger.exception('Divera-Qualifikationen konnten nicht gespeichert werden')
+    """Qualifikations-Definitionen des Standorts speichern (für die Auswahl bei Auto-Gruppen).
+
+    Divera liefert sie unter cluster.qualification als {"<id>": {"name": …, "shortname": …}}.
+    """
+    definitions = cluster_data.get('qualification') or cluster_data.get('qualifications')
+    if not isinstance(definitions, dict):
+        return
+    for qid_str, qinfo in definitions.items():
+        if not str(qid_str).isdigit():
+            continue
+        qinfo = qinfo if isinstance(qinfo, dict) else {'name': str(qinfo)}
+        try:
+            DiveraQualification.objects.update_or_create(qual_id=int(qid_str), defaults={
+                'name': str(qinfo.get('name') or qinfo.get('title') or qid_str)[:200],
+                'short_name': str(qinfo.get('shortname') or qinfo.get('short_name') or '')[:50],
+            })
+        except DatabaseError:
+            logger.exception('Divera-Qualifikation %s konnte nicht gespeichert werden', qid_str)
 
 
 def _divera_pull(access_token, ucr_id=None, timeout=30):

@@ -4,11 +4,12 @@
 {% block page_title %}Auswertung{% endblock %}
 
 {% block site_content %}
+{% if user.is_authenticated %}{% url 'home' as overview_url %}{% else %}{% url 'training_config' as overview_url %}{% endif %}
 <div class="page" x-data="questionActions({
-         urls: { bookmark: '{% url 'question_bookmark' 0 %}', report: '{% url 'question_report' 0 %}' },
+         {% if user.is_authenticated %}urls: { bookmark: '{% url 'question_bookmark' 0 %}', report: '{% url 'question_report' 0 %}' },{% endif %}
          saved: { {% for item in questions_data %}{% if item.saved %}{{ item.question.pk }}: true, {% endif %}{% endfor %} },
      })">
-    <a href="{% url 'excercise' %}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} Übungen</a>
+    <a href="{{ overview_url }}" class="back-link">{% include "icons/arrow-left.html" with cls="size-4" %} {% if user.is_authenticated %}Start{% else %}Theorie-Training{% endif %}</a>
     <div class="page-header">
         <div>
             <p class="eyebrow">Theorie-Training</p>
@@ -45,9 +46,9 @@
                         {% csrf_token %}
                         <button type="submit" class="btn btn-primary w-full">{% include "icons/arrow-path.html" with cls="size-4" %} {{ wrong|length }} Fehler direkt nochmal üben</button>
                     </form>
-                    <a href="{% url 'excercise' %}" class="btn btn-secondary w-full">Zur Übersicht</a>
+                    <a href="{{ overview_url }}" class="btn btn-secondary w-full">Zur Übersicht</a>
                     {% else %}
-                    <a href="{% url 'excercise' %}" class="btn btn-primary w-full">{% include "icons/arrow-right.html" with cls="size-4" %} Weiter lernen</a>
+                    <a href="{{ overview_url }}" class="btn btn-primary w-full">{% include "icons/arrow-right.html" with cls="size-4" %} Weiter lernen</a>
                     {% endif %}
                 </div>
             </section>
@@ -69,6 +70,12 @@
             </section>
             {% endif %}
 
+            {% if not user.is_authenticated %}
+            <section class="card card-body text-sm text-ink-2">
+                <p><a class="link" href="{% url 'login' %}?next={% url 'training_config' %}">Melde dich an</a>, damit dein Lernerfolg gespeichert wird und du Fragen merken oder Fehler melden kannst.</p>
+            </section>
+            {% endif %}
+
             {% if score_after is not None %}
             <section class="card card-body">
                 <p class="text-sm font-semibold text-ink-2">Dein Lernerfolg{% if current_level %} · {{ current_level.name }}{% endif %}</p>
@@ -84,7 +91,7 @@
                 </div>
                 <p class="mt-2 text-xs text-ink-3">
                     {% if wrong %}Falsch beantwortete Fragen kommen beim nächsten „Heute lernen“ wieder dran.{% else %}Richtig beantwortete Fragen kommen erst nach einigen Tagen zur Wiederholung.{% endif %}
-                    <a class="link" href="{% url 'learning_stats' %}">Mein Lernstand</a>
+                    <a class="link" href="{% url 'home' %}#lernstand">Mein Lernstand</a>
                 </p>
             </section>
             {% endif %}

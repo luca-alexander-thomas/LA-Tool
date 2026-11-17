@@ -1,4 +1,4 @@
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.views.decorators.http import require_http_methods, require_POST
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import auth, messages
@@ -39,8 +39,13 @@ def _user_exam_filter(user):
 
 
 def index(request):
+    """Startseite. Angemeldet: das Wichtigste auf einen Blick (Heute lernen, Lernaufträge, Lernstand, nächster
+    Dienst, Prüfungen, gemerkte Fragen, letzte Trainings); ohne Anmeldung die Vorstellung des LA-Tools.
+    Alle Fragen mit Status stehen auf „Fragen nachschlagen“."""
+    site = SiteSettings.get()
+    notice = {'notice': site.notice_for(request.user), 'notice_level': site.notice_level}
     if not request.user.is_authenticated:
-        return render(request, "home.html")
+        return render(request, "home.html", notice)
 
     user = request.user
 
@@ -51,26 +56,20 @@ def index(request):
         type(profile).objects.filter(pk=profile.pk).update(divera_prompt_seen=True)
         return redirect('first_run_wizard')
 
-    training_results = TrainingResultData.objects.filter(
-        user=user
-    ).order_by('-meta_time')[:5]
-
+    overview = _learning_overview(request)
     open_exams_count = Exams.objects.filter(
         _user_exam_filter(user), visible=True, archived=False
     ).distinct().count()
 
-    unreleased_results = ExamResultData.objects.filter(
-        user=user, state='published'
-    ).order_by('-meta_time')[:3]
-
-    next_work = _visible_works(user).filter(date__gte=timezone.now()).order_by('date').first()
-
     return render(request, "home.html", {
-        'user': user,
-        'training_results': training_results,
+        **notice,
+        **overview,
+        **_today_plan(overview),
+        **_home_learning(request, overview),
+        'training_results': TrainingResultData.objects.filter(user=user).order_by('-meta_time')[:3],
         'open_exams_count': open_exams_count,
-        'unreleased_results': unreleased_results,
-        'next_work': next_work,
+        'unreleased_results': ExamResultData.objects.filter(user=user, state='published').order_by('-meta_time')[:3],
+        'next_work': _visible_works(user).filter(date__gte=timezone.now()).order_by('date').first(),
         'divera_missing': divera_missing,
     })
 
@@ -492,27 +491,8 @@ def exam_result(request, exam_id):
     })
 
 def excercise(request):
-    if not request.user.is_authenticated:
-        return redirect_to_login(request.get_full_path())
-
-    last_trainings = TrainingResultData.objects.filter(
-        user=request.user
-    ).order_by('-meta_time')[:3]
-    sample_theory = _published(Questions_Theory).order_by('?').first()
-    sample_practical = _published(Questions_Practical).order_by('?').first()
-    sample_group = _published_groups().order_by('?').first()
-    overview = _learning_overview(request)
-
-    return render(request, "exercise.html", {
-        **_today_plan(overview),
-        'last_trainings': last_trainings,
-        'theory_progress': overview['progress'],
-        'readiness': overview['readiness'],
-        'assignments': overview['assignments'],
-        'sample_theory': sample_theory,
-        'sample_practical': sample_practical,
-        'sample_group': sample_group,
-    })
+    """Frühere Übersicht „Übungen“; ihr Inhalt steht jetzt auf der Startseite (alte Links und Benachrichtigungen)."""
+    return redirect('home')
 
 def _visible_works(user):
     """Dienste, die der Nutzer sehen darf: keine Entwürfe, nur ohne Gruppe oder für seine Gruppen."""
@@ -634,12 +614,16 @@ def _open_assignments(user, history):
 
 
 def _learning_overview(request):
-    """Lernstand der aktiven Stufe: Kataloge mit Fortschritt, Ampel, fällige Fragen, offene Lernaufträge."""
+    """Lernstand der aktiven Stufe: Kataloge mit Fortschritt, Ampel, fällige Fragen, offene Lernaufträge.
+
+    Nur Kataloge mit freigegebenen Theoriefragen (reine Praxis-Kataloge erscheinen hier nicht).
+    """
     user = request.user
     level = Levels.objects.filter(slug=current_la_filter(request), is_draft=False).first()
     catalogs = list(Questions_Catalogs.objects.filter(
         level=level, is_draft=False).order_by('order', 'title')) if level else []
     ids_by_catalog = learning.catalog_question_ids(catalogs)
+    catalogs = [c for c in catalogs if ids_by_catalog[c.pk]]
     question_ids = [qid for c in catalogs for qid in ids_by_catalog[c.pk]]
 
     tracked = user.is_authenticated
@@ -770,12 +754,29 @@ def training_today(request):
     return redirect('training_run')
 
 
+# So viele Trainings ohne Anmeldung merkt sich die Sitzung, damit nur der Übende seine Auswertung sieht
+ANONYMOUS_RESULTS_KEPT = 20
+
+
+def _remember_anonymous_result(request, result):
+    if result.user_id is None:
+        kept = [pk for pk in request.session.get('training_anonymous_results', []) if pk != result.pk]
+        request.session['training_anonymous_results'] = (kept + [result.pk])[-ANONYMOUS_RESULTS_KEPT:]
+
+
+def _own_training_result(request, result_id):
+    """Training des Nutzers; ohne Anmeldung nur die in dieser Sitzung abgegebenen (sonst 404)."""
+    if request.user.is_authenticated:
+        return get_object_or_404(TrainingResultData, pk=result_id, user=request.user)
+    if result_id not in request.session.get('training_anonymous_results', []):
+        raise Http404
+    return get_object_or_404(TrainingResultData, pk=result_id, user__isnull=True)
+
+
 @require_POST
 def training_retry(request, result_id):
     """Die nicht (ganz) richtig beantworteten Fragen eines Trainings sofort erneut üben."""
-    if not request.user.is_authenticated:
-        return redirect_to_login(reverse('training_result', args=[result_id]))
-    result = get_object_or_404(TrainingResultData, pk=result_id, user=request.user)
+    result = _own_training_result(request, result_id)
     answers = result.answers or {}
     published = set(_published(Questions_Theory).filter(pk__in=result.questions or []).values_list('pk', flat=True))
     wrong = [q.pk for q in _ordered_questions([qid for qid in result.questions or [] if qid in published])
@@ -840,7 +841,7 @@ def _remember_finished_run(request, run_id, result):
     if not run_id:
         return
     finished = [pair for pair in request.session.get('training_finished_runs', []) if pair[0] != run_id]
-    request.session['training_finished_runs'] = (finished + [[run_id, result.pk if result.user_id else None]])[-FINISHED_RUNS_KEPT:]
+    request.session['training_finished_runs'] = (finished + [[run_id, result.pk]])[-FINISHED_RUNS_KEPT:]
 
 
 def _late_training_submit(request):
@@ -849,12 +850,12 @@ def _late_training_submit(request):
     Läuft inzwischen ein anderer Durchgang (oder keiner mehr), kommen die Fragen aus dem Formular
     (nur freigegebene, höchstens 100). Ein bereits abgegebener Durchgang wird nicht doppelt gespeichert.
     """
-    if not request.user.is_authenticated:
-        return redirect('training_config')
     run_id = request.POST.get('run_id', '')
     for done_id, result_id in request.session.get('training_finished_runs', []):
         if done_id == run_id:
             return redirect('training_result', result_id=result_id) if result_id else redirect('training_config')
+    if not request.user.is_authenticated:
+        return redirect('training_config')  # ohne Anmeldung keine Offline-Abgabe (Fragen kommen aus dem Formular)
     try:
         posted = json.loads(request.POST.get('question_ids') or '[]')
     except ValueError:
@@ -866,9 +867,7 @@ def _late_training_submit(request):
         return redirect('training_config')
     result = _save_training_result(request.user, [q.pk for q in questions], _answers_from_post(request, questions))
     _remember_finished_run(request, run_id, result)
-    if result.user_id:
-        return redirect('training_result', result_id=result.pk)
-    return redirect('training_config')
+    return redirect('training_result', result_id=result.pk)
 
 
 def training_run(request):
@@ -888,11 +887,10 @@ def training_run(request):
         answers = _answers_from_post(request, questions)
         result = _save_training_result(request.user, [q.pk for q in questions], answers)
         _remember_finished_run(request, request.session.get('training_run_id'), result)
+        _remember_anonymous_result(request, result)
         for key in ('training_question_ids', 'training_run_id'):
             request.session.pop(key, None)
-        if result.user_id:
-            return redirect('training_result', result_id=result.pk)
-        return redirect('training_config')
+        return redirect('training_result', result_id=result.pk)
 
     run_id = request.session.get('training_run_id') or secrets.token_hex(8)
     request.session['training_run_id'] = run_id
@@ -919,10 +917,9 @@ def _save_training_result(user, question_ids, answers):
 
 
 def training_result(request, result_id):
-    if not request.user.is_authenticated:
-        return redirect_to_login(request.get_full_path())
-
-    result = get_object_or_404(TrainingResultData, pk=result_id, user=request.user)
+    """Auswertung eines Trainings; ohne Anmeldung ohne Lernerfolg, Merken und Erinnerungen."""
+    result = _own_training_result(request, result_id)
+    tracked = request.user.is_authenticated
     question_ids = result.questions or []
     answers = result.answers or {}
     meta = result.meta_reference or {}
@@ -935,9 +932,11 @@ def training_result(request, result_id):
     right = [d for d in questions_data if d['is_correct']]
 
     # Lernerfolg der aktiven Stufe vor und nach diesem Training
-    level_ids = list(_published(Questions_Theory).filter(
-        catalog__level__slug=current_la_filter(request)).values_list('pk', flat=True))
-    score_before, score_after = learning.score_change(request.user, result, level_ids)
+    score_before = score_after = None
+    if tracked:
+        level_ids = list(_published(Questions_Theory).filter(
+            catalog__level__slug=current_la_filter(request)).values_list('pk', flat=True))
+        score_before, score_after = learning.score_change(request.user, result, level_ids)
 
     total = meta.get('total', len(questions_data))
     score = meta.get('score', sum(1 for d in questions_data if d['is_correct']))
@@ -961,7 +960,7 @@ def training_result(request, result_id):
         'score_after': score_after,
         'score_delta': None if score_before is None else score_after - score_before,
         # Nach dem Training Erinnerungen per Push anbieten (app.js pushPrompt, einmal je Gerät)
-        'push_public_key': settings.VAPID_PUBLIC_KEY if push_configured() else '',
+        'push_public_key': settings.VAPID_PUBLIC_KEY if tracked and push_configured() else '',
     })
 
 
@@ -981,51 +980,35 @@ def _today_plan(overview):
     }}
 
 
-# ── MEIN LERNSTAND ────────────────────────────────────────────────────────────
+# ── LERNSTAND AUF DER STARTSEITE ─────────────────────────────────────────────
 
-def learning_stats(request):
-    """Persönliche Statistik: Verlauf, Übungstage in Folge, Kataloge und alle Fragen mit Status."""
-    if not request.user.is_authenticated:
-        return redirect_to_login(request.get_full_path())
-    overview = _learning_overview(request)
-    attempts, history, ids = overview['attempts'], overview['history'], overview['question_ids']
+# So viele gemerkte Fragen zeigt die Startseite; alle stehen unter „Fragen nachschlagen“ (Filter „Gemerkt“)
+HOME_SAVED_SHOWN = 5
+
+
+def _home_learning(request, overview):
+    """Kennzahlen und gemerkte Fragen der aktiven Stufe für die Startseite."""
+    attempts, ids = overview['attempts'], overview['question_ids']
     today = timezone.localdate()
     saved_ids = _bookmarked_ids(request.user)
-
-    q_map = Questions_Theory.objects.select_related('catalog').in_bulk(ids)
-    rows = []
-    for qid in ids:
-        tries = attempts.get(qid, [])
-        box, due = learning.schedule(tries)
-        status = learning.status(history.get(qid, []))
-        rows.append({
-            'question': q_map[qid],
-            'status': status,
-            'status_label': learning.STATUS_LABELS[status],
-            'mastery': round(learning.mastery(history.get(qid, [])) * 100),
-            'box': box,
-            'due': due,
-            'is_due': bool(tries) and due <= today,
-            'saved': qid in saved_ids,
-            'tries': len(tries),
-        })
-
-    trainings = TrainingResultData.objects.filter(user=request.user)
-    practice_days = {timezone.localdate(t) for t in trainings.values_list('meta_time', flat=True)}
-    timeline = learning.progress_timeline(ids, attempts)
-    return render(request, 'exercise-theorie-lernstand.html', {
-        **overview,
-        **_today_plan(overview),
-        'rows': rows,
-        'saved_count': sum(1 for r in rows if r['saved']),
+    level_saved = [qid for qid in ids if qid in saved_ids]
+    q_map = Questions_Theory.objects.select_related('catalog').in_bulk(level_saved[:HOME_SAVED_SHOWN])
+    other_ids = saved_ids - set(ids)
+    practice_days = {timezone.localdate(t) for t in
+                     TrainingResultData.objects.filter(user=request.user).values_list('meta_time', flat=True)}
+    return {
+        'saved_questions': [q_map[qid] for qid in level_saved[:HOME_SAVED_SHOWN]],
+        'saved_count': len(level_saved),
+        'other_level_saved': _published(Questions_Theory).filter(pk__in=other_ids).count() if other_ids else 0,
         'streak': learning.practice_streak(practice_days, today),
-        'practice_day_count': len(practice_days),
-        'training_count': trainings.count(),
-        'answer_count': sum(len(tries) for tries in attempts.values()),
         'due_week': learning.due_count_until(ids, attempts, today + timedelta(days=7)),
-        'chart': _timeline_chart(timeline),
-        'intervals': learning.INTERVALS,
-    })
+    }
+
+
+def learning_stats(request):
+    """Frühere Seite „Mein Lernstand“: Kennzahlen stehen auf der Startseite, alle Fragen mit Status unter
+    „Fragen nachschlagen“."""
+    return redirect('theory_lookup')
 
 
 def _timeline_chart(points, width=600, height=180, pad=28):
@@ -1086,16 +1069,26 @@ def theory_lookup(request):
     la = current_la_filter(request)
     questions = list(_published(Questions_Theory).select_related('catalog').filter(catalog__level__slug=la))
     questions.sort(key=lambda q: (learning.natural_key(q.number), q.pk))
-    history = learning.user_history(request.user)
+    attempts = learning.user_attempts(request.user)
+    history = learning.scores_only(attempts)
+    today = timezone.localdate()
     entries = []
     for q in questions:
         correct = set(q.correct_answers)
-        status = learning.status(history.get(q.pk, []))
+        scores = history.get(q.pk, [])
+        status = learning.status(scores)
+        tries = attempts.get(q.pk, [])
+        box, due = learning.schedule(tries)
         entries.append({
             'question': q,
             'choices': [(letter, text, text in correct) for letter, text in _labeled_choices(q)],
             'status': status,
             'status_label': learning.STATUS_LABELS[status],
+            'mastery': round(learning.mastery(scores) * 100),
+            'tries': len(tries),
+            'box': box,
+            'due': due,
+            'is_due': bool(tries) and due <= today,
             # Suchtext: Frage, Nummer und Antworten (für die Suche im Browser)
             'search': ' '.join([q.number or '', q.question, *(q.answer_choice or [])]).lower(),
         })
@@ -1104,10 +1097,23 @@ def theory_lookup(request):
         'items': items,
         'progress': learning.summary([e['question'].pk for e in items], history),
     } for catalog, items in _by_catalog(entries, catalog_of=lambda e: e['question'].catalog)]
+    ids = [e['question'].pk for e in entries]
+    progress = learning.summary(ids, history)
+    saved_ids = _bookmarked_ids(request.user) & set(ids)
     return render(request, 'exercise-theorie-katalog.html', {
         'sections': sections,
         'question_count': len(entries),
-        'saved_ids': sorted(_bookmarked_ids(request.user) & {e['question'].pk for e in entries}),
+        'saved_ids': sorted(saved_ids),
+        # (Schlüssel, Beschriftung, Anzahl) für die Statusfilter; „Gemerkt“ zählt der Browser mit
+        'status_filters': [
+            ('all', 'Alle', len(entries)),
+            ('due', 'Fällig', sum(1 for e in entries if e['is_due'])),
+            *[(key, learning.STATUS_LABELS[key], progress['counts'][key])
+              for key in ('weak', 'learning', 'mastered', 'new')],
+            ('saved', 'Gemerkt', len(saved_ids)),
+        ],
+        'chart': _timeline_chart(learning.progress_timeline(ids, attempts)),
+        'intervals': learning.INTERVALS,
     })
 
 

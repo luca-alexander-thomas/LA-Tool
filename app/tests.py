@@ -301,6 +301,65 @@ class LookupAndPracticalListTests(TestCase):
         self.assertEqual([c.title for c, _ in sections], ['Aaa', 'Bbb'])
 
 
+class AnonymousTrainingResultTests(TestCase):
+    """Üben ohne Anmeldung: Auswertung nur für die eigene Sitzung, ohne Merken/Lernerfolg (Issue #10)."""
+
+    def setUp(self):
+        level = Levels.objects.create(name='Teststufe', slug='teststufe', order=99)
+        catalog = Questions_Catalogs.objects.create(title='Katalog', short_title='KAT', level=level)
+        self.q = Questions_Theory.objects.create(
+            number='1', question='Einfach?', catalog=catalog, answer_text='Ja', answer_choice=['Nein', 'Ja'])
+
+    def submit(self, client, answer):
+        session = client.session
+        session['training_question_ids'] = [self.q.pk]
+        session.save()
+        return client.post(reverse('training_run'), {'answers': json.dumps({str(self.q.pk): [answer]})})
+
+    def test_anonymous_sees_own_result(self):
+        response = self.submit(self.client, 'a')
+        result = TrainingResultData.objects.get()
+        self.assertIsNone(result.user)
+        self.assertRedirects(response, reverse('training_result', args=[result.pk]))
+        page = self.client.get(reverse('training_result', args=[result.pk]))
+        self.assertEqual(page.status_code, 200)
+        self.assertEqual(page.context['score'], 0)
+        self.assertEqual(len(page.context['wrong']), 1)
+        self.assertIsNone(page.context['score_after'])
+        self.assertEqual(page.context['push_public_key'], '')
+        self.assertNotContains(page, reverse('question_bookmark', args=[0]))
+        self.assertContains(page, reverse('training_config'))
+
+    def test_result_hidden_from_other_sessions_and_users(self):
+        self.submit(self.client, 'b')
+        result = TrainingResultData.objects.get()
+        other = self.client_class()
+        self.assertEqual(other.get(reverse('training_result', args=[result.pk])).status_code, 404)
+        other.force_login(User.objects.create_user('jugend'))
+        self.assertEqual(other.get(reverse('training_result', args=[result.pk])).status_code, 404)
+
+    def test_anonymous_can_retry_wrong_answers(self):
+        self.submit(self.client, 'a')
+        result = TrainingResultData.objects.get()
+        response = self.client.post(reverse('training_retry', args=[result.pk]))
+        self.assertRedirects(response, reverse('training_run'), fetch_redirect_response=False)
+        self.assertEqual(self.client.session['training_question_ids'], [self.q.pk])
+        other = self.client_class()
+        self.assertEqual(other.post(reverse('training_retry', args=[result.pk])).status_code, 404)
+
+    def test_double_submit_shows_same_result(self):
+        session = self.client.session
+        session['training_question_ids'] = [self.q.pk]
+        session['training_run_id'] = 'lauf1'
+        session.save()
+        data = {'run_id': 'lauf1', 'question_ids': json.dumps([self.q.pk]), 'answers': '{}'}
+        self.client.post(reverse('training_run'), data)
+        result = TrainingResultData.objects.get()
+        response = self.client.post(reverse('training_run'), data)
+        self.assertRedirects(response, reverse('training_result', args=[result.pk]))
+        self.assertEqual(TrainingResultData.objects.count(), 1)
+
+
 class GroupExerciseTests(TestCase):
     """Gruppenaufgaben sind eigenständig: an eine Stufe (oder alle Stufen) gebunden, nicht an Kataloge."""
 

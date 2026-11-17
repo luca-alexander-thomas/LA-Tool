@@ -17,6 +17,33 @@
 
     <div class="space-y-4">
         <section class="card">
+            <div class="card-header"><h2 class="section-title">Hinweisbanner</h2></div>
+            <form method="post" class="card-body space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="section" value="notice">
+                <p class="text-xs text-ink-2">Erscheint oben auf der Startseite, z.&nbsp;B. für Ausfälle oder Termine.</p>
+                <div>
+                    <label class="form-label" for="{{ notice_form.notice_text.id_for_label }}">{{ notice_form.notice_text.label }}</label>
+                    {{ notice_form.notice_text }}
+                    <p class="mt-1 text-xs text-ink-3">{{ notice_form.notice_text.help_text }}</p>
+                    {% for e in notice_form.notice_text.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="form-label" for="{{ notice_form.notice_level.id_for_label }}">{{ notice_form.notice_level.label }}</label>
+                        {{ notice_form.notice_level }}
+                    </div>
+                    <div>
+                        <label class="form-label" for="{{ notice_form.notice_visibility.id_for_label }}">{{ notice_form.notice_visibility.label }}</label>
+                        {{ notice_form.notice_visibility }}
+                        {% for e in notice_form.notice_visibility.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">{% include "icons/check.html" with cls="size-4" %} Speichern</button>
+            </form>
+        </section>
+
+        <section class="card">
             <div class="card-header"><h2 class="section-title">Training</h2></div>
             <form method="post" class="card-body">
                 {% csrf_token %}

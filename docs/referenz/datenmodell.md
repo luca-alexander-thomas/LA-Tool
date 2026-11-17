@@ -14,7 +14,7 @@ Alle Modelle der Apps `app` und `la_tool_admin` (Stand der Modelle im Code; Feld
 | `Exams` | `name`, `level`, `catalog` (ungenutzt in der Oberfläche), `time_in_min`, `pass_threshold` (Punkte), `info_text`, `end_text`, `visible`, `closed`, `archived`, `assigned_users`, `assigned_groups`, `questions`→Theory | Übungsprüfung |
 | `Work` | `title`, `date`, `date_end`, `location`, `description`, `level`, `divera_id`, `created_at`, `created_user`, `is_manual`, `is_draft`, `theory_questions`, `practical_exercises`, `group_exercises`, `groups` | Dienst; `divera_id` verbindet mit dem Divera-Termin; ohne `groups` für alle sichtbar |
 | `LearningAssignment` | `title`, `description`, `level`, `catalogs` (leer = alle der Stufe), `target_pct`, `due_date`, `work`, `assigned_users`, `assigned_groups`, `created_by`, `created_at` | Lernauftrag; Frist = `due_date` oder Tag des Dienstes; ohne Zuweisung für alle |
-| `SiteSettings` | `training_pass_threshold` | Einzeilige Tabelle (`SiteSettings.get()`); trägt außerdem die App-Berechtigungen (`Meta.permissions`) |
+| `SiteSettings` | `training_pass_threshold`, `notice_text`, `notice_level` (`info`/`warning`), `notice_visibility` (`off`/`public`/`users`) | Einzeilige Tabelle (`SiteSettings.get()`); Hinweisbanner der Startseite (`notice_for(user)`); trägt außerdem die App-Berechtigungen (`Meta.permissions`) |
 
 ## Ergebnisse und Nutzerdaten (`app`)
 
@@ -32,7 +32,7 @@ Alle Modelle der Apps `app` und `la_tool_admin` (Stand der Modelle im Code; Feld
 | Modell | Felder | Hinweise |
 |---|---|---|
 | `Profile` | `user` (1:1), `login_source` (`local`/`divera`/`entra`), `divera_ucr`, `divera_qualifications`, `divera_groups`, `divera_left_at`, `divera_listed`, `entra_oid`, `entra_group_ids`, `learning_reminders`, `last_learning_reminder_at` | Zusatzdaten zum Django-`User`. `divera_left_at` gesetzt = wegen Austritt gesperrt; `divera_listed` = stand schon in der Divera-Personenliste |
-| `DiveraQualification` | `qual_id`, `name`, `short_name` | Namen der Divera-Qualifikationen (vom Abgleich gefüllt) |
+| `DiveraQualification` | `qual_id`, `name`, `short_name` | Namen der Divera-Qualifikationen aus `cluster.qualification` (bei Divera-Anmeldung und nächtlichem Abgleich gefüllt); Auswahl bei Auto-Gruppen |
 | `AutoGroupRule` | `group` (1:1), `divera_qual_ids`, `entra_group_ids` | Regel für automatische Gruppenmitgliedschaft |
 | `PinnedGroup` | `user`, `group`, `created_by`, `created_at` | Festgesetzte Mitgliedschaft (vom Abgleich nie entfernt) |
 | `PushSubscription` | `user`, `endpoint` (eindeutig), `p256dh`, `auth`, `user_agent`, `created_at` | Push-Abo eines Geräts |

@@ -18,7 +18,7 @@ from app.models import (
 from app.views import _assignment_question_ids, _visible_assignments, assignment_status, review_rows
 from app.list_filters import filtered_list_url, remember_filters
 from app.login_function import apply_remember, post_login_setup, safe_next_url
-from .forms import CatalogForm, TheoryQuestionForm, PracticalForm, GroupExerciseForm, ExamForm, WorkForm, WorkCreateForm, ImportQuestionForm, LevelForm, PushMessageForm, LearningAssignmentForm
+from .forms import CatalogForm, TheoryQuestionForm, PracticalForm, GroupExerciseForm, ExamForm, WorkForm, WorkCreateForm, ImportQuestionForm, LevelForm, PushMessageForm, LearningAssignmentForm, SiteNoticeForm
 from .models import PinnedGroup, Profile, PushSubscription
 from .utils import pin_group, unpin_group
 from .push import push_configured, send_push
@@ -594,19 +594,33 @@ def admin_catalog_create(request):
     })
 
 
+CATALOG_TABS = ('theory', 'practical')
+
+
+def _catalog_detail_url(catalog_id, tab):
+    return f"{reverse('admin_catalog_detail', args=[catalog_id])}?tab={tab}"
+
+
 @admin_required
 def admin_catalog_detail(request, catalog_id):
     catalog = get_object_or_404(Questions_Catalogs, pk=catalog_id)
     form = CatalogForm(instance=catalog)
     theory_qs = Questions_Theory.objects.filter(catalog=catalog).order_by('number', 'pk')
     practical_qs = Questions_Practical.objects.filter(catalog=catalog).order_by('number', 'pk')
+    # Gewählte Ansicht (Theorie/Praxis) merken: Rückwege ohne ?tab= (z.B. nach Speichern einer Praxisaufgabe)
+    # öffnen wieder die zuletzt benutzte (Issue #7)
+    active_tab = request.GET.get('tab')
+    if active_tab in CATALOG_TABS:
+        request.session['admin_catalog_tab'] = active_tab
+    else:
+        active_tab = request.session.get('admin_catalog_tab', 'theory')
     return render(request, 'admin-catalog-detail.html', {
         'user': request.user,
         'catalog': catalog,
         'form': form,
         'theory_questions': theory_qs,
         'practical_questions': practical_qs,
-        'active_tab': request.GET.get('tab', 'theory'),
+        'active_tab': active_tab,
         'move_targets': Questions_Catalogs.objects.exclude(pk=catalog.pk).select_related('level')
                         .order_by('level__order', 'order', 'title'),
     })
@@ -647,7 +661,7 @@ def admin_theory_create(request, catalog_id):
                 form.add_error(None, 'Mindestens eine richtige Antwort muss markiert sein.')
             else:
                 form.save_to_model(catalog, choices, correct_texts)
-                return redirect('admin_catalog_detail', catalog_id=catalog_id)
+                return redirect(_catalog_detail_url(catalog_id, 'theory'))
     else:
         form = TheoryQuestionForm()
     is_post = request.method == 'POST'
@@ -675,7 +689,7 @@ def admin_theory_edit(request, catalog_id, q_id):
                 form.add_error(None, 'Mindestens eine richtige Antwort muss markiert sein.')
             else:
                 form.save_to_model(catalog, choices, correct_texts, instance=question)
-                return redirect('admin_catalog_detail', catalog_id=catalog_id)
+                return redirect(_catalog_detail_url(catalog_id, 'theory'))
         init_choices = [c.strip() for c in request.POST.getlist('choice')]
         init_correct = request.POST.getlist('correct')
     else:
@@ -704,7 +718,7 @@ def admin_theory_delete(request, catalog_id, q_id):
     if request.method == 'POST':
         question.delete()
         messages.success(request, 'Theoriefrage gelöscht.')
-    return redirect('admin_catalog_detail', catalog_id=catalog_id)
+    return redirect(_catalog_detail_url(catalog_id, 'theory'))
 
 
 # ── SAMMELAKTIONEN IM KATALOG ─────────────────────────────────────────────────
@@ -724,7 +738,7 @@ def admin_catalog_bulk(request, catalog_id):
     if kind not in BULK_KINDS:
         raise Http404
     model, perm, one, many = BULK_KINDS[kind]
-    back = f"{reverse('admin_catalog_detail', args=[catalog.pk])}?tab={kind}"
+    back = _catalog_detail_url(catalog.pk, kind)
     if request.method != 'POST':
         return redirect(back)
     if not request.user.has_perm(f'app.{perm}'):
@@ -1117,7 +1131,7 @@ def admin_practical_create(request, catalog_id):
             obj = form.save(commit=False)
             obj.catalog = catalog
             obj.save()
-            return redirect('admin_catalog_detail', catalog_id=catalog_id)
+            return redirect(_catalog_detail_url(catalog_id, 'practical'))
     else:
         form = PracticalForm()
     return render(request, 'admin-question-practical.html', {
@@ -1139,7 +1153,7 @@ def admin_practical_edit(request, catalog_id, q_id):
             del form.fields['file']
         if form.is_valid():
             form.save()
-            return redirect('admin_catalog_detail', catalog_id=catalog_id)
+            return redirect(_catalog_detail_url(catalog_id, 'practical'))
     else:
         form = PracticalForm(instance=question)
     return render(request, 'admin-question-practical.html', {
@@ -1157,7 +1171,7 @@ def admin_practical_delete(request, catalog_id, q_id):
     if request.method == 'POST':
         question.delete()
         messages.success(request, 'Praktische Aufgabe gelöscht.')
-    return redirect('admin_catalog_detail', catalog_id=catalog_id)
+    return redirect(_catalog_detail_url(catalog_id, 'practical'))
 
 
 # ── GRUPPENAUFGABEN ───────────────────────────────────────────────────────────
@@ -1326,7 +1340,7 @@ def admin_file_confirm(request):
 
         obj.save()
         if model == 'practical':
-            return redirect('admin_catalog_detail', catalog_id=catalog_id)
+            return redirect(_catalog_detail_url(catalog_id, 'practical'))
         return redirect(filtered_list_url(request, 'admin_group_list'))
 
     # GET: render confirmation page with previews
@@ -1741,19 +1755,26 @@ def admin_push_test(request):
 def admin_settings(request):
     settings_obj = SiteSettings.get()
     error = None
-    if request.method == 'POST':
+    is_notice = request.method == 'POST' and request.POST.get('section') == 'notice'
+    notice_form = SiteNoticeForm(request.POST if is_notice else None, instance=settings_obj)
+    if is_notice:
+        if notice_form.is_valid():
+            notice_form.save()
+            messages.success(request, 'Hinweisbanner gespeichert.')
+            return redirect('admin_settings')
+    elif request.method == 'POST':
         raw = request.POST.get('training_pass_threshold', '')
         try:
             val = int(raw)
             if 0 <= val <= 100:
                 settings_obj.training_pass_threshold = val
-                settings_obj.save()
+                settings_obj.save(update_fields=['training_pass_threshold'])
                 return redirect('admin_settings')
             else:
                 error = 'Der Wert muss zwischen 0 und 100 liegen.'
         except ValueError:
             error = 'Bitte eine ganze Zahl eingeben.'
-    return render(request, 'admin-settings.html', {'settings': settings_obj, 'error': error})
+    return render(request, 'admin-settings.html', {'settings': settings_obj, 'error': error, 'notice_form': notice_form})
 
 
 # ── LA-STUFEN ─────────────────────────────────────────────────────────────────
@@ -1852,11 +1873,20 @@ def admin_autogroup_list(request):
     })
 
 
+def _divera_qual_choices(selected_ids):
+    """Bekannte Divera-Qualifikationen plus gewählte, die (noch) nicht bekannt sind – sonst gingen sie beim Speichern verloren."""
+    from .models import DiveraQualification
+    known = list(DiveraQualification.objects.order_by('name'))
+    known_ids = {q.qual_id for q in known}
+    return known + [DiveraQualification(qual_id=qid, name='Unbekannte Qualifikation')
+                    for qid in sorted(set(selected_ids) - known_ids)]
+
+
 @admin_permission_required('app.manage_groups')
 def admin_autogroup_create(request):
-    from .models import AutoGroupRule, DiveraQualification
+    from .models import AutoGroupRule
     from .forms import AutoGroupRuleForm
-    all_divera_quals = DiveraQualification.objects.order_by('name')
+    all_divera_quals = _divera_qual_choices([])
 
     if request.method == 'POST':
         form = AutoGroupRuleForm(request.POST)
@@ -1890,11 +1920,12 @@ def admin_autogroup_create(request):
 
 @admin_permission_required('app.manage_groups')
 def admin_autogroup_edit(request, group_id):
-    from .models import AutoGroupRule, DiveraQualification
+    from .models import AutoGroupRule
     from .forms import AutoGroupRuleForm
     group = get_object_or_404(Group, pk=group_id)
     rule = AutoGroupRule.objects.filter(group=group).first() or AutoGroupRule(group=group)
-    all_divera_quals = DiveraQualification.objects.order_by('name')
+    selected_qual_ids = {int(x) for x in rule.divera_qual_ids if str(x).isdigit()}
+    all_divera_quals = _divera_qual_choices(selected_qual_ids)
 
     if request.method == 'POST':
         form = AutoGroupRuleForm(request.POST)
@@ -1923,7 +1954,7 @@ def admin_autogroup_edit(request, group_id):
         'rule': rule,
         'group': group,
         'all_divera_quals': all_divera_quals,
-        'selected_divera_qual_ids': set(int(x) for x in rule.divera_qual_ids if str(x).isdigit()),
+        'selected_divera_qual_ids': selected_qual_ids,
         'selected_entra_group_ids': rule.entra_group_ids,
         'title': f'Gruppe bearbeiten: {group.name}',
         'mapped_entra': group.name in {n for gid, n in getattr(settings, 'AZURE_GROUPS_MAPPING', {}).items() if gid},
@@ -2157,7 +2188,7 @@ def admin_assignment_create(request):
                 assignment.recipients(),
                 title='Neuer Lernauftrag',
                 body=f'„{assignment.title}“' + (f' bis {deadline:%d.%m.}' if deadline else ''),
-                url=reverse('excercise'),
+                url=reverse('home'),
             ))
         messages.success(request, 'Lernauftrag angelegt.')
         return redirect('admin_assignment_detail', assignment_id=assignment.pk)

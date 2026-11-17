@@ -8,9 +8,8 @@ def _user_has_admin_access(user):
 # URL-Name -> Navigationsbereich, damit Templates den aktiven Menüpunkt markieren können
 _NAV_SECTIONS = {
     'home': 'home',
-    'excercise': 'excercise',
     'training_config': 'theory', 'training_run': 'theory', 'training_result': 'theory', 'theory_lookup': 'lookup',
-    'training_today': 'theory', 'training_retry': 'theory', 'learning_stats': 'stats',
+    'training_today': 'theory', 'training_retry': 'theory',
     'practical_list': 'practical', 'practical_detail': 'practical',
     'group_list': 'group', 'group_detail': 'group',
     'work': 'work', 'work_detail': 'work', 'work_training_start': 'work',
@@ -42,7 +41,7 @@ _NAV_SECTIONS = {
 
 
 # Bereiche unter dem Menüpunkt „Üben“
-_PRACTICE_SECTIONS = {'excercise', 'theory', 'lookup', 'stats', 'practical', 'group'}
+_PRACTICE_SECTIONS = {'theory', 'lookup', 'practical', 'group'}
 
 
 def nav_section(request):

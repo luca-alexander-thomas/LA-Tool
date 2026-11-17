@@ -10,14 +10,14 @@ PLACEHOLDER = '[BITTE ERGÄNZEN'
 
 LEGAL = {
     # Verantwortliche Stelle (Art. 4 Nr. 7 DSGVO)
-    'controller_name': '[BITTE ERGÄNZEN: z.B. THW-Jugend Gelsenkirchen im THW-Jugend e.V.]',
-    'controller_address': '[BITTE ERGÄNZEN: Straße Nr., PLZ Ort]',
-    'controller_represented_by': '[BITTE ERGÄNZEN: vertretungsberechtigte Person, z.B. Jugendbeauftragte*r]',
-    'contact_email': '[BITTE ERGÄNZEN: Kontakt-E-Mail]',
+    'controller_name': 'THW-Jugend Gelsenkirchen',
+    'controller_address': 'Adenauerallee 100, 45891 Gelsenkirchen',
+    'controller_represented_by': 'Luca-Alexander Thomas',
+    'contact_email': 'webmaster@thw-jugend-ge.de',
     # Datenschutzbeauftragte Person (leer lassen, falls keine benannt ist)
-    'dpo': '[BITTE ERGÄNZEN: Name und Kontakt der/des Datenschutzbeauftragten oder leer lassen]',
+    'dpo': 'Luca-Alexander Thomas',
     # Betrieb der Anwendung
-    'hoster': '[BITTE ERGÄNZEN: Hoster/Rechenzentrum und Standort, z.B. „eigener Server bei …, Deutschland“]',
+    'hoster': 'Netcup GmbH, Hans-Böckler-Allee 7, 30173 Hannover, www.netcup.de Serverstandort: Wien',
     'operator_note': 'Die Anwendung wird ehrenamtlich von Luca-Alexander Thomas für die THW-Jugend Gelsenkirchen betrieben.',
     # Zuständige Aufsichtsbehörde (Sitz der verantwortlichen Stelle in NRW)
     'authority': 'Landesbeauftragte für Datenschutz und Informationsfreiheit Nordrhein-Westfalen (LDI NRW), '
