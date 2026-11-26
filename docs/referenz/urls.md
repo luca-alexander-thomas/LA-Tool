@@ -37,6 +37,7 @@ Legende Zugriff: **öffentlich** = ohne Anmeldung, **angemeldet** = Sitzung nöt
 | `/datenschutz/`, `/nutzungsbedingungen/`, `/impressum/` | `legal_privacy`, `legal_terms`, `legal_imprint` | öffentlich | Rechtstexte |
 | `/lizenzen/` | `legal_licenses` | öffentlich | Lizenz (AGPL-3.0), Link zum Quellcode der laufenden Version, Ausnahme Logos, Fremdkomponenten |
 | `/neuigkeiten/` | `release_notes` | öffentlich | installierte Version mit Release-Notizen (aus `release.json`) |
+| `/app-installieren/` | `install_guide` | öffentlich | Anleitung zur App-Installation (iPhone/iPad, Android, Computer); Knopf für den Browser-Dialog, falls verfügbar |
 
 ## JSON-Endpunkte
 

@@ -1,8 +1,12 @@
 {% comment %}
-Karte „App installieren“ (app.js installPrompt). Nur sichtbar, wenn die App installierbar und noch nicht
-installiert ist. Parameter: dismiss_key (optional) – mit „Später“ ausblendbar, im Gerät gemerkt.
+Karte „App installieren“ (app.js installPrompt). Sichtbar, solange die App nicht installiert ist:
+- Android/Desktop mit Browser-Dialog: Knopf „Installieren“
+- iPhone/iPad: Schritte direkt sichtbar
+- andere Browser: Link zur Anleitungsseite (install_guide)
+Parameter: dismiss_key (optional) – mit „Später“ ausblendbar, im Gerät gemerkt; die Anleitung bleibt über die
+Fußzeile erreichbar.
 {% endcomment %}
-<section class="card card-body" x-data="installPrompt({ {% if dismiss_key %}dismissKey: '{{ dismiss_key }}'{% endif %} })" x-show="mode !== 'hidden'" x-cloak>
+<section class="card card-body" x-data="installPrompt({ {% if dismiss_key %}dismissKey: '{{ dismiss_key }}'{% endif %} })" x-show="['available', 'ios', 'guide'].includes(mode)" x-cloak>
     <div class="flex flex-wrap items-center gap-3">
         <span class="icon-tile">{% include "icons/arrow-down-on-square.html" with cls="size-6" %}</span>
         <div class="min-w-0 flex-1">
@@ -10,13 +14,15 @@ installiert ist. Parameter: dismiss_key (optional) – mit „Später“ ausblen
             <p class="text-xs text-ink-2">Startet vom Home-Bildschirm, ohne Browserleiste, mit Erinnerungen und Fragen auch ohne Netz.</p>
         </div>
         <div class="flex w-full gap-2 sm:w-auto">
-            <button type="button" class="btn btn-primary btn-sm flex-1 sm:flex-none" @click="install()" :aria-expanded="mode === 'ios' ? help.toString() : null">Installieren</button>
+            <button type="button" x-show="mode === 'available'" class="btn btn-primary btn-sm flex-1 sm:flex-none" @click="install()">Installieren</button>
+            <a href="{% url 'install_guide' %}" x-show="mode === 'guide'" class="btn btn-primary btn-sm flex-1 sm:flex-none">So geht’s</a>
             {% if dismiss_key %}<button type="button" class="btn btn-ghost btn-sm" @click="dismiss()">Später</button>{% endif %}
         </div>
     </div>
-    <ol x-show="help" x-cloak class="mt-3 list-decimal space-y-1 rounded-xl bg-surface-2 py-3 pr-3 pl-8 text-sm text-ink-2">
-        <li>Tippe in Safari unten auf <strong>Teilen</strong> (Quadrat mit Pfeil nach oben).</li>
+    <ol x-show="mode === 'ios'" class="mt-3 list-decimal space-y-1 rounded-xl bg-surface-2 py-3 pr-3 pl-8 text-sm text-ink-2">
+        <li>Tippe unten (Safari) bzw. oben rechts (andere Browser) auf <strong>Teilen</strong> (Quadrat mit Pfeil nach oben).</li>
         <li>Wähle <strong>Zum Home-Bildschirm</strong>.</li>
         <li>Tippe auf <strong>Hinzufügen</strong> und öffne das LA-Tool danach über das neue Symbol.</li>
     </ol>
+    <p x-show="mode === 'ios'" class="mt-2 text-xs text-ink-3"><a class="link" href="{% url 'install_guide' %}">Ausführliche Anleitung</a></p>
 </section>

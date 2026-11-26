@@ -1287,6 +1287,11 @@ def legal_page(request, template):
     return render(request, template, legal_context())
 
 
+def install_guide(request):
+    """Anleitung zum Installieren der App (PWA) je System; öffentlich."""
+    return render(request, 'install-guide.html')
+
+
 def release_notes(request):
     """Neuigkeiten: Version und Notizen des aktuell installierten Releases."""
     from .release import current_release, notes_html
