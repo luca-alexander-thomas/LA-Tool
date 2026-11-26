@@ -102,38 +102,79 @@
             },
         }));
 
-        // Knopf/Karte „App installieren“: Android/Desktop über den Browser-Dialog, iOS mit Anleitung.
-        // dismissKey: optional, „Nicht mehr zeigen“ wird im Gerät gemerkt
+        // Knopf/Karte „App installieren“: Android/Desktop über den Browser-Dialog, iOS mit Anleitung,
+        // andere Browser (Firefox, Safari auf dem Mac, Chrome nach einer Ablehnung) mit Link zur Anleitungsseite.
+        // dismissKey: optional, „Später“ wird im Gerät gemerkt (die Anleitungsseite bleibt über Fußzeile/Konto erreichbar)
         Alpine.data('installPrompt', (cfg = {}) => ({
-            // hidden | available | ios
+            // hidden | installed | available | ios | guide
             mode: 'hidden',
-            help: false,
+            // ios | android | desktop: hebt auf der Anleitungsseite den passenden Abschnitt hervor
+            platform: isIOS() ? 'ios' : (/android/i.test(navigator.userAgent) ? 'android' : 'desktop'),
             init() {
                 const update = () => {
-                    if (isStandalone() || (cfg.dismissKey && storageGet(cfg.dismissKey))) this.mode = 'hidden';
+                    if (isStandalone()) this.mode = 'installed';
+                    else if (cfg.dismissKey && storageGet(cfg.dismissKey)) this.mode = 'hidden';
                     else if (installEvent) this.mode = 'available';
                     else if (isIOS()) this.mode = 'ios';
-                    else this.mode = 'hidden';
+                    else this.mode = 'guide';
                 };
                 update();
                 window.addEventListener('la:install-available', update);
-                window.addEventListener('la:installed', update);
+                window.addEventListener('la:installed', () => { this.mode = 'installed'; });
             },
             async install() {
-                if (this.mode === 'ios') {
-                    this.help = !this.help;
-                    return;
-                }
                 if (!installEvent) return;
                 installEvent.prompt();
                 const choice = await installEvent.userChoice.catch(() => null);
                 installEvent = null;
-                this.mode = 'hidden';
-                if (choice && choice.outcome === 'accepted') toast('Die App wird installiert.', { level: 'success' });
+                if (choice && choice.outcome === 'accepted') {
+                    this.mode = 'installed';
+                    toast('Die App wird installiert.', { level: 'success' });
+                } else {
+                    // Abgelehnt: Der Browser bietet den Dialog erst später wieder an, die Anleitung hilft weiter
+                    this.mode = 'guide';
+                }
             },
             dismiss() {
                 if (cfg.dismissKey) storageSet(cfg.dismissKey, '1');
                 this.mode = 'hidden';
+            },
+        }));
+
+        // Bestehensgrenze wahlweise in Prozent oder als Anzahl Fragen eingeben; gespeichert wird nur der Prozentwert
+        // im Formularfeld cfg.pct. cfg.total: Feld mit der Fragenanzahl, auf die sich die Grenze bezieht.
+        // Umrechnung wie bei Prüfungen: Fragen = aufrunden(Anzahl × Prozent / 100).
+        Alpine.data('passThreshold', (cfg) => ({
+            unit: 'pct',
+            pct: 0,
+            total: 0,
+            count: 0,
+            init() {
+                this.pctEl = document.getElementById(cfg.pct);
+                this.totalEl = document.getElementById(cfg.total);
+                const read = () => {
+                    this.pct = parseInt(this.pctEl.value, 10) || 0;
+                    this.total = parseInt(this.totalEl.value, 10) || 0;
+                    if (this.unit === 'pct') this.count = this.countFor(this.pct);
+                };
+                read();
+                this.pctEl.addEventListener('input', read);
+                this.totalEl.addEventListener('input', () => {
+                    read();
+                    if (this.unit === 'count') this.setCount(this.count);
+                });
+            },
+            countFor(pct) {
+                return Math.ceil(this.total * pct / 100);
+            },
+            // Kleinster ganzzahliger Prozentwert, der wieder genau diese Anzahl Fragen ergibt
+            setCount(value) {
+                const n = Math.max(0, Math.min(parseInt(value, 10) || 0, this.total));
+                let pct = this.total ? Math.floor(n * 100 / this.total) : 0;
+                if (this.countFor(pct) < n) pct += 1;
+                this.count = n;
+                this.pct = Math.min(pct, 100);
+                this.pctEl.value = this.pct;
             },
         }));
 

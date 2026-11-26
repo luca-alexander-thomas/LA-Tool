@@ -1,4 +1,5 @@
 {% extends "admin_base.html" %}
+{% load edit_log %}
 
 {% block page_title %}{{ title }} · Admin{% endblock %}
 
@@ -10,6 +11,7 @@
         <div>
             <p class="eyebrow">LA-Stufen</p>
             <h1 class="page-title mt-1">{{ title }}</h1>
+            {% edit_hint level %}
         </div>
     </div>
 
@@ -96,9 +98,23 @@
                     {{ form.default_training_count }}
                     {% for e in form.default_training_count.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
                 </div>
-                <div>
-                    <label class="form-label" for="{{ form.default_training_pass_pct.id_for_label }}">{{ form.default_training_pass_pct.label }}</label>
-                    <div class="input-group">{{ form.default_training_pass_pct }}<span class="input-group-text">%</span></div>
+                <div x-data="passThreshold({ pct: '{{ form.default_training_pass_pct.id_for_label }}', total: '{{ form.default_training_count.id_for_label }}' })">
+                    <div class="flex items-center justify-between gap-2">
+                        <label class="form-label" :for="unit === 'pct' ? '{{ form.default_training_pass_pct.id_for_label }}' : 'default_training_pass_pct_count'">{{ form.default_training_pass_pct.label }}</label>
+                        <div class="mb-1.5 flex gap-1" role="group" aria-label="Eingabe in">
+                            <button type="button" class="btn btn-sm" :class="unit === 'pct' ? 'btn-primary' : 'btn-secondary'" :aria-pressed="(unit === 'pct').toString()" @click="unit = 'pct'">%</button>
+                            <button type="button" class="btn btn-sm" :class="unit === 'count' ? 'btn-primary' : 'btn-secondary'" :aria-pressed="(unit === 'count').toString()" @click="unit = 'count'; count = countFor(pct)">Fragen</button>
+                        </div>
+                    </div>
+                    <div class="input-group" x-show="unit === 'pct'">{{ form.default_training_pass_pct }}<span class="input-group-text">%</span></div>
+                    <div class="input-group" x-show="unit === 'count'" x-cloak>
+                        <input type="number" class="form-control" id="default_training_pass_pct_count" min="0" :max="total" :value="count" @input="setCount($event.target.value)">
+                        <span class="input-group-text">von <span class="mx-1 tabular-nums" x-text="total"></span> Fragen</span>
+                    </div>
+                    <p class="mt-1 text-xs text-ink-3" aria-live="polite">
+                        <span x-show="unit === 'pct'">= <span class="tabular-nums" x-text="countFor(pct)"></span> von <span class="tabular-nums" x-text="total"></span> Fragen</span>
+                        <span x-show="unit === 'count'" x-cloak>= <span class="tabular-nums" x-text="pct"></span> % (gespeichert wird der Prozentwert)<template x-if="countFor(pct) !== count"><span> · ergibt <span x-text="countFor(pct)"></span> Fragen, genauer geht es mit ganzen Prozent nicht</span></template></span>
+                    </p>
                     {% for e in form.default_training_pass_pct.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
                 </div>
                 <div>
@@ -106,9 +122,23 @@
                     {{ form.default_exam_count }}
                     {% for e in form.default_exam_count.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
                 </div>
-                <div>
-                    <label class="form-label" for="{{ form.default_exam_pass_pct.id_for_label }}">{{ form.default_exam_pass_pct.label }}</label>
-                    <div class="input-group">{{ form.default_exam_pass_pct }}<span class="input-group-text">%</span></div>
+                <div x-data="passThreshold({ pct: '{{ form.default_exam_pass_pct.id_for_label }}', total: '{{ form.default_exam_count.id_for_label }}' })">
+                    <div class="flex items-center justify-between gap-2">
+                        <label class="form-label" :for="unit === 'pct' ? '{{ form.default_exam_pass_pct.id_for_label }}' : 'default_exam_pass_pct_count'">{{ form.default_exam_pass_pct.label }}</label>
+                        <div class="mb-1.5 flex gap-1" role="group" aria-label="Eingabe in">
+                            <button type="button" class="btn btn-sm" :class="unit === 'pct' ? 'btn-primary' : 'btn-secondary'" :aria-pressed="(unit === 'pct').toString()" @click="unit = 'pct'">%</button>
+                            <button type="button" class="btn btn-sm" :class="unit === 'count' ? 'btn-primary' : 'btn-secondary'" :aria-pressed="(unit === 'count').toString()" @click="unit = 'count'; count = countFor(pct)">Fragen</button>
+                        </div>
+                    </div>
+                    <div class="input-group" x-show="unit === 'pct'">{{ form.default_exam_pass_pct }}<span class="input-group-text">%</span></div>
+                    <div class="input-group" x-show="unit === 'count'" x-cloak>
+                        <input type="number" class="form-control" id="default_exam_pass_pct_count" min="0" :max="total" :value="count" @input="setCount($event.target.value)">
+                        <span class="input-group-text">von <span class="mx-1 tabular-nums" x-text="total"></span> Fragen</span>
+                    </div>
+                    <p class="mt-1 text-xs text-ink-3" aria-live="polite">
+                        <span x-show="unit === 'pct'">= <span class="tabular-nums" x-text="countFor(pct)"></span> von <span class="tabular-nums" x-text="total"></span> Fragen</span>
+                        <span x-show="unit === 'count'" x-cloak>= <span class="tabular-nums" x-text="pct"></span> % (gespeichert wird der Prozentwert)<template x-if="countFor(pct) !== count"><span> · ergibt <span x-text="countFor(pct)"></span> Fragen, genauer geht es mit ganzen Prozent nicht</span></template></span>
+                    </p>
                     {% for e in form.default_exam_pass_pct.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
                 </div>
             </div>

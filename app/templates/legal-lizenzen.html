@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block page_title %}Lizenzen{% endblock %}
+
+{% block site_content %}
+<article class="page-narrow legal">
+    <p class="eyebrow">Rechtliches</p>
+    <h1 class="page-title mt-1">Lizenzen</h1>
+
+    <h2>LA-Tool</h2>
+    <p>Das LA-Tool ist freie Software unter der <a class="link" href="https://www.gnu.org/licenses/agpl-3.0.html" rel="noopener">GNU Affero General Public License, Version 3</a> (AGPL-3.0). Copyright © 2026 Luca-Alexander Thomas. Es wird ohne jede Gewährleistung bereitgestellt.</p>
+    <p>Den Quellcode dieser Version findest du unter <a class="link" href="{{ source_url }}{% if release.tag %}/tree/{{ release.tag|urlencode }}{% endif %}" rel="noopener">{{ source_url }}</a>{% if release.tag %} (Version {{ release.tag }}){% endif %}.</p>
+
+    <h2>Logos und Abzeichen</h2>
+    <p>Nicht unter der AGPL stehen die Logos, Abzeichen und Kennzeichen der Bundesanstalt Technisches Hilfswerk (THW) und der THW-Jugend, einschließlich der daraus abgeleiteten App-Symbole. Die Rechte liegen bei den jeweiligen Inhabern. Ebenfalls nicht Teil der Lizenz sind die Inhalte der Fragenkataloge aus den Unterlagen der THW-Jugend zum Leistungsabzeichen.</p>
+
+    <h2>Verwendete Open-Source-Komponenten</h2>
+    <ul>
+        {% for name, version, license, url in third_party %}
+        <li><a class="link" href="{{ url }}" rel="noopener">{{ name }}</a> {{ version }} · {{ license }}</li>
+        {% endfor %}
+    </ul>
+    <p>Die Lizenztexte stehen bei den jeweiligen Projekten; eine Übersicht liegt im Repository in der Datei <code>NOTICE.md</code>.</p>
+</article>
+{% endblock %}

@@ -17,9 +17,12 @@ from app.models import (
 )
 from app.views import _assignment_question_ids, _visible_assignments, assignment_status, review_rows
 from app.list_filters import filtered_list_url, remember_filters
+from app.legal_info import RETENTION
 from app.login_function import apply_remember, post_login_setup, safe_next_url
 from .forms import CatalogForm, TheoryQuestionForm, PracticalForm, GroupExerciseForm, ExamForm, WorkForm, WorkCreateForm, ImportQuestionForm, LevelForm, PushMessageForm, LearningAssignmentForm, SiteNoticeForm
 from .models import PinnedGroup, Profile, PushSubscription
+from .edit_log import diff, format_value, log_edit, snapshot
+from app.media_files import delete_if_unused
 from .utils import pin_group, unpin_group
 from .push import push_configured, send_push
 import logging
@@ -56,6 +59,8 @@ APP_PERMISSIONS = [
     ('send_notifications', 'Benachrichtigungen senden'),
     ('view_learning_progress', 'Lernstand einsehen'),
     ('manage_assignments', 'Lernaufträge verwalten'),
+    ('view_edit_log', 'Änderungsprotokoll einsehen'),
+    ('manage_files', 'Dateien verwalten'),
 ]
 
 
@@ -520,6 +525,7 @@ def admin_draft_toggle(request, model, pk):
     obj = get_object_or_404(ModelClass, pk=pk)
     obj.is_draft = not obj.is_draft
     obj.save(update_fields=['is_draft'])
+    log_edit(request.user, obj, 'update', {'is_draft': [format_value(not obj.is_draft), format_value(obj.is_draft)]})
     return redirect(filtered_list_url(request, redirect_map.get(model, 'admin_index')))
 
 
@@ -585,7 +591,8 @@ def admin_catalog_list(request):
 def admin_catalog_create(request):
     form = CatalogForm(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():
-        form.save()
+        catalog = form.save()
+        log_edit(request.user, catalog, 'create', diff({}, snapshot(catalog)))
         return redirect(filtered_list_url(request, 'admin_catalog'))
     return render(request, 'admin-catalog-create.html', {
         'user': request.user,
@@ -630,9 +637,11 @@ def admin_catalog_detail(request, catalog_id):
 def admin_catalog_update(request, catalog_id):
     catalog = get_object_or_404(Questions_Catalogs, pk=catalog_id)
     if request.method == 'POST':
+        before = snapshot(catalog)
         form = CatalogForm(request.POST, request.FILES, instance=catalog)
         if form.is_valid():
             form.save()
+            log_edit(request.user, catalog, 'update', diff(before, snapshot(catalog)))
     return redirect('admin_catalog_detail', catalog_id=catalog_id)
 
 
@@ -640,6 +649,7 @@ def admin_catalog_update(request, catalog_id):
 def admin_catalog_delete(request, catalog_id):
     catalog = get_object_or_404(Questions_Catalogs, pk=catalog_id)
     if request.method == 'POST':
+        log_edit(request.user, catalog, 'delete', diff(snapshot(catalog), {}))
         catalog.delete()
         messages.success(request, f'Katalog „{catalog.title}“ gelöscht.')
         return redirect(filtered_list_url(request, 'admin_catalog'))
@@ -660,7 +670,8 @@ def admin_theory_create(request, catalog_id):
             elif not correct_texts:
                 form.add_error(None, 'Mindestens eine richtige Antwort muss markiert sein.')
             else:
-                form.save_to_model(catalog, choices, correct_texts)
+                question = form.save_to_model(catalog, choices, correct_texts)
+                log_edit(request.user, question, 'create', diff({}, snapshot(question)))
                 return redirect(_catalog_detail_url(catalog_id, 'theory'))
     else:
         form = TheoryQuestionForm()
@@ -688,7 +699,9 @@ def admin_theory_edit(request, catalog_id, q_id):
             elif not correct_texts:
                 form.add_error(None, 'Mindestens eine richtige Antwort muss markiert sein.')
             else:
+                before = snapshot(question)
                 form.save_to_model(catalog, choices, correct_texts, instance=question)
+                log_edit(request.user, question, 'update', diff(before, snapshot(question)))
                 return redirect(_catalog_detail_url(catalog_id, 'theory'))
         init_choices = [c.strip() for c in request.POST.getlist('choice')]
         init_correct = request.POST.getlist('correct')
@@ -716,6 +729,7 @@ def admin_theory_edit(request, catalog_id, q_id):
 def admin_theory_delete(request, catalog_id, q_id):
     question = get_object_or_404(Questions_Theory, pk=q_id, catalog_id=catalog_id)
     if request.method == 'POST':
+        log_edit(request.user, question, 'delete', diff(snapshot(question), {}))
         question.delete()
         messages.success(request, 'Theoriefrage gelöscht.')
     return redirect(_catalog_detail_url(catalog_id, 'theory'))
@@ -749,13 +763,17 @@ def admin_catalog_bulk(request, catalog_id):
     count = items.count()
     noun = one if count == 1 else many
     action = request.POST.get('action')
+    affected = ', '.join(str(item) for item in items)  # vor der Änderung festhalten (fürs Protokoll)
+    summary = ''
     if not count:
         messages.warning(request, f'Keine {many} ausgewählt.')
     elif action == 'publish':
         items.update(is_draft=False)
+        summary = f'{count} {noun} freigegeben'
         messages.success(request, f'{count} {noun} freigegeben.')
     elif action == 'draft':
         items.update(is_draft=True)
+        summary = f'{count} {noun} als Entwurf markiert'
         messages.success(request, f'{count} {noun} als Entwurf markiert.')
     elif action == 'move':
         target = Questions_Catalogs.objects.filter(pk=request.POST.get('target')).exclude(pk=catalog.pk).first()
@@ -765,6 +783,7 @@ def admin_catalog_bulk(request, catalog_id):
             numbers = {n for n in items.values_list('number', flat=True) if n}
             clashes = model.objects.filter(catalog=target, number__in=numbers).count()
             items.update(catalog=target)
+            summary = f'{count} {noun} nach „{target}“ verschoben'
             text = f'{count} {noun} nach „{target}“ verschoben.'
             if clashes:
                 text += f' Achtung: {clashes} Nummer{"n" if clashes != 1 else ""} gibt es dort schon doppelt.'
@@ -773,7 +792,10 @@ def admin_catalog_bulk(request, catalog_id):
         with transaction.atomic():
             for item in items:
                 item.delete()  # einzeln, damit Signale (z.B. Dateien löschen) greifen
+        summary = f'{count} {noun} gelöscht'
         messages.success(request, f'{count} {noun} gelöscht.')
+    if summary:
+        log_edit(request.user, catalog, 'bulk', {'Sammelaktion': ['', summary], many: [affected, '']})
     return redirect(back)
 
 
@@ -1011,6 +1033,10 @@ def admin_import_questions(request):
                         )
                         created += 1
 
+            if created or updated:
+                log_edit(request.user, catalog, 'import', {
+                    'Import': ['', f'{uploaded.name}: {created} neu, {updated} aktualisiert, {skipped} übersprungen'],
+                })
             results = {
                 'created': created,
                 'updated': updated,
@@ -1131,6 +1157,7 @@ def admin_practical_create(request, catalog_id):
             obj = form.save(commit=False)
             obj.catalog = catalog
             obj.save()
+            log_edit(request.user, obj, 'create', diff({}, snapshot(obj)))
             return redirect(_catalog_detail_url(catalog_id, 'practical'))
     else:
         form = PracticalForm()
@@ -1147,12 +1174,17 @@ def admin_practical_edit(request, catalog_id, q_id):
     catalog = get_object_or_404(Questions_Catalogs, pk=catalog_id)
     question = get_object_or_404(Questions_Practical, pk=q_id, catalog=catalog)
     if request.method == 'POST':
+        before = snapshot(question)  # vor is_valid(): das Formular schreibt die Werte schon ins Objekt
+        old_file = question.file.name if question.file else ''
         form = PracticalForm(request.POST, request.FILES, instance=question)
         if not request.FILES.get('file'):
             # Exclude file field so save_form_data never re-saves the existing file
             del form.fields['file']
         if form.is_valid():
             form.save()
+            if old_file and old_file != question.file.name:
+                delete_if_unused(old_file)  # ersetzte Datei nicht liegen lassen
+            log_edit(request.user, question, 'update', diff(before, snapshot(question)))
             return redirect(_catalog_detail_url(catalog_id, 'practical'))
     else:
         form = PracticalForm(instance=question)
@@ -1169,6 +1201,7 @@ def admin_practical_edit(request, catalog_id, q_id):
 def admin_practical_delete(request, catalog_id, q_id):
     question = get_object_or_404(Questions_Practical, pk=q_id, catalog_id=catalog_id)
     if request.method == 'POST':
+        log_edit(request.user, question, 'delete', diff(snapshot(question), {}))
         question.delete()
         messages.success(request, 'Praktische Aufgabe gelöscht.')
     return redirect(_catalog_detail_url(catalog_id, 'practical'))
@@ -1237,7 +1270,8 @@ def admin_group_create(request):
                         },
                     }
                     return redirect('admin_file_confirm')
-            form.save()
+            obj = form.save()
+            log_edit(request.user, obj, 'create', diff({}, snapshot(obj)))
             return redirect(filtered_list_url(request, 'admin_group_list'))
     else:
         form = GroupExerciseForm(initial={'level': Levels.objects.filter(slug=request.session.get('la_filter')).first()})
@@ -1252,12 +1286,17 @@ def admin_group_create(request):
 def admin_group_edit(request, q_id):
     question = get_object_or_404(Questions_GroupExercise, pk=q_id)
     if request.method == 'POST':
+        before = snapshot(question)  # vor is_valid(): das Formular schreibt die Werte schon ins Objekt
+        old_file = question.file.name if question.file else ''
         form = GroupExerciseForm(request.POST, request.FILES, instance=question)
         if not request.FILES.get('file'):
             # Exclude file field so save_form_data never re-saves the existing file
             del form.fields['file']
         if form.is_valid():
             form.save()
+            if old_file and old_file != question.file.name:
+                delete_if_unused(old_file)  # ersetzte Datei nicht liegen lassen
+            log_edit(request.user, question, 'update', diff(before, snapshot(question)))
             return redirect(filtered_list_url(request, 'admin_group_list'))
     else:
         form = GroupExerciseForm(instance=question)
@@ -1273,6 +1312,7 @@ def admin_group_edit(request, q_id):
 def admin_group_delete(request, q_id):
     question = get_object_or_404(Questions_GroupExercise, pk=q_id)
     if request.method == 'POST':
+        log_edit(request.user, question, 'delete', diff(snapshot(question), {}))
         question.delete()
         messages.success(request, 'Gruppenaufgabe gelöscht.')
     return redirect(filtered_list_url(request, 'admin_group_list'))
@@ -1337,8 +1377,13 @@ def admin_file_confirm(request):
             # Clean up temp
             if default_storage.exists(temp_path):
                 default_storage.delete(temp_path)
+            try:
+                default_storage.delete(_os.path.dirname(temp_path))  # leeren tmp/<uuid>-Ordner entfernen
+            except OSError:
+                pass
 
         obj.save()
+        log_edit(request.user, obj, 'create', diff({}, snapshot(obj)))
         if model == 'practical':
             return redirect(_catalog_detail_url(catalog_id, 'practical'))
         return redirect(filtered_list_url(request, 'admin_group_list'))
@@ -1426,6 +1471,7 @@ def admin_exam_create(request):
         exam.assigned_users.set(User.objects.filter(pk__in=user_ids))
         exam.assigned_groups.set(Group.objects.filter(pk__in=group_ids))
         exam.questions.set(Questions_Theory.objects.filter(pk__in=question_ids))
+        log_edit(request.user, exam, 'create', diff({}, snapshot(exam)))
         # Divera notification on exam assignment (opt-in)
         if request.POST.get('notify_divera'):
             assigned = list(User.objects.filter(pk__in=user_ids))
@@ -1482,6 +1528,7 @@ def admin_exam_edit(request, exam_id):
     all_groups = Group.objects.order_by('name')
 
     if request.method == 'POST':
+        before = snapshot(exam)  # vor is_valid(): das Formular schreibt die Werte schon ins Objekt
         form = ExamForm(request.POST, instance=exam)
         if form.is_valid():
             form.save()
@@ -1491,6 +1538,7 @@ def admin_exam_edit(request, exam_id):
             exam.assigned_users.set(User.objects.filter(pk__in=user_ids))
             exam.assigned_groups.set(Group.objects.filter(pk__in=group_ids))
             exam.questions.set(Questions_Theory.objects.filter(pk__in=question_ids))
+            log_edit(request.user, exam, 'update', diff(before, snapshot(exam)))
             return redirect('admin_exam_list')
     else:
         form = ExamForm(instance=exam)
@@ -1530,6 +1578,7 @@ def admin_exam_edit(request, exam_id):
 def admin_exam_delete(request, exam_id):
     exam = get_object_or_404(Exams, pk=exam_id)
     if request.method == 'POST':
+        log_edit(request.user, exam, 'delete', diff(snapshot(exam), {}))
         exam.delete()
         messages.success(request, f'Prüfung „{exam.name}“ gelöscht.')
     return redirect('admin_exam_list')
@@ -1543,6 +1592,8 @@ def admin_exam_toggle(request, exam_id, field):
     if field in ('visible', 'closed', 'archived'):
         setattr(exam, field, not getattr(exam, field))
         exam.save()
+        log_edit(request.user, exam, 'update',
+                 {field: [format_value(not getattr(exam, field)), format_value(getattr(exam, field))]})
         state = {
             'visible': ('sichtbar', 'ausgeblendet'), 'closed': ('gesperrt', 'freigegeben'),
             'archived': ('archiviert', 'aus dem Archiv geholt'),
@@ -1643,6 +1694,7 @@ def admin_work_create(request):
         work.created_user = request.user
         work.save()
         form.save_m2m()
+        log_edit(request.user, work, 'create', diff({}, snapshot(work)))
         return redirect('admin_work_list')
     return render(request, 'admin-work-create.html', {
         'form': form,
@@ -1661,6 +1713,7 @@ def admin_work_edit(request, work_id):
 
     all_groups = Group.objects.order_by('name')
     if request.method == 'POST':
+        before = snapshot(work)  # vor is_valid(): das Formular schreibt die Werte schon ins Objekt
         form = WorkForm(request.POST, instance=work)
         if form.is_valid():
             work = form.save()
@@ -1669,6 +1722,7 @@ def admin_work_edit(request, work_id):
             work.group_exercises.set(request.POST.getlist('group_ids'))
             group_ids = [int(x) for x in request.POST.getlist('work_group_ids') if x.isdigit()]
             work.groups.set(Group.objects.filter(pk__in=group_ids))
+            log_edit(request.user, work, 'update', diff(before, snapshot(work)))
             return redirect('admin_work_list')
     else:
         form = WorkForm(instance=work)
@@ -1691,6 +1745,7 @@ def admin_work_edit(request, work_id):
 def admin_work_delete(request, work_id):
     if request.method == 'POST':
         work = get_object_or_404(Work, pk=work_id)
+        log_edit(request.user, work, 'delete', diff(snapshot(work), {}))
         work.delete()
         messages.success(request, f'Dienst „{work.title}“ gelöscht.')
     return redirect('admin_work_list')
@@ -1757,9 +1812,11 @@ def admin_settings(request):
     error = None
     is_notice = request.method == 'POST' and request.POST.get('section') == 'notice'
     notice_form = SiteNoticeForm(request.POST if is_notice else None, instance=settings_obj)
+    before = snapshot(settings_obj)
     if is_notice:
         if notice_form.is_valid():
             notice_form.save()
+            log_edit(request.user, settings_obj, 'update', diff(before, snapshot(settings_obj)), label='Einstellungen')
             messages.success(request, 'Hinweisbanner gespeichert.')
             return redirect('admin_settings')
     elif request.method == 'POST':
@@ -1769,6 +1826,7 @@ def admin_settings(request):
             if 0 <= val <= 100:
                 settings_obj.training_pass_threshold = val
                 settings_obj.save(update_fields=['training_pass_threshold'])
+                log_edit(request.user, settings_obj, 'update', diff(before, snapshot(settings_obj)), label='Einstellungen')
                 return redirect('admin_settings')
             else:
                 error = 'Der Wert muss zwischen 0 und 100 liegen.'
@@ -1792,7 +1850,8 @@ def admin_level_list(request):
 def admin_level_create(request):
     form = LevelForm(request.POST or None, request.FILES or None)
     if request.method == 'POST' and form.is_valid():
-        form.save()
+        level = form.save()
+        log_edit(request.user, level, 'create', diff({}, snapshot(level)))
         return redirect('admin_level_list')
     return render(request, 'admin-levels-edit.html', {
         'user': request.user,
@@ -1805,9 +1864,14 @@ def admin_level_create(request):
 def admin_level_edit(request, level_id):
     level = get_object_or_404(Levels, pk=level_id)
     if request.method == 'POST':
+        before = snapshot(level)  # vor is_valid(): das Formular schreibt die Werte schon ins Objekt
+        old_icon = level.icon.name if level.icon else ''
         form = LevelForm(request.POST, request.FILES, instance=level)
         if form.is_valid():
             form.save()
+            if old_icon and old_icon != (level.icon.name if level.icon else ''):
+                delete_if_unused(old_icon)  # ersetztes/entferntes Logo nicht liegen lassen
+            log_edit(request.user, level, 'update', diff(before, snapshot(level)))
             return redirect('admin_level_list')
     else:
         form = LevelForm(instance=level)
@@ -1823,6 +1887,7 @@ def admin_level_edit(request, level_id):
 def admin_level_delete(request, level_id):
     level = get_object_or_404(Levels, pk=level_id)
     if request.method == 'POST':
+        log_edit(request.user, level, 'delete', diff(snapshot(level), {}))
         level.delete()
         messages.success(request, f'Stufe „{level.name}“ gelöscht.')
         return redirect('admin_level_list')
@@ -1836,6 +1901,20 @@ def admin_level_delete(request, level_id):
 
 
 # ── AUTOMATISCHE GRUPPEN ──────────────────────────────────────────────────────
+
+def _group_snapshot(group):
+    """Name, Regeln und App-Rechte einer Gruppe fürs Änderungsprotokoll."""
+    from .models import AutoGroupRule
+    rule = AutoGroupRule.objects.filter(group=group).first()
+    labels = dict(APP_PERMISSIONS)
+    perms = group.permissions.filter(content_type__app_label='app', codename__in=labels)
+    return {
+        'name': group.name,
+        'divera_qual_ids': format_value(rule.divera_qual_ids if rule else []),
+        'entra_group_ids': format_value(rule.entra_group_ids if rule else []),
+        'permissions': format_value(sorted(labels[p.codename] for p in perms)),
+    }
+
 
 def _set_group_permissions(group, codenames):
     """App-Rechte der Gruppe auf die gewählten setzen; andere Rechte der Gruppe bleiben unberührt."""
@@ -1892,7 +1971,8 @@ def admin_autogroup_create(request):
         form = AutoGroupRuleForm(request.POST)
         if form.is_valid():
             group_name = form.cleaned_data['group_name']
-            group, _ = Group.objects.get_or_create(name=group_name)
+            group, created = Group.objects.get_or_create(name=group_name)
+            before = {} if created else _group_snapshot(group)
             try:
                 rule = AutoGroupRule.objects.get(group=group)
             except AutoGroupRule.DoesNotExist:
@@ -1902,6 +1982,7 @@ def admin_autogroup_create(request):
             rule.entra_group_ids = [ln.strip() for ln in entra_raw.splitlines() if ln.strip()]
             rule.save()
             _set_group_permissions(group, request.POST.getlist('perms'))
+            log_edit(request.user, group, 'create' if created else 'update', diff(before, _group_snapshot(group)))
             messages.success(request, f'Gruppe „{group.name}“ gespeichert.')
             return redirect('admin_autogroup_list')
     else:
@@ -1930,6 +2011,7 @@ def admin_autogroup_edit(request, group_id):
     if request.method == 'POST':
         form = AutoGroupRuleForm(request.POST)
         if form.is_valid():
+            before = _group_snapshot(group)
             group_name = form.cleaned_data['group_name']
             if group_name != group.name:
                 group.name = group_name
@@ -1940,6 +2022,7 @@ def admin_autogroup_edit(request, group_id):
             if rule.pk or rule.divera_qual_ids or rule.entra_group_ids:
                 rule.save()
             _set_group_permissions(group, request.POST.getlist('perms'))
+            log_edit(request.user, group, 'update', diff(before, _group_snapshot(group)))
             messages.success(request, f'Gruppe „{group.name}“ gespeichert.')
             return redirect('admin_autogroup_list')
     else:
@@ -1967,11 +2050,14 @@ def admin_autogroup_delete(request, group_id):
     group = get_object_or_404(Group, pk=group_id)
     if request.method == 'POST':
         delete_group = request.POST.get('delete_group') == '1'
+        before = _group_snapshot(group)
         try:
             from .models import AutoGroupRule
             AutoGroupRule.objects.filter(group=group).delete()
         except Exception:
             pass
+        log_edit(request.user, group, 'delete' if delete_group else 'update',
+                 diff(before, {} if delete_group else _group_snapshot(group)))
         if delete_group:
             group.delete()
         messages.success(request, f'Regel für „{group.name}“ gelöscht' + (' (Gruppe ebenfalls).' if delete_group else '.'))
@@ -2182,6 +2268,7 @@ def admin_assignment_create(request):
         assignment.created_by = request.user
         assignment.save()
         _save_assignment_relations(request, assignment)
+        log_edit(request.user, assignment, 'create', diff({}, snapshot(assignment)))
         if request.POST.get('notify_push'):
             deadline = assignment.deadline
             _report_push(request, send_push(
@@ -2198,10 +2285,12 @@ def admin_assignment_create(request):
 @admin_permission_required('app.manage_assignments')
 def admin_assignment_edit(request, assignment_id):
     assignment = get_object_or_404(LearningAssignment, pk=assignment_id)
+    before = snapshot(assignment) if request.method == 'POST' else {}  # vor is_valid()
     form = LearningAssignmentForm(request.POST or None, instance=assignment)
     if request.method == 'POST' and form.is_valid():
         form.save()
         _save_assignment_relations(request, assignment)
+        log_edit(request.user, assignment, 'update', diff(before, snapshot(assignment)))
         messages.success(request, 'Lernauftrag gespeichert.')
         return redirect('admin_assignment_detail', assignment_id=assignment.pk)
     return render(request, 'admin-assignment-edit.html', {
@@ -2224,6 +2313,132 @@ def admin_assignment_detail(request, assignment_id):
 def admin_assignment_delete(request, assignment_id):
     assignment = get_object_or_404(LearningAssignment, pk=assignment_id)
     if request.method == 'POST':
+        log_edit(request.user, assignment, 'delete', diff(snapshot(assignment), {}))
         assignment.delete()
         messages.success(request, 'Lernauftrag gelöscht.')
     return redirect('admin_assignment_list')
+
+
+# ── ÄNDERUNGSPROTOKOLL ────────────────────────────────────────────────────────
+
+EDIT_LOG_PAGE_SIZE = 50
+
+
+@admin_permission_required('app.view_edit_log')
+def admin_edit_log(request):
+    """Änderungen an Stammdaten mit Filtern (Bereich, Objekt, Person, Aktion, Zeitraum)."""
+    from django.core.paginator import Paginator
+    from django.utils.dateparse import parse_date
+    from .edit_log import TARGET_LABELS, field_label, target_url
+    from .models import EditLogEntry
+
+    filters = _list_filters(request, 'typ', 'id', 'person', 'q', 'aktion', 'von', 'bis')
+    remember_filters(request, 'admin_edit_log')
+    entries = EditLogEntry.objects.all()
+    if filters['typ'] in TARGET_LABELS:
+        entries = entries.filter(target_type=filters['typ'])
+    if filters['id'].isdigit():
+        entries = entries.filter(target_id=int(filters['id']))
+    if filters['person']:
+        entries = entries.filter(user_name__icontains=filters['person'])
+    if filters['q']:
+        entries = entries.filter(target_label__icontains=filters['q'])
+    if filters['aktion'] in dict(EditLogEntry.ACTION_CHOICES):
+        entries = entries.filter(action=filters['aktion'])
+    if (start := parse_date(filters['von'] or '')):
+        entries = entries.filter(created_at__date__gte=start)
+    if (end := parse_date(filters['bis'] or '')):
+        entries = entries.filter(created_at__date__lte=end)
+
+    page = Paginator(entries, EDIT_LOG_PAGE_SIZE).get_page(request.GET.get('seite'))
+    # Fragen/Aufgaben liegen unter ihrem Katalog: Katalog-IDs für die Links holen
+    ids = {kind: [e.target_id for e in page if e.target_type == kind] for kind in ('theory', 'practical')}
+    parents = {('theory', pk): cat for pk, cat in
+               Questions_Theory.objects.filter(pk__in=ids['theory']).values_list('pk', 'catalog_id')}
+    parents.update({('practical', pk): cat for pk, cat in
+                    Questions_Practical.objects.filter(pk__in=ids['practical']).values_list('pk', 'catalog_id')})
+    rows = [{
+        'entry': entry,
+        'type_label': TARGET_LABELS.get(entry.target_type, entry.target_type),
+        'url': target_url(entry, parents),
+        'changes': [(field_label(key), value[0], value[1]) for key, value in entry.changes.items()
+                    if isinstance(value, list) and len(value) == 2],
+    } for entry in page]
+    query = request.GET.copy()
+    query.pop('seite', None)
+    return render(request, 'admin-edit-log.html', {
+        'rows': rows,
+        'page': page,
+        'filters': filters,
+        'filtered': any(filters.values()),
+        'page_query': query.urlencode(),
+        'type_choices': sorted(TARGET_LABELS.items(), key=lambda item: item[1]),
+        'retention_years': RETENTION['edit_log_days'] // 365,
+        'action_choices': EditLogEntry.ACTION_CHOICES,
+    })
+
+
+# ── DATEIEN ───────────────────────────────────────────────────────────────────
+
+@admin_permission_required('app.manage_files')
+def admin_files(request):
+    """Hochgeladene Dateien sichten: Verwendung, unbenutzte markieren und löschen, umbenennen."""
+    from .files import list_files
+    filters = _list_filters(request, 'status', 'ordner', 'q')
+    remember_filters(request, 'admin_files')
+    files = list_files()
+    folders = sorted({f['folder'] for f in files})
+    shown = [f for f in files
+             if (filters['status'] != 'unbenutzt' or not f['used'])
+             and (filters['status'] != 'benutzt' or f['used'])
+             and (not filters['ordner'] or f['folder'] == filters['ordner'])
+             and (not filters['q'] or filters['q'].lower() in f['name'].lower())]
+    unused = [f for f in files if not f['used']]
+    return render(request, 'admin-files.html', {
+        'files': shown,
+        'total': len(files),
+        'unused_count': len(unused),
+        'unused_size': sum(f['size'] for f in unused),
+        'folders': folders,
+        'filters': filters,
+        'filtered': any(filters.values()),
+    })
+
+
+@admin_permission_required('app.manage_files')
+def admin_files_delete(request):
+    """Ausgewählte Dateien löschen – nur unbenutzte; benutzte werden übersprungen."""
+    from .files import delete_files
+    if request.method != 'POST':
+        return redirect('admin_files')
+    deleted, skipped = delete_files(request.POST.getlist('names'))
+    for name in deleted:
+        log_edit(request.user, None, 'delete', target_type='file', label=name)
+    if deleted:
+        messages.success(request, f'{len(deleted)} Datei{"en" if len(deleted) != 1 else ""} gelöscht.')
+    if skipped:
+        messages.warning(request, f'{len(skipped)} Datei{"en" if len(skipped) != 1 else ""} übersprungen '
+                                  '(noch verwendet oder nicht mehr vorhanden).')
+    return redirect(filtered_list_url(request, 'admin_files'))
+
+
+@admin_permission_required('app.manage_files')
+def admin_file_rename(request):
+    """Datei umbenennen; Aufgaben und Stufen, die sie nutzen, zeigen danach auf den neuen Namen."""
+    from .files import RenameError, rename_file, usage_links
+    if request.method != 'POST':
+        return redirect('admin_files')
+    name = request.POST.get('name', '')
+    users = [label for label, _ in usage_links().get(name, [])]
+    try:
+        new_name = rename_file(name, request.POST.get('new_name', ''))
+    except RenameError as exc:
+        messages.error(request, str(exc))
+    else:
+        if new_name != name:
+            changes = {'Name': [name, new_name]}
+            if users:
+                changes['Verwendet von'] = ['', format_value(users)]
+            log_edit(request.user, None, 'rename', changes, target_type='file', label=new_name)
+            messages.success(request, f'Umbenannt in „{new_name}“' + (f' ({len(users)} Verweis{"e" if len(users) != 1 else ""} angepasst).' if users else '.'))
+    return redirect(filtered_list_url(request, 'admin_files'))

@@ -1,0 +1,8 @@
+{# Letzte Änderung eines Objekts (templatetags/edit_log.py edit_hint). Parameter: entry, log_url #}
+{% if entry %}
+<p class="mt-1 flex flex-wrap items-center gap-x-1.5 text-xs text-ink-3">
+    {% include "icons/pencil-square.html" with cls="size-3.5" %}
+    <span>Zuletzt {% if entry.action == 'create' %}angelegt{% elif entry.action == 'import' %}importiert{% else %}bearbeitet{% endif %} von <span class="font-medium text-ink-2">{{ entry.user_name }}</span> am {{ entry.created_at|date:"d.m.Y, H:i" }} Uhr</span>
+    {% if log_url %}<span aria-hidden="true">·</span><a class="link" href="{{ log_url }}">Verlauf</a>{% endif %}
+</p>
+{% endif %}

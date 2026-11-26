@@ -29,7 +29,8 @@ class Levels(models.Model):
         ]
 
     def save(self, *args, **kwargs):
-        shrink_icon(self.icon, lambda name: Levels.objects.filter(icon=name).exclude(pk=self.pk).exists())
+        from .media_files import in_use
+        shrink_icon(self.icon, lambda name: in_use(name, exclude=self))
         super().save(*args, **kwargs)
 
     @property
@@ -317,33 +318,19 @@ class LearningAssignment(models.Model):
 
 
 @receiver(pre_delete, sender=Questions_Practical)
-def delete_practical_file(sender, instance, **kwargs):
-    if not instance.file:
-        return
-    # Only delete the physical file if no other practical question references it
-    shared = Questions_Practical.objects.filter(
-        file=instance.file.name
-    ).exclude(pk=instance.pk).exists()
-    if not shared:
-        instance.file.delete(save=False)
-
-
 @receiver(pre_delete, sender=Questions_GroupExercise)
-def delete_group_file(sender, instance, **kwargs):
-    if not instance.file:
-        return
-    # Only delete the physical file if no other group exercise references it
-    shared = Questions_GroupExercise.objects.filter(
-        file=instance.file.name
-    ).exclude(pk=instance.pk).exists()
-    if not shared:
-        instance.file.delete(save=False)
+def delete_task_file(sender, instance, **kwargs):
+    # Datei nur löschen, wenn kein anderer Datensatz (auch anderer Art) sie nutzt
+    from .media_files import delete_if_unused
+    if instance.file:
+        delete_if_unused(instance.file.name, exclude=instance)
 
 
 @receiver(pre_delete, sender=Levels)
 def delete_level_icon(sender, instance, **kwargs):
+    from .media_files import delete_if_unused
     if instance.icon:
-        instance.icon.delete(save=False)
+        delete_if_unused(instance.icon.name, exclude=instance)
 
 
 class Exams(models.Model):
@@ -434,6 +421,8 @@ class SiteSettings(models.Model):
             ('send_notifications', 'Benachrichtigungen senden'),
             ('view_learning_progress', 'Lernstand einsehen'),
             ('manage_assignments', 'Lernaufträge verwalten'),
+            ('view_edit_log', 'Änderungsprotokoll einsehen'),
+            ('manage_files', 'Dateien verwalten'),
         ]
 
     @classmethod

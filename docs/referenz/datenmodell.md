@@ -37,6 +37,7 @@ Alle Modelle der Apps `app` und `la_tool_admin` (Stand der Modelle im Code; Feld
 | `PinnedGroup` | `user`, `group`, `created_by`, `created_at` | Festgesetzte Mitgliedschaft (vom Abgleich nie entfernt) |
 | `PushSubscription` | `user`, `endpoint` (eindeutig), `p256dh`, `auth`, `user_agent`, `created_at` | Push-Abo eines Geräts |
 | `UserNotification` | `user`, `title`, `body`, `url`, `created_at`, `read_at` | Gespeicherte Benachrichtigung |
+| `EditLogEntry` | `created_at`, `user` (SET_NULL), `user_name`, `action`, `target_type`, `target_id`, `target_label`, `changes` (`{Feld: [alt, neu]}`) | Änderungsprotokoll der Stammdaten; geschrieben über `la_tool_admin/edit_log.py`, gelöscht nach `RETENTION['edit_log_days']` |
 | `Changes` | `change`, `datetime`, `username`, `additional_meta` | Ungenutzt (nur im Django-Admin registriert) |
 
 ## Signale und Hooks

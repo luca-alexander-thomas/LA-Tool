@@ -35,7 +35,9 @@ Legende Zugriff: **öffentlich** = ohne Anmeldung, **angemeldet** = Sitzung nöt
 | `/dienste/<id>/ueben/` | `work_training_start` | angemeldet | Training mit den Fragen des Dienstes |
 | `/la-filter/<slug>/` | `set_la_filter` | öffentlich | aktive LA-Stufe der Sitzung wechseln |
 | `/datenschutz/`, `/nutzungsbedingungen/`, `/impressum/` | `legal_privacy`, `legal_terms`, `legal_imprint` | öffentlich | Rechtstexte |
+| `/lizenzen/` | `legal_licenses` | öffentlich | Lizenz (AGPL-3.0), Link zum Quellcode der laufenden Version, Ausnahme Logos, Fremdkomponenten |
 | `/neuigkeiten/` | `release_notes` | öffentlich | installierte Version mit Release-Notizen (aus `release.json`) |
+| `/app-installieren/` | `install_guide` | öffentlich | Anleitung zur App-Installation (iPhone/iPad, Android, Computer); Knopf für den Browser-Dialog, falls verfügbar |
 
 ## JSON-Endpunkte
 
@@ -97,3 +99,5 @@ Alle Seiten verlangen eine Anmeldung und das Recht `access_admin`; zusätzlich d
 | `/admin/stufen/erstellen/`, `…/<id>/`, `…/<id>/loeschen/` | `manage_levels` |
 | `/admin/autogruppen/…` | `manage_groups` (Gruppen, Regeln und Gruppenrechte) |
 | `/admin/settings/` | `manage_settings` |
+| `/admin/dateien/`, `/admin/dateien/loeschen/` (POST `names`), `/admin/dateien/umbenennen/` (POST `name`, `new_name`) | `manage_files` |
+| `/admin/aenderungen/` | `view_edit_log` (Filter `typ`, `id`, `person`, `q`, `aktion`, `von`, `bis`, Seite `seite`) |

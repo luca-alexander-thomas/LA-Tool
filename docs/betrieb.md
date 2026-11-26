@@ -136,6 +136,16 @@ Nach Updates: Tests lokal und in der CI, dann regulärer [Release-Prozess](deplo
 - Ungenutzt, aber vorhanden: Modell/Tabelle `Changes` (`la_tool_admin`).
 - Stufen-Icons älterer Uploads einmalig verkleinern: `python manage.py optimize_icons`.
 
+### Hochgeladene Dateien
+
+Admin → **Dateien** (Recht „Dateien verwalten“) zeigt alle Dateien in `media/` mit Größe und Verwendung:
+
+- Unbenutzte Dateien und Reste abgebrochener Uploads (`media/tmp/`) sind markiert und lassen sich auswählen und löschen. Benutzte Dateien kann die Seite nicht löschen.
+- Beim Umbenennen bleiben Ordner und Endung; Aufgaben und Stufen, die die Datei nutzen, zeigen danach auf den neuen Namen.
+- Jede Aktion steht im Änderungsprotokoll (Bereich „Datei“).
+
+Ersetzte Dateien (neues PDF an einer Aufgabe, neues Stufen-Logo) werden seit 1.0.3 automatisch gelöscht, wenn sie niemand mehr nutzt.
+
 ### PWA-Bilder
 
 Startbilder (`app/static/pwa/startup/`) und Screenshots für den Installationsdialog (`app/static/pwa/screenshots/`, aus einem Demo-Konto) bei größeren Design-Änderungen neu erzeugen; die Dateinamen stehen in `app/templates/pwa/_startup_images.html` bzw. `SCREENSHOTS` in `app/pwa.py`.

@@ -1,0 +1,101 @@
+{% extends "admin_base.html" %}
+
+{% block page_title %}Änderungsprotokoll · Admin{% endblock %}
+
+{% block admin_content %}
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Konfiguration</p>
+        <h1 class="page-title mt-1">Änderungsprotokoll</h1>
+        <p class="page-subtitle">Wer hat wann welche Stammdaten geändert. Einträge werden nach {{ retention_years|default:2 }} Jahren gelöscht.</p>
+    </div>
+</div>
+
+{# Filter (GET, Lesezeichen-fähig); Auswahlfelder filtern sofort #}
+<form method="get" class="card card-body mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" role="search">
+    {% if filters.id %}<input type="hidden" name="id" value="{{ filters.id }}">{% endif %}
+    <div class="lg:col-span-2">
+        <label class="form-label" for="f-q">Objekt</label>
+        <input id="f-q" type="search" name="q" value="{{ filters.q }}" class="form-control" placeholder="Titel, Frage, Name …">
+    </div>
+    <div>
+        <label class="form-label" for="f-typ">Bereich</label>
+        <select id="f-typ" name="typ" class="form-select" onchange="this.form.requestSubmit()">
+            <option value="">Alle</option>
+            {% for key, label in type_choices %}<option value="{{ key }}" {% if filters.typ == key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+    </div>
+    <div>
+        <label class="form-label" for="f-aktion">Aktion</label>
+        <select id="f-aktion" name="aktion" class="form-select" onchange="this.form.requestSubmit()">
+            <option value="">Alle</option>
+            {% for key, label in action_choices %}<option value="{{ key }}" {% if filters.aktion == key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+    </div>
+    <div>
+        <label class="form-label" for="f-person">Person</label>
+        <input id="f-person" type="search" name="person" value="{{ filters.person }}" class="form-control" placeholder="Name">
+    </div>
+    <div>
+        <label class="form-label" for="f-von">Von</label>
+        <input id="f-von" type="date" name="von" value="{{ filters.von }}" class="form-control">
+    </div>
+    <div>
+        <label class="form-label" for="f-bis">Bis</label>
+        <input id="f-bis" type="date" name="bis" value="{{ filters.bis }}" class="form-control">
+    </div>
+    <div class="flex flex-wrap items-end justify-between gap-2">
+        <p class="text-sm text-ink-2" aria-live="polite">{{ page.paginator.count }} Eintr{{ page.paginator.count|pluralize:"ag,äge" }}{% if filters.id %} zu einem Objekt{% endif %}</p>
+        <div class="flex gap-2">
+            {% if filtered %}<a href="?" class="btn btn-sm btn-secondary">{% include "icons/x-mark.html" with cls="size-4" %} Filter zurücksetzen</a>{% endif %}
+            <button type="submit" class="btn btn-sm btn-soft">{% include "icons/magnifying-glass.html" with cls="size-4" %} Suchen</button>
+        </div>
+    </div>
+</form>
+
+<section class="card">
+    <ul class="divide-y divide-line">
+        {% for row in rows %}
+        {% with e=row.entry %}
+        <li class="px-4 py-3 sm:px-5">
+            <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                <span class="badge {% if e.action == 'delete' %}badge-danger{% elif e.action == 'create' %}badge-success{% else %}badge-neutral{% endif %}">{{ e.get_action_display }}</span>
+                <span class="text-xs font-semibold text-ink-3">{{ row.type_label }}</span>
+                {% if row.url %}<a class="link min-w-0 text-sm font-semibold" href="{{ row.url }}">{{ e.target_label|default:"–" }}</a>
+                {% else %}<span class="min-w-0 text-sm font-semibold text-ink">{{ e.target_label|default:"–" }}</span>{% endif %}
+            </div>
+            <p class="mt-0.5 text-xs text-ink-3">{{ e.user_name }} · {{ e.created_at|date:"d.m.Y, H:i" }} Uhr</p>
+            {% if row.changes %}
+            <details class="group mt-2">
+                <summary class="cursor-pointer text-xs text-ink-2">{{ row.changes|length }} Feld{{ row.changes|length|pluralize:"er" }}</summary>
+                <div class="mt-2 overflow-x-auto">
+                    <table class="w-full min-w-[28rem] text-left text-xs">
+                        <thead class="text-ink-3"><tr><th class="py-1 pr-3 font-semibold">Feld</th><th class="py-1 pr-3 font-semibold">Vorher</th><th class="py-1 font-semibold">Nachher</th></tr></thead>
+                        <tbody>
+                            {% for label, old, new in row.changes %}
+                            <tr class="border-t border-line align-top">
+                                <td class="py-1.5 pr-3 font-medium text-ink-2">{{ label }}</td>
+                                <td class="py-1.5 pr-3 break-words text-ink-3">{{ old|default:"–" }}</td>
+                                <td class="py-1.5 break-words text-ink">{{ new|default:"–" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+            {% endif %}
+        </li>
+        {% endwith %}
+        {% empty %}
+        <li class="empty-state p-6">Keine Einträge{% if filtered %} für diese Filter{% endif %}.</li>
+        {% endfor %}
+    </ul>
+    {% if page.has_other_pages %}
+    <nav class="card-footer justify-between" aria-label="Seiten">
+        {% if page.has_previous %}<a class="btn btn-sm btn-secondary" href="?{{ page_query }}{% if page_query %}&amp;{% endif %}seite={{ page.previous_page_number }}">Neuere</a>{% else %}<span></span>{% endif %}
+        <span class="text-xs text-ink-3">Seite {{ page.number }} von {{ page.paginator.num_pages }}</span>
+        {% if page.has_next %}<a class="btn btn-sm btn-secondary" href="?{{ page_query }}{% if page_query %}&amp;{% endif %}seite={{ page.next_page_number }}">Ältere</a>{% else %}<span></span>{% endif %}
+    </nav>
+    {% endif %}
+</section>
+{% endblock %}

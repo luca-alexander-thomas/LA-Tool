@@ -45,6 +45,13 @@ Ausführlich: [Entwicklung](docs/entwicklung.md).
 
 Übersicht aller Dokumente: [docs/README.md](docs/README.md).
 
+## Lizenz
+
+Copyright © 2026 Luca-Alexander Thomas. Der Code steht unter der [GNU Affero General Public License v3.0](LICENSE)
+(AGPL-3.0): Wer eine geänderte Fassung als Webdienst betreibt, muss deren Quellcode anbieten. Ausgenommen sind
+Logos und Abzeichen von THW und THW-Jugend sowie die Fragen-Inhalte; Details und verwendete Fremdkomponenten
+stehen in [NOTICE.md](NOTICE.md) und in der App unter „Lizenzen“ (`/lizenzen/`).
+
 ## Mitwirken
 
 Feature-Wünsche und Fehler bitte als GitHub-Issue melden. Hinweise zu Arbeitsweise und Konventionen: [Entwicklung](docs/entwicklung.md#arbeitsweise-und-konventionen).

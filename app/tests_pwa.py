@@ -170,3 +170,26 @@ class DiveraPromptTests(TestCase):
         response = self.client.get(reverse('home'))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, 'Divera verknüpfen')
+
+
+class InstallGuideTests(TestCase):
+    """Anleitung zur App-Installation (Issue #24)."""
+
+    def test_guide_is_public_and_covers_platforms(self):
+        response = self.client.get(reverse('install_guide'))
+        self.assertEqual(response.status_code, 200)
+        for text in ('iPhone und iPad', 'Android', 'Computer', 'Zum Home-Bildschirm', 'Zum Dock hinzufügen'):
+            self.assertContains(response, text)
+
+    def test_links_and_card_for_visitors(self):
+        home = self.client.get(reverse('home'))
+        self.assertContains(home, 'installPrompt(')            # Karte auch auf der Startseite ohne Anmeldung
+        # Karte („So geht’s“, ausführliche iOS-Anleitung) und Fußzeile
+        self.assertContains(home, 'href="%s"' % reverse('install_guide'), count=3)
+
+    def test_account_menu_links_guide(self):
+        from django.contrib.auth.models import User
+        self.client.force_login(User.objects.create_user('jugend'))
+        html = self.client.get(reverse('profile')).content.decode()
+        self.assertIn('App installieren', html)
+        self.assertGreaterEqual(html.count('href="%s"' % reverse('install_guide')), 3)  # Menü, Fußzeile, Karte

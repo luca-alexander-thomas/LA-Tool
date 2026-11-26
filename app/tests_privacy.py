@@ -142,3 +142,21 @@ class LegalPagesTests(TestCase):
         login = self.client.get(reverse('login'))
         self.assertContains(login, reverse('legal_privacy'))
         self.assertContains(login, 'noindex')
+
+
+class LicensePageTests(TestCase):
+    """Lizenzseite (Issue #23): AGPL-Hinweis, Quellcode-Link der laufenden Version, Fremdkomponenten."""
+
+    def test_page_lists_license_source_and_components(self):
+        from unittest import mock
+        with mock.patch('app.release.current_release', return_value={'tag': 'v9.9.9'}):
+            response = self.client.get(reverse('legal_licenses'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'https://github.com/luca-alexander-thomas/LA-Tool/tree/v9.9.9')
+        self.assertContains(response, 'GNU Affero General Public License')
+        self.assertContains(response, 'https://github.com/luca-alexander-thomas/LA-Tool')
+        self.assertContains(response, 'Alpine.js')
+        self.assertContains(response, 'Logos und Abzeichen')
+
+    def test_footer_links_license_page(self):
+        self.assertContains(self.client.get(reverse('login')), reverse('legal_licenses'))

@@ -4,6 +4,10 @@ from django.core.management.base import BaseCommand
 from la_tool import env
 from app.login_function import divera_error_text
 from app.models import Work
+from la_tool_admin.edit_log import diff, log_edit, snapshot
+
+# Vom Abgleich gesetzte Felder; nur deren Änderungen kommen ins Änderungsprotokoll
+SYNCED_FIELDS = ('title', 'date', 'date_end', 'location', 'description')
 
 
 def _divera_pull(access_token, ucr_id=None, timeout=30):
@@ -114,7 +118,9 @@ class Command(BaseCommand):
             location = (event.get('address') or event.get('location') or '')[:200]
             description = event.get('text') or event.get('description') or ''
 
-            _, was_created = Work.objects.update_or_create(
+            existing = Work.objects.filter(divera_id=str(divera_id)).first()
+            before = snapshot(existing, fields=SYNCED_FIELDS) if existing else {}
+            work, was_created = Work.objects.update_or_create(
                 divera_id=str(divera_id),
                 defaults={
                     'title': title,
@@ -124,6 +130,9 @@ class Command(BaseCommand):
                     'description': description,
                 },
             )
+            changes = diff(before, snapshot(work, fields=SYNCED_FIELDS))
+            if changes:
+                log_edit(None, work, 'create' if was_created else 'update', changes, user_name='Divera-Abgleich')
             if was_created:
                 created += 1
             else:

@@ -191,7 +191,7 @@ Alle Aufrufe nutzen feste URLs und Timeouts; Accesskeys werden als Parameter üb
 
 | Funktion | Umsetzung |
 |---|---|
-| Installation | Manifest `/manifest.webmanifest` mit ID, Screenshots, Verknüpfungen; Startbilder für iOS (`app/static/pwa/startup/`) |
+| Installation | Manifest `/manifest.webmanifest` mit ID, Screenshots, Verknüpfungen; Startbilder für iOS (`app/static/pwa/startup/`). Karte „App installieren“ (`installPrompt` in `app.js`): Browser-Dialog, iOS-Schritte oder Link zur Anleitung `/app-installieren/` (auch in Fußzeile und Kontomenü) |
 | Service Worker | `/sw.js` (Template `app/templates/pwa/sw.js`): statische Dateien aus dem Cache (mit `DEBUG` zuerst vom Server), Seiten nie gecacht |
 | Ohne Netz | Offline-Seite; „Fragen nachschlagen“ aus `/uebungen/theorie/fragen/offline.json` (ohne persönliche Daten); Trainings werden im Gerät gespeichert und später gesendet |
 | Push | VAPID; Zahl am App-Symbol = ungelesene Benachrichtigungen; Knopf „Jetzt üben“ in der Erinnerung |
