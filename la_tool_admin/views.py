@@ -22,6 +22,7 @@ from app.login_function import apply_remember, post_login_setup, safe_next_url
 from .forms import CatalogForm, TheoryQuestionForm, PracticalForm, GroupExerciseForm, ExamForm, WorkForm, WorkCreateForm, ImportQuestionForm, LevelForm, PushMessageForm, LearningAssignmentForm, SiteNoticeForm
 from .models import PinnedGroup, Profile, PushSubscription
 from .edit_log import diff, format_value, log_edit, snapshot
+from app.media_files import delete_if_unused
 from .utils import pin_group, unpin_group
 from .push import push_configured, send_push
 import logging
@@ -59,6 +60,7 @@ APP_PERMISSIONS = [
     ('view_learning_progress', 'Lernstand einsehen'),
     ('manage_assignments', 'Lernaufträge verwalten'),
     ('view_edit_log', 'Änderungsprotokoll einsehen'),
+    ('manage_files', 'Dateien verwalten'),
 ]
 
 
@@ -1173,12 +1175,15 @@ def admin_practical_edit(request, catalog_id, q_id):
     question = get_object_or_404(Questions_Practical, pk=q_id, catalog=catalog)
     if request.method == 'POST':
         before = snapshot(question)  # vor is_valid(): das Formular schreibt die Werte schon ins Objekt
+        old_file = question.file.name if question.file else ''
         form = PracticalForm(request.POST, request.FILES, instance=question)
         if not request.FILES.get('file'):
             # Exclude file field so save_form_data never re-saves the existing file
             del form.fields['file']
         if form.is_valid():
             form.save()
+            if old_file and old_file != question.file.name:
+                delete_if_unused(old_file)  # ersetzte Datei nicht liegen lassen
             log_edit(request.user, question, 'update', diff(before, snapshot(question)))
             return redirect(_catalog_detail_url(catalog_id, 'practical'))
     else:
@@ -1282,12 +1287,15 @@ def admin_group_edit(request, q_id):
     question = get_object_or_404(Questions_GroupExercise, pk=q_id)
     if request.method == 'POST':
         before = snapshot(question)  # vor is_valid(): das Formular schreibt die Werte schon ins Objekt
+        old_file = question.file.name if question.file else ''
         form = GroupExerciseForm(request.POST, request.FILES, instance=question)
         if not request.FILES.get('file'):
             # Exclude file field so save_form_data never re-saves the existing file
             del form.fields['file']
         if form.is_valid():
             form.save()
+            if old_file and old_file != question.file.name:
+                delete_if_unused(old_file)  # ersetzte Datei nicht liegen lassen
             log_edit(request.user, question, 'update', diff(before, snapshot(question)))
             return redirect(filtered_list_url(request, 'admin_group_list'))
     else:
@@ -1369,6 +1377,10 @@ def admin_file_confirm(request):
             # Clean up temp
             if default_storage.exists(temp_path):
                 default_storage.delete(temp_path)
+            try:
+                default_storage.delete(_os.path.dirname(temp_path))  # leeren tmp/<uuid>-Ordner entfernen
+            except OSError:
+                pass
 
         obj.save()
         log_edit(request.user, obj, 'create', diff({}, snapshot(obj)))
@@ -1853,9 +1865,12 @@ def admin_level_edit(request, level_id):
     level = get_object_or_404(Levels, pk=level_id)
     if request.method == 'POST':
         before = snapshot(level)  # vor is_valid(): das Formular schreibt die Werte schon ins Objekt
+        old_icon = level.icon.name if level.icon else ''
         form = LevelForm(request.POST, request.FILES, instance=level)
         if form.is_valid():
             form.save()
+            if old_icon and old_icon != (level.icon.name if level.icon else ''):
+                delete_if_unused(old_icon)  # ersetztes/entferntes Logo nicht liegen lassen
             log_edit(request.user, level, 'update', diff(before, snapshot(level)))
             return redirect('admin_level_list')
     else:
@@ -2361,3 +2376,69 @@ def admin_edit_log(request):
         'retention_years': RETENTION['edit_log_days'] // 365,
         'action_choices': EditLogEntry.ACTION_CHOICES,
     })
+
+
+# ── DATEIEN ───────────────────────────────────────────────────────────────────
+
+@admin_permission_required('app.manage_files')
+def admin_files(request):
+    """Hochgeladene Dateien sichten: Verwendung, unbenutzte markieren und löschen, umbenennen."""
+    from .files import list_files
+    filters = _list_filters(request, 'status', 'ordner', 'q')
+    remember_filters(request, 'admin_files')
+    files = list_files()
+    folders = sorted({f['folder'] for f in files})
+    shown = [f for f in files
+             if (filters['status'] != 'unbenutzt' or not f['used'])
+             and (filters['status'] != 'benutzt' or f['used'])
+             and (not filters['ordner'] or f['folder'] == filters['ordner'])
+             and (not filters['q'] or filters['q'].lower() in f['name'].lower())]
+    unused = [f for f in files if not f['used']]
+    return render(request, 'admin-files.html', {
+        'files': shown,
+        'total': len(files),
+        'unused_count': len(unused),
+        'unused_size': sum(f['size'] for f in unused),
+        'folders': folders,
+        'filters': filters,
+        'filtered': any(filters.values()),
+    })
+
+
+@admin_permission_required('app.manage_files')
+def admin_files_delete(request):
+    """Ausgewählte Dateien löschen – nur unbenutzte; benutzte werden übersprungen."""
+    from .files import delete_files
+    if request.method != 'POST':
+        return redirect('admin_files')
+    deleted, skipped = delete_files(request.POST.getlist('names'))
+    for name in deleted:
+        log_edit(request.user, None, 'delete', target_type='file', label=name)
+    if deleted:
+        messages.success(request, f'{len(deleted)} Datei{"en" if len(deleted) != 1 else ""} gelöscht.')
+    if skipped:
+        messages.warning(request, f'{len(skipped)} Datei{"en" if len(skipped) != 1 else ""} übersprungen '
+                                  '(noch verwendet oder nicht mehr vorhanden).')
+    return redirect(filtered_list_url(request, 'admin_files'))
+
+
+@admin_permission_required('app.manage_files')
+def admin_file_rename(request):
+    """Datei umbenennen; Aufgaben und Stufen, die sie nutzen, zeigen danach auf den neuen Namen."""
+    from .files import RenameError, rename_file, usage_links
+    if request.method != 'POST':
+        return redirect('admin_files')
+    name = request.POST.get('name', '')
+    users = [label for label, _ in usage_links().get(name, [])]
+    try:
+        new_name = rename_file(name, request.POST.get('new_name', ''))
+    except RenameError as exc:
+        messages.error(request, str(exc))
+    else:
+        if new_name != name:
+            changes = {'Name': [name, new_name]}
+            if users:
+                changes['Verwendet von'] = ['', format_value(users)]
+            log_edit(request.user, None, 'rename', changes, target_type='file', label=new_name)
+            messages.success(request, f'Umbenannt in „{new_name}“' + (f' ({len(users)} Verweis{"e" if len(users) != 1 else ""} angepasst).' if users else '.'))
+    return redirect(filtered_list_url(request, 'admin_files'))

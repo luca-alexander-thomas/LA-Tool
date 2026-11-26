@@ -1,0 +1,115 @@
+{% extends "admin_base.html" %}
+
+{% block page_title %}Dateien · Admin{% endblock %}
+
+{% block admin_content %}
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Konfiguration</p>
+        <h1 class="page-title mt-1">Dateien</h1>
+        <p class="page-subtitle">Hochgeladene PDFs und Bilder von Aufgaben und Stufen. Unbenutzte Dateien lassen sich löschen; beim Umbenennen werden die Verweise mitgeführt.</p>
+    </div>
+</div>
+
+{% if unused_count %}
+<div class="alert alert-info mb-4">
+    {% include "icons/information-circle.html" with cls="size-5 shrink-0" %}
+    <span><strong>{{ unused_count }}</strong> unbenutzte Datei{{ unused_count|pluralize:"en" }} ({{ unused_size|filesizeformat }}). <a class="link" href="?status=unbenutzt">Nur diese anzeigen</a></span>
+</div>
+{% endif %}
+
+{# Filter (GET, Lesezeichen-fähig); Auswahlfelder filtern sofort #}
+<form method="get" class="card card-body mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))]" role="search">
+    <div>
+        <label class="form-label" for="f-q">Suche</label>
+        <input id="f-q" type="search" name="q" value="{{ filters.q }}" class="form-control" placeholder="Dateiname …">
+    </div>
+    <div>
+        <label class="form-label" for="f-status">Verwendung</label>
+        <select id="f-status" name="status" class="form-select" onchange="this.form.requestSubmit()">
+            <option value="">Alle</option>
+            <option value="unbenutzt" {% if filters.status == 'unbenutzt' %}selected{% endif %}>Unbenutzt</option>
+            <option value="benutzt" {% if filters.status == 'benutzt' %}selected{% endif %}>Benutzt</option>
+        </select>
+    </div>
+    <div>
+        <label class="form-label" for="f-ordner">Ordner</label>
+        <select id="f-ordner" name="ordner" class="form-select" onchange="this.form.requestSubmit()">
+            <option value="">Alle</option>
+            {% for folder in folders %}<option value="{{ folder }}" {% if filters.ordner == folder %}selected{% endif %}>{{ folder|default:"(Hauptordner)" }}</option>{% endfor %}
+        </select>
+    </div>
+    <div class="flex flex-wrap items-center justify-between gap-2 sm:col-span-2 lg:col-span-3">
+        <p class="text-sm text-ink-2" aria-live="polite">{{ files|length }} von {{ total }} Datei{{ total|pluralize:"en" }}</p>
+        <div class="flex gap-2">
+            {% if filtered %}<a href="?" class="btn btn-sm btn-secondary">{% include "icons/x-mark.html" with cls="size-4" %} Filter zurücksetzen</a>{% endif %}
+            <button type="submit" class="btn btn-sm btn-soft">{% include "icons/magnifying-glass.html" with cls="size-4" %} Suchen</button>
+        </div>
+    </div>
+</form>
+
+<div x-data="{ sel: [], all: [{% for f in files %}{% if not f.used %}'{{ f.name|escapejs }}',{% endif %}{% endfor %}], renaming: null }">
+    <form id="files-delete" method="post" action="{% url 'admin_files_delete' %}"
+          @submit="if (!confirm(`${sel.length} Datei(en) endgültig löschen?`)) $event.preventDefault()">
+        {% csrf_token %}
+    </form>
+
+    <section class="card">
+        {% if files %}
+        <div class="card-header">
+            <label class="flex items-center gap-2 text-sm text-ink-2" x-show="all.length">
+                <input type="checkbox" class="form-check-input mt-0"
+                       :checked="all.length && sel.length === all.length" :indeterminate="sel.length && sel.length < all.length"
+                       @change="sel = $event.target.checked ? [...all] : []">
+                Alle unbenutzten auswählen
+            </label>
+            <button type="submit" form="files-delete" class="btn btn-sm btn-danger" x-show="sel.length" x-cloak>
+                {% include "icons/trash.html" with cls="size-4" %} <span x-text="`${sel.length} löschen`"></span>
+            </button>
+        </div>
+        {% endif %}
+        <ul class="divide-y divide-line">
+            {% for f in files %}
+            <li class="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-start sm:px-5" :class="sel.includes('{{ f.name|escapejs }}') && 'bg-accent-soft'">
+                <div class="flex min-w-0 flex-1 items-start gap-3">
+                    {% if f.used %}
+                    <span class="mt-0.5 size-4 shrink-0" aria-hidden="true"></span>
+                    {% else %}
+                    <input type="checkbox" class="form-check-input mt-0.5" name="names" value="{{ f.name }}" form="files-delete"
+                           x-model="sel" aria-label="{{ f.basename }} auswählen">
+                    {% endif %}
+                    <div class="min-w-0 flex-1">
+                        <p class="flex flex-wrap items-center gap-2 text-sm font-semibold break-all text-ink">
+                            <a class="link" href="{{ f.url }}" target="_blank" rel="noopener">{{ f.basename }}</a>
+                            {% if f.temp %}<span class="badge badge-warning">Abgebrochener Upload</span>
+                            {% elif not f.used %}<span class="badge badge-danger">Unbenutzt</span>{% endif %}
+                        </p>
+                        <p class="mt-0.5 text-xs text-ink-3">{{ f.folder|default:"(Hauptordner)" }} · {{ f.size|filesizeformat }} · {{ f.modified|date:"d.m.Y, H:i" }}</p>
+                        {% if f.usages %}
+                        <p class="mt-1 text-xs text-ink-2">Verwendet von:
+                            {% for label, url in f.usages %}<a class="link" href="{{ url }}">{{ label|truncatechars:60 }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}
+                        </p>
+                        {% endif %}
+                        <form method="post" action="{% url 'admin_file_rename' %}" class="mt-2 flex flex-wrap items-center gap-2"
+                              x-show="renaming === '{{ f.name|escapejs }}'" x-cloak>
+                            {% csrf_token %}
+                            <input type="hidden" name="name" value="{{ f.name }}">
+                            <label class="sr-only" for="rename-{{ forloop.counter }}">Neuer Name für {{ f.basename }}</label>
+                            <input id="rename-{{ forloop.counter }}" type="text" name="new_name" class="form-control w-auto min-w-0 flex-1" required
+                                   value="{{ f.basename }}" x-effect="if (renaming === '{{ f.name|escapejs }}') $nextTick(() => $el.select())">
+                            <button type="submit" class="btn btn-sm btn-primary">Umbenennen</button>
+                            <button type="button" class="btn btn-sm btn-secondary" @click="renaming = null">Abbrechen</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="flex shrink-0 gap-1 pl-7 sm:pl-0" x-show="renaming !== '{{ f.name|escapejs }}'">
+                    <button type="button" class="btn btn-sm btn-ghost" @click="renaming = '{{ f.name|escapejs }}'">{% include "icons/pencil-square.html" with cls="size-4" %} Umbenennen</button>
+                </div>
+            </li>
+            {% empty %}
+            <li class="empty-state p-6">Keine Dateien{% if filtered %} für diese Filter{% endif %}.</li>
+            {% endfor %}
+        </ul>
+    </section>
+</div>
+{% endblock %}

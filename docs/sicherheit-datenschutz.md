@@ -25,6 +25,7 @@ Es gibt keine festen Rollen, sondern Einzelrechte (Django-Permissions der App `a
 | `send_notifications` | Benachrichtigungen senden | freie Push-Nachrichten |
 | `view_learning_progress` | Lernstand einsehen | Lernstand je Person und Katalog |
 | `manage_assignments` | Lernaufträge verwalten | Lernaufträge anlegen, Fortschritt ansehen |
+| `manage_files` | Dateien verwalten | Admin → Dateien: hochgeladene Dateien sichten, unbenutzte löschen, umbenennen (eigens zu vergeben) |
 | `view_edit_log` | Änderungsprotokoll einsehen | Volles Änderungsprotokoll (Admin → Änderungen) mit Feldwerten vorher/nachher; Superuser immer. Den Hinweis „Zuletzt bearbeitet von …“ sieht jeder Admin |
 
 Schutzmechanismen:

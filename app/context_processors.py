@@ -33,6 +33,7 @@ _NAV_SECTIONS = {
     'admin_autogroup_edit': 'admin_autogroup',
     'admin_settings': 'admin_settings',
     'admin_edit_log': 'admin_edit_log',
+    'admin_files': 'admin_files',
     'admin_push_message': 'admin_push',
     'admin_report_list': 'admin_report',
     'admin_learning': 'admin_learning', 'admin_learning_user': 'admin_learning',

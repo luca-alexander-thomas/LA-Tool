@@ -99,4 +99,5 @@ Alle Seiten verlangen eine Anmeldung und das Recht `access_admin`; zusätzlich d
 | `/admin/stufen/erstellen/`, `…/<id>/`, `…/<id>/loeschen/` | `manage_levels` |
 | `/admin/autogruppen/…` | `manage_groups` (Gruppen, Regeln und Gruppenrechte) |
 | `/admin/settings/` | `manage_settings` |
+| `/admin/dateien/`, `/admin/dateien/loeschen/` (POST `names`), `/admin/dateien/umbenennen/` (POST `name`, `new_name`) | `manage_files` |
 | `/admin/aenderungen/` | `view_edit_log` (Filter `typ`, `id`, `person`, `q`, `aktion`, `von`, `bis`, Seite `seite`) |
