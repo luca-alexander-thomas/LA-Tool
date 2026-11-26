@@ -19,6 +19,7 @@ urlpatterns = [
     path('datenschutz/', views.legal_page, {'template': 'legal-datenschutz.html'}, name='legal_privacy'),
     path('nutzungsbedingungen/', views.legal_page, {'template': 'legal-nutzungsbedingungen.html'}, name='legal_terms'),
     path('impressum/', views.legal_page, {'template': 'legal-impressum.html'}, name='legal_imprint'),
+    path('lizenzen/', views.legal_page, {'template': 'legal-lizenzen.html'}, name='legal_licenses'),
     path('profile/daten/', views.my_data_export, name='my_data_export'),
     path('profile/lerndaten-loeschen/', views.my_learning_data_delete, name='my_learning_data_delete'),
     path('push/abonnieren/', pwa.push_subscribe, name='push_subscribe'),
