@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from django.contrib.auth.models import User
 
 
@@ -125,6 +126,39 @@ class Changes(models.Model):
 
     def __str__(self):
         return self.change
+
+
+class EditLogEntry(models.Model):
+    """Änderung an Stammdaten im Admin (wer, wann, was, Felder alt → neu); siehe la_tool_admin/edit_log.py.
+
+    Aufbewahrung: cleanup_data löscht Einträge nach RETENTION['edit_log_days'].
+    """
+    ACTION_CHOICES = [
+        ('create', 'angelegt'),
+        ('update', 'geändert'),
+        ('delete', 'gelöscht'),
+        ('bulk', 'Sammelaktion'),
+        ('import', 'importiert'),
+        ('rename', 'umbenannt'),
+    ]
+
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+    # Person; bleibt als Name erhalten, wenn das Konto gelöscht wird. Leer bei automatischen Änderungen.
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='edit_log_entries')
+    user_name = models.CharField(max_length=150)
+    action = models.CharField(max_length=10, choices=ACTION_CHOICES)
+    target_type = models.CharField(max_length=20)
+    target_id = models.PositiveIntegerField(null=True, blank=True)
+    target_label = models.CharField(max_length=200, blank=True, default='')
+    # {Feldname: [alt, neu]} oder Angaben zur Sammelaktion
+    changes = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
+        indexes = [models.Index(fields=['target_type', 'target_id'])]
+
+    def __str__(self):
+        return f'{self.created_at:%d.%m.%Y %H:%M} {self.user_name}: {self.target_type} {self.target_label} {self.action}'
 
 
 class PushSubscription(models.Model):

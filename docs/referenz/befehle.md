@@ -9,7 +9,7 @@ Projekteigene Management-Befehle (`app/management/commands/`) und die im Projekt
 | `sync_divera` | – | Holt Termine des Standorts mit dem Admin-Key, filtert auf `DIVERA_EVENTS_GROUP` (Termine ohne Gruppe immer) und legt Dienste an bzw. aktualisiert Titel, Zeit, Ort und Beschreibung (Schlüssel: `Work.divera_id`). Gleiche Funktion wie Admin → Dienste → Abgleich | `DIVERA_ADMIN_USER_API_KEY` |
 | `sync_divera_users` | `--dry-run` | Gleicht alle Konten mit Divera-ID gegen die Personenliste ab: Qualifikationen und Gruppen aktualisieren, Gruppen neu berechnen, Ausgetretene sperren (nur Divera-Konten, die schon gelistet waren). Bricht bei leerer Liste ohne Änderungen ab | `DIVERA_ADMIN_USER_API_KEY` |
 | `send_learning_reminders` | `--dry-run` | Push „Zeit für eine Wiederholung“ mit Knopf „Jetzt üben“ an Personen mit Push-Gerät, eingeschalteter Lern-Erinnerung und fälligen Fragen; je Person höchstens alle 6 Tage | `VAPID_*` (bei `--dry-run` nicht) |
-| `cleanup_data` | `--dry-run` | Löschkonzept: löscht abgelaufene Trainings, Prüfungsergebnisse, Benachrichtigungen, erledigte Meldungen und Konten ausgetretener Mitglieder (Fristen: `RETENTION` in `app/legal_info.py`) | – |
+| `cleanup_data` | `--dry-run` | Löschkonzept: löscht abgelaufene Trainings, Prüfungsergebnisse, Benachrichtigungen, erledigte Meldungen, Einträge im Änderungsprotokoll und Konten ausgetretener Mitglieder (Fristen: `RETENTION` in `app/legal_info.py`) | – |
 | `generate_vapid_keys` | – | Gibt ein neues VAPID-Schlüsselpaar für die `.env` aus. Neue Schlüssel machen bestehende Push-Abos ungültig | – |
 | `optimize_icons` | – | Verkleinert vorhandene Stufen-Icons auf max. 160 px und speichert sie als WebP (neue Uploads automatisch) | – |
 

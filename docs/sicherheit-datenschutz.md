@@ -25,6 +25,7 @@ Es gibt keine festen Rollen, sondern Einzelrechte (Django-Permissions der App `a
 | `send_notifications` | Benachrichtigungen senden | freie Push-Nachrichten |
 | `view_learning_progress` | Lernstand einsehen | Lernstand je Person und Katalog |
 | `manage_assignments` | Lernaufträge verwalten | Lernaufträge anlegen, Fortschritt ansehen |
+| `view_edit_log` | Änderungsprotokoll einsehen | Volles Änderungsprotokoll (Admin → Änderungen) mit Feldwerten vorher/nachher; Superuser immer. Den Hinweis „Zuletzt bearbeitet von …“ sieht jeder Admin |
 
 Schutzmechanismen:
 
@@ -86,6 +87,7 @@ Prüfung mit Produktionswerten: `python manage.py check --deploy` (erwartete Hin
 | Prüfungsergebnisse | Datenbank | Person nach Freigabe; `view_exam_results` |
 | Meldungen zu Fragen | Datenbank | `manage_theory` |
 | Push-Abos, Benachrichtigungen | Datenbank | Person selbst |
+| Änderungsprotokoll (Name der bearbeitenden Person, Zeitpunkt, geänderte Felder) | Datenbank | `view_edit_log`; „Zuletzt bearbeitet von …“ alle Admins; eigene Einträge im Datenexport |
 | Fehlgeschlagene Anmeldungen (mit IP) | Server-Log | Server-Administration |
 | Farbschema, Zwischenstände, Offline-Fragen, offene Trainings | Browser des Geräts | Person selbst; Fragen und offene Trainings werden beim Abmelden gelöscht |
 
@@ -108,6 +110,7 @@ Fristen in `app/legal_info.py` (`RETENTION`), umgesetzt von `python manage.py cl
 | Konten ausgetretener Mitglieder (inkl. aller Daten) | 1 Jahr nach dem Austritt |
 | Benachrichtigungen | 90 Tage |
 | Erledigte Meldungen zu Fragen | 1 Jahr |
+| Änderungsprotokoll | 2 Jahre (der Name bleibt bis dahin auch nach Löschung des Kontos stehen) |
 | Sitzungen | Ablauf der Sitzung (`clearsessions`) |
 
 Änderungen an den Fristen in `RETENTION` vornehmen; die Datenschutzerklärung übernimmt die Werte automatisch.

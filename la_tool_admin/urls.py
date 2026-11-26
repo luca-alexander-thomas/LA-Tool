@@ -64,6 +64,7 @@ urlpatterns = [
 
     # Einstellungen
     path('settings/', views.admin_settings, name='admin_settings'),
+    path('aenderungen/', views.admin_edit_log, name='admin_edit_log'),
 
     # LA-Stufen
     path('stufen/', views.admin_level_list, name='admin_level_list'),

@@ -18,7 +18,7 @@ from .context_processors import current_la_filter
 from . import learning
 from .scoring import score_question as _score_question
 from django.conf import settings
-from la_tool_admin.models import Profile, UserNotification
+from la_tool_admin.models import EditLogEntry, Profile, UserNotification
 from la_tool_admin.push import push_configured, safe_internal_url
 from .models import (
     Questions_Catalogs, Questions_Theory, TrainingResultData,
@@ -1357,6 +1357,12 @@ def my_data_export(request):
         ],
         'push_geraete': [
             {'browser': s.user_agent, 'seit': dt(s.created_at)} for s in PushSubscription.objects.filter(user=user)
+        ],
+        # Eigene Änderungen als Admin (Änderungsprotokoll)
+        'aenderungsprotokoll': [
+            {'zeitpunkt': dt(e.created_at), 'aktion': e.get_action_display(), 'bereich': e.target_type,
+             'objekt': e.target_label, 'aenderungen': e.changes}
+            for e in EditLogEntry.objects.filter(user=user)
         ],
     }
     response = JsonResponse(data, json_dumps_params={'ensure_ascii': False, 'indent': 2})

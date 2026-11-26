@@ -32,6 +32,8 @@ RETENTION = {
     'left_account_days': 365,
     'notification_days': 90,
     'resolved_report_days': 365,
+    # Änderungsprotokoll der Stammdaten (Name der bearbeitenden Person, Änderungen)
+    'edit_log_days': 2 * 365,
 }
 
 

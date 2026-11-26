@@ -434,6 +434,7 @@ class SiteSettings(models.Model):
             ('send_notifications', 'Benachrichtigungen senden'),
             ('view_learning_progress', 'Lernstand einsehen'),
             ('manage_assignments', 'Lernaufträge verwalten'),
+            ('view_edit_log', 'Änderungsprotokoll einsehen'),
         ]
 
     @classmethod

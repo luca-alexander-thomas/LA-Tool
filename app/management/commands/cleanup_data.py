@@ -6,6 +6,7 @@
   Austritt (mit allen zugehörigen Daten: Ergebnisse, Merkliste, Push-Abos, Benachrichtigungen …)
 - Benachrichtigungen älter als RETENTION['notification_days'], erledigte Fehlermeldungen älter als
   RETENTION['resolved_report_days']
+- Einträge im Änderungsprotokoll älter als RETENTION['edit_log_days']
 
 Für einen täglichen systemd-Timer gedacht; zuerst mit --dry-run prüfen.
 """
@@ -18,7 +19,7 @@ from django.utils import timezone
 
 from app.legal_info import RETENTION
 from app.models import ExamResultData, QuestionReport, TrainingResultData
-from la_tool_admin.models import UserNotification
+from la_tool_admin.models import EditLogEntry, UserNotification
 
 
 class Command(BaseCommand):
@@ -39,6 +40,7 @@ class Command(BaseCommand):
             ('Benachrichtigungen', UserNotification.objects.filter(created_at__lt=older(RETENTION['notification_days']))),
             ('Erledigte Fehlermeldungen', QuestionReport.objects.filter(
                 resolved_at__lt=older(RETENTION['resolved_report_days']))),
+            ('Änderungsprotokoll', EditLogEntry.objects.filter(created_at__lt=older(RETENTION['edit_log_days']))),
             # Nur wegen Austritt gesperrte Konten; von Admins gesperrte (ohne divera_left_at) bleiben
             ('Konten nach Austritt', User.objects.filter(
                 is_active=False, profile__divera_left_at__lt=older(RETENTION['left_account_days']))),

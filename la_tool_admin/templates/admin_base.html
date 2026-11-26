@@ -25,6 +25,7 @@ Admin-Seiten füllen {% block admin_content %}.
         <a href="{% url 'admin_level_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_level' %}nav-link-active{% endif %}" {% if nav_section == 'admin_level' %}aria-current="page"{% endif %}>Stufen</a>
         {% if perms.app.manage_groups %}<a href="{% url 'admin_autogroup_list' %}" class="nav-link shrink-0 {% if nav_section == 'admin_autogroup' %}nav-link-active{% endif %}" {% if nav_section == 'admin_autogroup' %}aria-current="page"{% endif %}>Autogruppen</a>{% endif %}
         {% if perms.app.manage_settings %}<a href="{% url 'admin_settings' %}" class="nav-link shrink-0 {% if nav_section == 'admin_settings' %}nav-link-active{% endif %}" {% if nav_section == 'admin_settings' %}aria-current="page"{% endif %}>Einstellungen</a>{% endif %}
+        {% if perms.app.view_edit_log %}<a href="{% url 'admin_edit_log' %}" class="nav-link shrink-0 {% if nav_section == 'admin_edit_log' %}nav-link-active{% endif %}" {% if nav_section == 'admin_edit_log' %}aria-current="page"{% endif %}>Änderungen</a>{% endif %}
     </nav>
 
     {# Desktop: Seitenleiste #}
@@ -51,6 +52,7 @@ Admin-Seiten füllen {% block admin_content %}.
             <a href="{% url 'admin_level_list' %}" class="sidebar-link {% if nav_section == 'admin_level' %}sidebar-link-active{% endif %}" {% if nav_section == 'admin_level' %}aria-current="page"{% endif %}>{% include "icons/trophy.html" %} LA-Stufen</a>
             {% if perms.app.manage_groups %}<a href="{% url 'admin_autogroup_list' %}" class="sidebar-link {% if nav_section == 'admin_autogroup' %}sidebar-link-active{% endif %}" {% if nav_section == 'admin_autogroup' %}aria-current="page"{% endif %}>{% include "icons/bolt.html" %} Autogruppen</a>{% endif %}
             {% if perms.app.manage_settings %}<a href="{% url 'admin_settings' %}" class="sidebar-link {% if nav_section == 'admin_settings' %}sidebar-link-active{% endif %}" {% if nav_section == 'admin_settings' %}aria-current="page"{% endif %}>{% include "icons/cog-6-tooth.html" %} Einstellungen</a>{% endif %}
+            {% if perms.app.view_edit_log %}<a href="{% url 'admin_edit_log' %}" class="sidebar-link {% if nav_section == 'admin_edit_log' %}sidebar-link-active{% endif %}" {% if nav_section == 'admin_edit_log' %}aria-current="page"{% endif %}>{% include "icons/clock.html" %} Änderungen</a>{% endif %}
 
             <div class="my-3 h-px bg-line"></div>
             <a href="{% url 'home' %}" class="sidebar-link">{% include "icons/arrow-left.html" %} Zur App</a>
