@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import Group
-from django.core.validators import FileExtensionValidator
+from django.core.validators import FileExtensionValidator, MaxValueValidator, MinValueValidator
 from app.models import Questions_Catalogs, Questions_Theory, Questions_Practical, Questions_GroupExercise, Exams, Work, Levels, LearningAssignment, SiteSettings
 
 _PDF_IMAGE_VALIDATOR = FileExtensionValidator(allowed_extensions=['pdf', 'png', 'jpg', 'jpeg'])
@@ -36,11 +36,19 @@ class LevelForm(forms.ModelForm):
             'badge_bg_class': 'Hintergrundfarbe (CSS-Klasse)',
             'badge_text_class': 'Textfarbe (CSS-Klasse)',
             'default_training_count': 'Standard Trainingsanzahl (Fragen)',
-            'default_training_pass_pct': 'Standard Bestehensgrenze Training (%)',
+            'default_training_pass_pct': 'Standard Bestehensgrenze Training',
             'default_exam_count': 'Standard Prüfungsanzahl (Fragen)',
-            'default_exam_pass_pct': 'Standard Bestehensgrenze Prüfung (%)',
+            'default_exam_pass_pct': 'Standard Bestehensgrenze Prüfung',
             'is_draft': 'Entwurf (für User unsichtbar)',
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Grenzen auch serverseitig prüfen (bisher nur im Browser über min/max)
+        for name in ('default_training_pass_pct', 'default_exam_pass_pct'):
+            self.fields[name].validators += [MinValueValidator(0), MaxValueValidator(100)]
+        for name in ('default_training_count', 'default_exam_count'):
+            self.fields[name].validators.append(MinValueValidator(1))
 
 
 class CatalogForm(forms.ModelForm):

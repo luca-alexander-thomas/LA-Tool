@@ -256,7 +256,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (arrow) arrow.classList.add('rotate-90');
         }
     });
-    updatePassThreshold();
+    // Gespeicherte (ggf. selbst gesetzte) Grenze beim Bearbeiten nicht überschreiben; nur neu berechnen, wenn leer/0
+    const passField = document.getElementById('id_pass_threshold');
+    if (!passField.value || passField.value === '0') updatePassThreshold();
+    else updateLevelHint();
     document.querySelectorAll('.child-check').forEach(function(c) {
         c.addEventListener('change', updatePassThreshold);
     });

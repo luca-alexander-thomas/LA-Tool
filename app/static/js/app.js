@@ -141,6 +141,43 @@
             },
         }));
 
+        // Bestehensgrenze wahlweise in Prozent oder als Anzahl Fragen eingeben; gespeichert wird nur der Prozentwert
+        // im Formularfeld cfg.pct. cfg.total: Feld mit der Fragenanzahl, auf die sich die Grenze bezieht.
+        // Umrechnung wie bei Prüfungen: Fragen = aufrunden(Anzahl × Prozent / 100).
+        Alpine.data('passThreshold', (cfg) => ({
+            unit: 'pct',
+            pct: 0,
+            total: 0,
+            count: 0,
+            init() {
+                this.pctEl = document.getElementById(cfg.pct);
+                this.totalEl = document.getElementById(cfg.total);
+                const read = () => {
+                    this.pct = parseInt(this.pctEl.value, 10) || 0;
+                    this.total = parseInt(this.totalEl.value, 10) || 0;
+                    if (this.unit === 'pct') this.count = this.countFor(this.pct);
+                };
+                read();
+                this.pctEl.addEventListener('input', read);
+                this.totalEl.addEventListener('input', () => {
+                    read();
+                    if (this.unit === 'count') this.setCount(this.count);
+                });
+            },
+            countFor(pct) {
+                return Math.ceil(this.total * pct / 100);
+            },
+            // Kleinster ganzzahliger Prozentwert, der wieder genau diese Anzahl Fragen ergibt
+            setCount(value) {
+                const n = Math.max(0, Math.min(parseInt(value, 10) || 0, this.total));
+                let pct = this.total ? Math.floor(n * 100 / this.total) : 0;
+                if (this.countFor(pct) < n) pct += 1;
+                this.count = n;
+                this.pct = Math.min(pct, 100);
+                this.pctEl.value = this.pct;
+            },
+        }));
+
         // Nach dem ersten Training: Erinnerungen per Push anbieten (nur wenn noch nie gefragt)
         Alpine.data('pushPrompt', (cfg) => ({
             show: false,

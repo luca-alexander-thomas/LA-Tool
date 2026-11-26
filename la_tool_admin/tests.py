@@ -306,3 +306,42 @@ class AdminNavTests(TestCase):
         html = self.client.get(reverse('admin_users')).content.decode()
         self.assertIn('nav-link-active" aria-current="page">Benutzer', html)
         self.assertNotIn('\\"', html)
+
+
+class LevelDefaultsTests(TestCase):
+    """Bestehensgrenzen der Stufe: Eingabe in % oder Fragen, gespeichert als Prozent (Issue #21)."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user('admin')
+        grant(self.admin, 'access_admin', 'manage_levels')
+        self.client.force_login(self.admin)
+        self.level = Levels.objects.create(name='Bronze', slug='bronze-x', order=50)
+
+    def post(self, **changes):
+        data = {'name': 'Bronze', 'slug': 'bronze-x', 'order': 50, 'badge_bg_class': '', 'badge_text_class': '',
+                'default_training_count': 10, 'default_training_pass_pct': 75,
+                'default_exam_count': 20, 'default_exam_pass_pct': 75, **changes}
+        return self.client.post(reverse('admin_level_edit', args=[self.level.pk]), data)
+
+    def test_form_offers_percent_or_question_input(self):
+        html = self.client.get(reverse('admin_level_edit', args=[self.level.pk])).content.decode()
+        self.assertEqual(html.count('x-data="passThreshold('), 2)
+        self.assertIn("pct: 'id_default_exam_pass_pct', total: 'id_default_exam_count'", html)
+
+    def test_percent_saved_and_limits_checked_on_server(self):
+        self.assertEqual(self.post(default_exam_pass_pct=66).status_code, 302)
+        self.level.refresh_from_db()
+        self.assertEqual(self.level.default_exam_pass_pct, 66)
+        for changes in ({'default_exam_pass_pct': 101}, {'default_training_pass_pct': 150}, {'default_exam_count': 0}):
+            response = self.post(**changes)
+            self.assertEqual(response.status_code, 200, changes)
+            self.assertTrue(response.context['form'].errors, changes)
+
+    def test_exam_form_keeps_stored_threshold(self):
+        from app.models import Exams
+        grant(self.admin, 'manage_exams')
+        exam = Exams.objects.create(name='Probe', level=self.level, pass_threshold=7)
+        html = self.client.get(reverse('admin_exam_edit', args=[exam.pk])).content.decode()
+        self.assertIn('value="7"', html)
+        # Neu berechnet wird beim Laden nur, wenn noch keine Grenze gesetzt ist
+        self.assertIn("if (!passField.value || passField.value === '0') updatePassThreshold();", html)
